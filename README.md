@@ -89,7 +89,7 @@ These layers form a unified system:
 | ------------- | ------------- | 
 | Login/Sign-Up | The enrty point for all users. Displays a login form and a registration form where new users activate their account using an admin provided registration code. Handles authenticaiton and redirects user to their role-specific dahsboard after successful login |
 | Teacher Dahsboard | Displays all courses created by the logged-in teacher. Teachers can add, edit, or delete courses, create new tasks and study groups, and upload notes. Provodes quick links to manage cours eparticipants and materials.  |
-| Student Dahsboard | Main end-user | Shows an overview of the student's enrolles courses, upcoming tasks, and flashcards due for review. Students can navifate directly to course details, create personal notes, adn track their study progress.  |
+| Student Dahsboard | Shows an overview of the student's enrolles courses, upcoming tasks, and flashcards due for review. Students can navifate directly to course details, create personal notes, adn track their study progress.  |
 | Courses | Lists all available or enrolled courses depending on user role. Each course can be opened to view details such as description, tasks, notes, and related study groups. Teachers can create new courses; students can enrol or leave a course. |
 | Course Details | Displays a course overview with tabs for Tasks, Notes, Study Groups, and People. Teachers can post or edit tasks and notes. Students can view assigned work, access shared notes, and join study groups. |
 | Study Groups | Lists all study groups within a course. Students can join or leave groups; teachers can create or moderate them. Each group page shows members, group notes, and discussions related to the course. |
