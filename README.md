@@ -100,7 +100,7 @@ These layers form a unified system:
 | Error/Empty States | Shown when a page has no content (e.g., “No courses found” or “No notes yet”) or when an invalid action occurs. Provides helpful guidance and navigation back to relevant sections. |
 ### Entity-Relationship (ER) Diagram
 
-![ER Diagram](./images/er_diagram.png)
+![ER Diagram](./images/ERdiagram.png)
 
 ## Teaser (MS3)
 
