@@ -102,6 +102,46 @@ These layers form a unified system:
 
 ![ER Diagram](./images/ERdiagram.png)
 
+##Scope Clarification & Milesstoen Alignment
+The ER model describes the full long-term vision of StudyBuddy.
+However, for Milestone 1 (Backend) and Milestone 2 (Frontend), the team will focus on a subset of the total feature space to keep the scope realistic and aligned with course requirements.
+
+The initial implementation prioritizes core entities and flows, while all other entities remain planned but not required for the first backend milestone.
+
+This means:
+- The ER represents the complete conceptual system, but
+- MS1 will only implement the essential backend entities and relationships needed for CRUD and relationship endpoints, exactly as required by the checklist, and
+- Additional functionality from the ER will be introduced gradually and only after the core system is stable.
+
+##Advanced Feature Candidates
+The system includes several advanced functionalities that go beyond basic CRUD. These features are built on top of the core StudyBuddy entities and provide meaningful learning support for students. Each feature requires non-trivial backend logic and dedicated frontend UI, fulfilling the requirements for an advanced milestone.
+### Summary Maker (Advanced Feature)
+
+StudyBuddy includes an optional summary-generation feature for notes.  
+This feature helps students review content more efficiently by allowing them to generate concise summaries of long or detailed notes.
+
+**Key capabilities:**
+- Students can generate a summary for any note they have access to.
+- The backend processes the note content and produces a condensed version.
+- Summaries can be stored alongside the original note for later viewing.
+- The frontend displays the summary in the Notes page for quick studying.
+
+### Flashcards & Quiz Generator (Advanced Feature)
+
+StudyBuddy provides interactive study tools based on existing note content.  
+Students can automatically turn their notes into flashcards and quizzes to support active recall and self-testing.
+
+**Flashcards:**
+- Users can generate flashcards directly from a selected note.
+- Flashcards display a prompt (front) and answer (back).
+- Students can flip cards and mark difficulty after reviewing them.
+- Progress can be tracked to help students focus on difficult areas.
+
+**Quiz Generator:**
+- Students can start a lightweight quiz generated from the content of their notes.
+- The system produces a short set of questions (e.g., five items) from the note.
+- Quizzes support quick self-assessment before deadlines or exams.
+
 ## Teaser (MS3)
 
 ![Teaser](./images/teaser.png)
