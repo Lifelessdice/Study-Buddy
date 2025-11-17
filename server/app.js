@@ -19,6 +19,8 @@ var userRoutes = require('./routes/users');   // ✅ FIXED
 var mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/animalDevelopmentDB';
 var port = process.env.PORT || 3000;
 
+//Versioned API prefix
+var API_PREFIX = '/api/v1';
 // ---------------------------------------------
 //  APP INIT
 // ---------------------------------------------
@@ -47,7 +49,12 @@ app.get('/api', function(req, res) {
 // ---------------------------------------------
 //  USER ROUTES (FR1.2)
 // ---------------------------------------------
-app.use("/api/v1/users", userRoutes);
+app.use(API_PREFIX + "/users", userRoutes);
+
+// When these routers exist, mount them like this:
+// app.use(API_PREFIX + "/courses", courseRoutes);
+// app.use(API_PREFIX + "/tasks", taskRoutes);
+// app.use(API_PREFIX + "/sessions", sessionRoutes);
 
 // ---------------------------------------------
 //  OPTIONAL: 404 CATCH FOR /api/v1/*
