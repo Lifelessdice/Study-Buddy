@@ -34,9 +34,6 @@ var app = express();
 // ---------------------------------------------
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-
-// ---------------------------------------------
-// ---------------------------------------------
 app.use(morgan('dev'));
 app.options('*', cors());
 app.use(cors());
@@ -48,11 +45,9 @@ app.get("/api/v1/health", (req, res) => {
 
 // ---------------------------------------------
 // ---------------------------------------------
-/*
 app.get('/api', function(req, res) {
-    res.json({'message': 'Welcome to your DIT342 backend ExpressJS project!'});
+    res.json({'message': 'Welcome to StudyBuddy API v1'});
 });
-*/
 
 
 // ---------------------------------------------
