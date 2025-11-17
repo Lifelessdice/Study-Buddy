@@ -9,94 +9,88 @@ var cors = require('cors');
 var history = require('connect-history-api-fallback');
 
 // ---------------------------------------------
+//  ROUTES
+// ---------------------------------------------
+var userRoutes = require('./routes/users');   // ✅ FIXED
+
+// ---------------------------------------------
 //  ENV + CONFIG
 // ---------------------------------------------
 var mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/animalDevelopmentDB';
 var port = process.env.PORT || 3000;
 
 // ---------------------------------------------
-// ---------------------------------------------
-/*
-mongoose.connect(mongoURI).catch(function(err) {
-    console.error(`Failed to connect to MongoDB with URI: ${mongoURI}`);
-    console.error(err.stack);
-    process.exit(1);
-}).then(function() {
-    console.log(`Connected to MongoDB with URI: ${mongoURI}`);
-});
-*/
-
-// ---------------------------------------------
+//  APP INIT
 // ---------------------------------------------
 var app = express();
 
-// ---------------------------------------------
-// ---------------------------------------------
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(morgan('dev'));
 app.options('*', cors());
 app.use(cors());
 
+// ---------------------------------------------
+//  HEALTH CHECK (Required for CI)
+// ---------------------------------------------
 app.get("/api/v1/health", (req, res) => {
     res.json({ status: "ok" });
 });
 
-
 // ---------------------------------------------
+//  ROOT TEMPLATE ENDPOINT (Required by template)
 // ---------------------------------------------
 app.get('/api', function(req, res) {
-    res.json({'message': 'Welcome to StudyBuddy API v1'});
+    res.json({ 'message': 'Welcome to StudyBuddy API v1' });
 });
 
+// ---------------------------------------------
+//  USER ROUTES (FR1.2)
+// ---------------------------------------------
+app.use("/api/v1/users", userRoutes);
 
 // ---------------------------------------------
+//  OPTIONAL: 404 CATCH FOR /api/v1/*
 // ---------------------------------------------
-/*
-app.use('/api/*', function (req, res) {
-    res.status(404).json({ 'message': 'Not Found' });
+app.use('/api/v1/*', function (req, res) {
+    res.status(404).json({ message: 'Not Found' });
 });
-*/
 
 // ---------------------------------------------
+//  GLOBAL ERROR HANDLER (FR1.2)
 // ---------------------------------------------
-/*
-app.use(history());
-var root = path.normalize(__dirname + '/..');
-var client = path.join(root, 'client', 'dist');
-app.use(express.static(client));
-*/
+app.use(function (err, req, res, next) {
+    console.error(err);
 
-// ---------------------------------------------
-// ---------------------------------------------
-/*
-var env = app.get('env');
-app.use(function(err, req, res, next) {
-    console.error(err.stack);
-    var err_res = {
-        'message': err.message,
-        'error': {}
-    };
-    if (env === 'development') {
-        err_res['error'] = err.stack;
+    if (err.name === "ValidationError") {
+        return res.status(400).json({
+            error: "ValidationError",
+            message: err.message,
+            details: err.errors,
+        });
     }
-    res.status(err.status || 500);
-    res.json(err_res);
-});
-*/
 
+    if (err.name === "CastError") {
+        return res.status(400).json({
+            error: "CastError",
+            message: `Invalid ${err.path}: ${err.value}`,
+        });
+    }
+
+    if (err.code && err.code === 11000) {
+        return res.status(409).json({
+            error: "DuplicateKey",
+            keyValue: err.keyValue,
+        });
+    }
+
+    res.status(err.status || 500).json({
+        error: "InternalServerError",
+        message: err.message || "Unexpected error",
+    });
+});
 
 // ---------------------------------------------
-/*
-app.listen(port, function(err) {
-    if (err) throw err;
-    console.log(`Express server listening on port ${port}, in ${env} mode`);
-    console.log(`Backend: http://localhost:${port}/api/`);
-    console.log(`Frontend (production): http://localhost:${port}/`);
-});
-*/
-
-// ---------------------------------------------
-//  EXPORT APP FOR server.js
+//  EXPORT FOR server.js
 // ---------------------------------------------
 module.exports = app;
