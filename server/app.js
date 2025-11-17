@@ -11,7 +11,11 @@ var history = require('connect-history-api-fallback');
 // ---------------------------------------------
 //  ROUTES
 // ---------------------------------------------
-var userRoutes = require('./routes/users');   // ✅ FIXED
+var userRoutes = require('./routes/users');   
+var courseRoutes = require('./routes/courses');
+var noteRoutes = require('./routes/notes');
+var quizRoutes = require('./routes/quizzes');
+
 
 // ---------------------------------------------
 //  ENV + CONFIG
@@ -47,9 +51,13 @@ app.get('/api', function(req, res) {
 });
 
 // ---------------------------------------------
-//  USER ROUTES (FR1.2)
+//  USER ROUTES 
 // ---------------------------------------------
 app.use(API_PREFIX + "/users", userRoutes);
+app.use(API_PREFIX + "/courses", courseRoutes);
+app.use(API_PREFIX + "/notes", noteRoutes);
+app.use(API_PREFIX + "/quizzes", quizRoutes);
+
 
 // When these routers exist, mount them like this:
 // app.use(API_PREFIX + "/courses", courseRoutes);
