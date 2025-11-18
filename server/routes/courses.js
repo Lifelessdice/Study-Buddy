@@ -90,4 +90,41 @@ router.patch('/:id', async (req, res, next) => {
   } 
 });
 
+
+//----------------------------------------------
+// DELETE /api/v1/courses/:id
+// FR4.5: Delete course by ID (Delete - detail)
+//----------------------------------------------
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const deletedcourse = await Course.findByIdAndDelete(req.params.id);
+
+    if (!deletedcourse) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Course not found',
+      });
+    }
+
+    //204 No Content - no response body
+    return res.status(204).send();
+  } catch (err) {
+    next(err);
+  } 
+});
+
+
+//----------------------------------------------
+// DELETE /api/v1/courses
+// DELETE all courses
+//----------------------------------------------
+router.delete('/', async (req, res, next) => {
+  try {
+    await Course.deleteMany({});
+    return res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
