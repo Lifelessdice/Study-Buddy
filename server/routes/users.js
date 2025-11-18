@@ -133,11 +133,8 @@ router.delete('/', async (req, res, next) => {
 // ----------------------------------------------
 router.put('/:id', async (req, res, next) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      overwrite: true,
-      runValidators: true,
-    });
+    // 1) Load existing user
+    const user = await User.findById(req.params.id);
 
     if (!user) {
       return res.status(404).json({
@@ -146,13 +143,22 @@ router.put('/:id', async (req, res, next) => {
       });
     }
 
+    // 2) Overwrite the entire document with the PUT payload
+    //    (Strip _id if you want to be strict)
+    const { _id, ...rest } = req.body;
+    user.overwrite(rest);
+
+    // 3) Validate + save (runs FULL schema validation, including required fields)
+    await user.save();
+
     res.status(200).json({
       status: 'success',
       data: user,
     });
   } catch (err) {
-    next(err);
-  }     
+    next(err); // ValidationError goes to global handler → 400
+  }
 });
+
 
 module.exports = router;

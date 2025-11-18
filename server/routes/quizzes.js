@@ -130,17 +130,11 @@ router.delete('/', async (req, res, next) => {
 });
 
 
-
-// ---------------------------------------------
-//  PUT /api/v1/quizzes/:id  (Full replace)
-// ---------------------------------------------
+//----------------------------------------------
+// PUT /api/v1/quizzes/:id (full replace)
 router.put('/:id', async (req, res, next) => {
   try {
-    const quiz = await Quiz.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      overwrite: true,
-      runValidators: true,
-    });
+    const quiz = await Quiz.findById(req.params.id);
 
     if (!quiz) {
       return res.status(404).json({
@@ -148,6 +142,11 @@ router.put('/:id', async (req, res, next) => {
         message: 'Quiz not found',
       });
     }
+
+    const { _id, ...rest } = req.body;
+    quiz.overwrite(rest);
+
+    await quiz.save(); // validates title, course, questions[], etc.
 
     res.status(200).json({
       status: 'success',
@@ -157,4 +156,5 @@ router.put('/:id', async (req, res, next) => {
     next(err);
   }
 });
+
 module.exports = router;

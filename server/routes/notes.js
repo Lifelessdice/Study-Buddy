@@ -127,16 +127,12 @@ router.delete('/', async (req, res, next) => {
   } 
 });
 
-// ---------------------------------------------
-//  PUT /api/v1/notes/:id  (Full replace)
-// ---------------------------------------------
+
+//----------------------------------------------
+// PUT /api/v1/notes/:id (full replace)
 router.put('/:id', async (req, res, next) => {
   try {
-    const note = await Note.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      overwrite: true,
-      runValidators: true,
-    });
+    const note = await Note.findById(req.params.id);
 
     if (!note) {
       return res.status(404).json({
@@ -144,6 +140,11 @@ router.put('/:id', async (req, res, next) => {
         message: 'Note not found',
       });
     }
+
+    const { _id, ...rest } = req.body;
+    note.overwrite(rest);
+
+    await note.save(); // validates topic, content, course, etc.
 
     res.status(200).json({
       status: 'success',
@@ -153,6 +154,7 @@ router.put('/:id', async (req, res, next) => {
     next(err);
   }
 });
+
 
 
 

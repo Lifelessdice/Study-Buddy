@@ -128,16 +128,10 @@ router.delete('/', async (req, res, next) => {
 });
 
 
-// ---------------------------------------------
-//  PUT /api/v1/courses/:id  (Full replace)
-// ---------------------------------------------
+// PUT /api/v1/courses/:id (full replace)
 router.put('/:id', async (req, res, next) => {
   try {
-    const course = await Course.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      overwrite: true,     // full replacement semantics
-      runValidators: true,
-    });
+    const course = await Course.findById(req.params.id);
 
     if (!course) {
       return res.status(404).json({
@@ -145,6 +139,11 @@ router.put('/:id', async (req, res, next) => {
         message: 'Course not found',
       });
     }
+
+    const { _id, ...rest } = req.body;
+    course.overwrite(rest);
+
+    await course.save(); // validates required: name, code, etc.
 
     res.status(200).json({
       status: 'success',
