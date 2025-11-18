@@ -1,5 +1,5 @@
 const express = require('express');
-const User = require('../models/users'); // NOTE: '../models/users' (plural)
+const User = require('../models/users'); 
 const router = express.Router();
 
 // ---------------------------------------------
@@ -64,5 +64,34 @@ router.get('/:id', async (req, res, next) => {
     next(err);
   }
 });
+
+
+// ----------------------------------------------
+// PATCH /api/v1/users/:id
+// FR4.4: Update user by ID (Update - detail)
+// ----------------------------------------------
+router.patch('/:id', async (req, res, next) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+      new: true, // return the updated document
+      runValidators: true, // run schema validators on update
+    });
+    if (!user) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'User not found',
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: user,
+    });
+  } catch (err) {
+    next(err);
+  }     
+});
+
+// ----------------------------------------------
 
 module.exports = router;

@@ -64,4 +64,31 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
+// ---------------------------------------------
+// PATCH /api/v1/notes/:id
+// FR4.4: Update note by ID
+// ---------------------------------------------
+router.patch('/:id', async (req, res, next) => {
+  try {
+    const note = await Note.findByIdAndUpdate(req.params.id, req.body, {
+      new: true, // return the updated document
+      runValidators: true, // run schema validators on update
+    });
+
+    if (!note) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Note not found',
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: note,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
