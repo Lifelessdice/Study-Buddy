@@ -127,6 +127,35 @@ router.delete('/', async (req, res, next) => {
   } 
 });
 
+// ---------------------------------------------
+//  PUT /api/v1/notes/:id  (Full replace)
+// ---------------------------------------------
+router.put('/:id', async (req, res, next) => {
+  try {
+    const note = await Note.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      overwrite: true,
+      runValidators: true,
+    });
+
+    if (!note) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Note not found',
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: note,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+
+
 
 
 module.exports = router;

@@ -128,4 +128,31 @@ router.delete('/', async (req, res, next) => {
   } 
 });
 
+// ----------------------------------------------
+// PUT /api/v1/users/:id  (Full replace)
+// ----------------------------------------------
+router.put('/:id', async (req, res, next) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      overwrite: true,
+      runValidators: true,
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'User not found',
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: user,
+    });
+  } catch (err) {
+    next(err);
+  }     
+});
+
 module.exports = router;

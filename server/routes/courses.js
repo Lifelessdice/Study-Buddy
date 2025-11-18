@@ -127,4 +127,58 @@ router.delete('/', async (req, res, next) => {
   }
 });
 
+
+// ---------------------------------------------
+//  PUT /api/v1/courses/:id  (Full replace)
+// ---------------------------------------------
+router.put('/:id', async (req, res, next) => {
+  try {
+    const course = await Course.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      overwrite: true,     // full replacement semantics
+      runValidators: true,
+    });
+
+    if (!course) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Course not found',
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: course,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------------------------------------------
+//  PATCH /api/v1/courses/:id  (Partial update)
+// ---------------------------------------------
+router.patch('/:id', async (req, res, next) => {
+  try {
+    const course = await Course.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    if (!course) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Course not found',
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: course,
+    });
+  } catch (err) {
+    next(err);
+  } 
+});
+
+
 module.exports = router;
