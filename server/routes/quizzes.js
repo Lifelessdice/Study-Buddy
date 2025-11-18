@@ -129,4 +129,32 @@ router.delete('/', async (req, res, next) => {
   }
 });
 
+
+//----------------------------------------------
+// PUT /api/v1/quizzes/:id (full replace)
+router.put('/:id', async (req, res, next) => {
+  try {
+    const quiz = await Quiz.findById(req.params.id);
+
+    if (!quiz) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Quiz not found',
+      });
+    }
+
+    const { _id, ...rest } = req.body;
+    quiz.overwrite(rest);
+
+    await quiz.save(); // validates title, course, questions[], etc.
+
+    res.status(200).json({
+      status: 'success',
+      data: quiz,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
