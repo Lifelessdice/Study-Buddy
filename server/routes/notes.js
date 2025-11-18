@@ -91,4 +91,42 @@ router.patch('/:id', async (req, res, next) => {
   }
 });
 
+//----------------------------------------------
+// DELETE /api/v1/notes/:id
+// FR4.5: Delete note by ID
+//----------------------------------------------
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const deletedNote = await Note.findByIdAndDelete(req.params.id);
+
+    if (!deletedNote) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Note not found',
+      });
+    }
+
+    //204 No Content
+    return res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+
+//----------------------------------------------
+// DELETE /api/v1/notes
+// Delete all notes
+//----------------------------------------------
+router.delete('/', async (req, res, next) => {
+  try {
+    await Note.deleteMany({});
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  } 
+});
+
+
+
 module.exports = router;

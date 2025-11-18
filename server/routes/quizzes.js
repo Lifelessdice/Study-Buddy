@@ -92,4 +92,41 @@ router.patch('/:id', async (req, res, next) => {
   }
 });
 
+//----------------------------------------------
+// DELETE /api/v1/quizzes/:id
+// FR4.5: Delete a quiz by ID
+//----------------------------------------------
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const deletedQuiz = await Quiz.findByIdAndDelete(req.params.id);
+
+    if (!deletedQuiz) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Quiz not found',
+      });
+    }
+
+    // 204 No Content
+    return res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+
+
+//----------------------------------------------
+// DELETE /api/v1/quizzes
+// DELETE all quizzes 
+//----------------------------------------------
+router.delete('/', async (req, res, next) => {
+  try {
+    await Quiz.deleteMany({});
+    return res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
