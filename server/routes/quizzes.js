@@ -64,4 +64,32 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
+
+// ---------------------------------------------
+// PATCH /api/v1/quizzes/:id
+// FR4.4: Update a quiz by ID 
+//---------------------------------------------
+router.patch('/:id', async (req, res, next) => {
+  try {
+    const quiz = await Quiz.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!quiz) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Quiz not found',
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: quiz,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
