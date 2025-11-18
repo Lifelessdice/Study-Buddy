@@ -93,5 +93,39 @@ router.patch('/:id', async (req, res, next) => {
 });
 
 // ----------------------------------------------
+// DELETE /api/v1/users/:id
+// FR4.5: Delete user by ID (Delete - detail)
+// ----------------------------------------------
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const deletedUser = await User.findByIdAndDelete(req.params.id);
+
+    if (!deletedUser) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'User not found',
+      });
+    }
+
+    // 204 No Content
+    return res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+
+//----------------------------------------------
+// DELETE /api/v1/users
+// Delete all users 
+//----------------------------------------------
+router.delete('/', async (req, res, next) => {
+  try {
+    await User.deleteMany({});
+    return res.status(204).send();
+  } catch (err) {
+    next(err);
+  } 
+});
 
 module.exports = router;
