@@ -15,6 +15,9 @@ var userRoutes = require('./routes/users');
 var courseRoutes = require('./routes/courses');
 var noteRoutes = require('./routes/notes');
 var quizRoutes = require('./routes/quizzes');
+var quizCreatorRoutes = require('./routes/quizCreators');
+var quizParticipationRoutes = require('./routes/quizParticipations');
+
 
 
 // ---------------------------------------------
@@ -57,6 +60,9 @@ app.use(API_PREFIX + "/users", userRoutes);
 app.use(API_PREFIX + "/courses", courseRoutes);
 app.use(API_PREFIX + "/notes", noteRoutes);
 app.use(API_PREFIX + "/quizzes", quizRoutes);
+app.use(API_PREFIX + "/quizcreators", quizCreatorRoutes);
+app.use(API_PREFIX + "/quizparticipations", quizParticipationRoutes);
+
 
 
 // When these routers exist, mount them like this:
