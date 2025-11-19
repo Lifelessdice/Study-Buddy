@@ -22,18 +22,44 @@ router.post('/', async (req, res, next) => {
 //  GET /api/v1/users
 //  FR4.3: List all users (Read - collection)
 // ---------------------------------------------
-router.get('/', async (req, res, next) => {
+router.get("/", async (req, res) => {
   try {
-    // later FR9 can plug filtering/sorting/pagination into this
-    const users = await User.find();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const totalDocuments = await User.countDocuments();
+    const totalPages = Math.ceil(totalDocuments / limit);
+
+    const users = await User.find().skip(skip).limit(limit);
+
+    // Add HATEOAS links to each user
+    const usersWithLinks = users.map(user => ({
+      ...user.toObject(),
+      links: {
+        self: `/api/v1/users/${user._id}`,
+        update: `/api/v1/users/${user._id}`,
+        delete: `/api/v1/users/${user._id}`
+      }
+    }));
 
     res.status(200).json({
-      status: 'success',
-      results: users.length,
-      data: users,
+      status: "success",
+      page,
+      limit,
+      totalPages,
+      totalDocuments,
+      links: {
+        self: `/api/v1/users?page=${page}&limit=${limit}`,
+        next: page < totalPages ? `/api/v1/users?page=${page + 1}&limit=${limit}` : null,
+        prev: page > 1 ? `/api/v1/users?page=${page - 1}&limit=${limit}` : null,
+        first: `/api/v1/users?page=1&limit=${limit}`,
+        last: `/api/v1/users?page=${totalPages}&limit=${limit}`
+      },
+      data: usersWithLinks
     });
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    res.status(500).json({ status: "error", message: error.message });
   }
 });
 
@@ -45,25 +71,26 @@ router.get('/:id', async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
 
-    // Valid ObjectId but no document found
     if (!user) {
       return res.status(404).json({
         status: 'fail',
-        message: 'User not found',
+        message: 'User not found'
       });
     }
 
-    // Document found
-    res.status(200).json({
+    return res.status(200).json({
       status: 'success',
-      data: user,
+      data: {
+        ...user.toObject(),
+        _links: userLinks(user._id)
+      }
     });
+
   } catch (err) {
-    // Invalid ObjectId -> CastError -> handled by global error handler,
-    // or any other error bubbles up there as well.
     next(err);
   }
 });
+
 
 
 // ----------------------------------------------
