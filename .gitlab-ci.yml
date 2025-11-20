@@ -9,6 +9,7 @@ cache:
 stages:
   - build
   - test
+  - postman-test
   - deploy
 
 build:
@@ -18,6 +19,36 @@ build:
   script:
     - cd server
     - npm install
+
+postman-test:
+  stage: postman-test
+  tags:
+    - docker
+  image: node:22-alpine
+  services:
+    - name: mongo:latest
+      alias: mongo
+  variables:
+    MONGODB_URI: "mongodb://mongo:27017/serverTestDB"
+  before_script:
+    - npm install -g newman wait-on
+    - cd server
+    - npm install
+    # Start backend in background
+    - npm run start-ci &
+    # Wait until API is reachable
+    - wait-on http://localhost:3000/api/v1/users
+  script:
+    - newman run server.postman_collection.json \
+        --env-var baseUrl=http://localhost:3000/api/v1 \
+        --reporters cli,junit \
+        --reporter-junit-export newman-results.xml
+  artifacts:
+    when: always
+    reports:
+      junit: newman-results.xml
+    paths:
+      - newman-results.xml
 
 test:
   stage: test
