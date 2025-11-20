@@ -63,6 +63,7 @@ app.use(API_PREFIX + "/notes", noteRoutes);
 app.use(API_PREFIX + "/quizzes", quizRoutes);
 app.use(API_PREFIX + "/quizcreators", quizCreatorRoutes);
 app.use(API_PREFIX + "/quizparticipations", quizParticipationRoutes);
+// Relationship routes under /courses
 app.use(API_PREFIX + "/courses", courseAttendancesRoutes);
 app.use(API_PREFIX + "/courses", teachingAssignmentRoutes);
 
