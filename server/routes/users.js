@@ -1,5 +1,6 @@
 const express = require('express');
 const User = require('../models/users'); 
+const { userLinks } = require('../Utils/hateoas');
 const router = express.Router();
 
 // ---------------------------------------------
