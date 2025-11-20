@@ -9,6 +9,7 @@ cache:
 stages:
   - build
   - test
+  - postman-test
   - deploy
 
 build:
@@ -19,18 +20,27 @@ build:
     - cd server
     - npm install
 
-test:
+postman-test:
   stage: test
   tags:
     - docker
+  image: node:22-alpine
   services:
     - name: mongo:latest
       alias: mongo
   variables:
     MONGODB_URI: "mongodb://mongo:27017/serverTestDB"
-  script:
+  before_script:
     - cd server
+    - npm install
+  script:
     - npm run ci-test
+  artifacts:
+    when: always
+    reports:
+      junit: newman-results.xml
+    paths:
+      - newman-results.xml
 
 deploy:
   stage: deploy
