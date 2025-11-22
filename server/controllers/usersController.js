@@ -25,7 +25,7 @@ exports.getUsers = async (req, res, next) => {
 
     const usersWithLinks = users.map((user) => ({
       ...user.toObject(),
-      _links: userLinks(user._id),
+      links: userLinks(user._id),
     }));
 
     res.status(200).json({
@@ -49,6 +49,7 @@ exports.getUsers = async (req, res, next) => {
 };
 
 // GET BY ID
+// GET BY ID
 exports.getUserById = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
@@ -56,18 +57,18 @@ exports.getUserById = async (req, res, next) => {
     if (!user)
       return res.status(404).json({ status: "fail", message: "User not found" });
 
-    // MUST be "links" to match list-users tests
     res.status(200).json({
       status: "success",
       data: {
         ...user.toObject(),
-        links: userLinks(user._id),
+        links: userLinks(user._id),   // ✅ CORRECT
       },
     });
   } catch (err) {
     next(err);
   }
 };
+
 
 // UPDATE (PATCH)
 exports.updateUser = async (req, res, next) => {
@@ -116,7 +117,7 @@ exports.deleteUser = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-};
+};da
 
 // DELETE ALL
 exports.deleteAllUsers = async (req, res, next) => {
