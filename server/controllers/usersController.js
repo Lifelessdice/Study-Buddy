@@ -117,7 +117,7 @@ exports.deleteUser = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-};da
+}
 
 // DELETE ALL
 exports.deleteAllUsers = async (req, res, next) => {
