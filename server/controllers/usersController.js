@@ -23,10 +23,9 @@ exports.getUsers = async (req, res, next) => {
 
     const users = await User.find().skip(skip).limit(limit);
 
-    // MUST be "links" (NOT "_links") because the test checks user.links.self
     const usersWithLinks = users.map((user) => ({
       ...user.toObject(),
-      links: userLinks(user._id),
+      _links: userLinks(user._id),
     }));
 
     res.status(200).json({
