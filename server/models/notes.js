@@ -1,32 +1,28 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const noteSchema = new mongoose.Schema(
   {
     topic: {
       type: String,
-      required: [true, 'Topic is required'],
+      required: [true, "Topic is required"],
       trim: true,
     },
     content: {
       type: String,
-      required: [true, 'Content is required'],
+      required: [true, "Content is required"],
     },
     accessibility: {
       type: String,
-      enum: ['public', 'course', 'private'],
-      default: 'course',
+      enum: ["public", "course", "private"],
+      default: "course",
     },
     course: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Course',
-      required: [true, 'Associated course is required'],
+      ref: "Course",
+      required: [true, "Associated course is required"],
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-const Note = mongoose.model('Note', noteSchema);
-
-module.exports = Note;
+module.exports = mongoose.model("Note", noteSchema);

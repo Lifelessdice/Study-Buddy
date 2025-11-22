@@ -6,10 +6,6 @@ exports.createNote = async (req, res, next) => {
     const note = await Note.create(req.body);
     res.status(201).json({ status: "success", data: note });
   } catch (err) {
-    // handle missing fields
-    if (err.name === "ValidationError") {
-      return res.status(400).json({ status: "fail", message: err.message });
-    }
     next(err);
   }
 };
@@ -17,7 +13,7 @@ exports.createNote = async (req, res, next) => {
 // LIST ALL
 exports.getNotes = async (req, res, next) => {
   try {
-    const notes = await Note.find();
+    const notes = await Note.find().populate("course");
     res.status(200).json({
       status: "success",
       results: notes.length,
@@ -31,8 +27,11 @@ exports.getNotes = async (req, res, next) => {
 // GET BY ID
 exports.getNoteById = async (req, res, next) => {
   try {
-    const note = await Note.findById(req.params.id);
-    if (!note) return res.status(404).json({ status: "fail", message: "Note not found" });
+    const note = await Note.findById(req.params.id).populate("course");
+
+    if (!note)
+      return res.status(404).json({ status: "fail", message: "Note not found" });
+
     res.status(200).json({ status: "success", data: note });
   } catch (err) {
     next(err);
@@ -46,12 +45,12 @@ exports.updateNote = async (req, res, next) => {
       new: true,
       runValidators: true,
     });
-    if (!updated) return res.status(404).json({ status: "fail", message: "Note not found" });
+
+    if (!updated)
+      return res.status(404).json({ status: "fail", message: "Note not found" });
+
     res.status(200).json({ status: "success", data: updated });
   } catch (err) {
-    if (err.name === "ValidationError") {
-      return res.status(400).json({ status: "fail", message: err.message });
-    }
     next(err);
   }
 };
@@ -60,17 +59,17 @@ exports.updateNote = async (req, res, next) => {
 exports.replaceNote = async (req, res, next) => {
   try {
     const note = await Note.findById(req.params.id);
-    if (!note) return res.status(404).json({ status: "fail", message: "Note not found" });
+
+    if (!note)
+      return res.status(404).json({ status: "fail", message: "Note not found" });
 
     const { _id, ...rest } = req.body;
+
     note.overwrite(rest);
-    await note.save(); // triggers validation
+    await note.save();
 
     res.status(200).json({ status: "success", data: note });
   } catch (err) {
-    if (err.name === "ValidationError") {
-      return res.status(400).json({ status: "fail", message: err.message });
-    }
     next(err);
   }
 };
@@ -79,7 +78,10 @@ exports.replaceNote = async (req, res, next) => {
 exports.deleteNote = async (req, res, next) => {
   try {
     const deleted = await Note.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ status: "fail", message: "Note not found" });
+
+    if (!deleted)
+      return res.status(404).json({ status: "fail", message: "Note not found" });
+
     res.status(204).send();
   } catch (err) {
     next(err);
