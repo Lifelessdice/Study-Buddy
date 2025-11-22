@@ -13,14 +13,21 @@ exports.createCourse = async (req, res, next) => {
     const { name, code, material, degree } = req.body;
 
     const missing = [];
-    if (!name) missing.push('name');
-    if (!code) missing.push('code');
+    if (!name || !code) {
+  let message = "";
 
-    if (missing.length) {
-      const err = new Error(missingFieldsMessage(missing));
-      err.name = "ValidationError";
-      throw err;
-    }
+  if (!code) {
+    message = "Course code is required";
+  } else {
+    message = "Course name is required";
+  }
+
+  return res.status(400).json({
+    error: "ValidationError",
+    message
+  });
+}
+
 
     const course = await Course.create({ name, code, material, degree });
 
