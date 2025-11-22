@@ -105,10 +105,18 @@ exports.replaceCourse = async (req, res, next) => {
     if (!code) missing.push("code");
 
     if (missing.length) {
+      let message;
+      if (missing.length === 1) {
+        // return a more specific message for a single missing field
+        message = missing[0] === 'code' ? 'Course code is required' : 'Course name is required';
+      } else {
+        message = `Missing required fields: ${missing.join(", ")}`;
+      }
+
       return res.status(400).json({
         status: "fail",
         error: "ValidationError",
-        message: `Missing required fields: ${missing.join(", ")}`
+        message
       });
     }
 
