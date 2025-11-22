@@ -98,26 +98,19 @@ exports.replaceCourse = async (req, res, next) => {
       });
     }
 
-    // Third: check required fields for full replace
     const { name, code } = req.body;
-    const missing = [];
-    if (!name) missing.push("name");
-    if (!code) missing.push("code");
+    const messages = [];
+if (!name) messages.push("Course name is required");
+if (!code) messages.push("Course code is required");
 
-    if (missing.length) {
-      let message;
-      if (missing.length === 1) {
-        // return a more specific message for a single missing field
-        message = missing[0] === 'code' ? 'Course code is required' : 'Course name is required';
-      } else {
-        message = `Missing required fields: ${missing.join(", ")}`;
-      }
-
-      return res.status(400).json({
-        status: "fail",
-        error: "ValidationError",
-        message
-      });
+if (messages.length) {
+  return res.status(400).json({
+    status: "fail",
+    error: "ValidationError",
+    message: messages.join(", ")
+  });
+}
+  });
     }
 
     // Overwrite data
