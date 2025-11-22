@@ -1,18 +1,25 @@
-const User = require("../models/users");
-const { userLinks } = require("../Utils/hateoas");
+const User = require('../models/users');
+const { userLinks } = require('../Utils/hateoas');
 
-// CREATE
+// ---------------------------------------------
+// Create a new user
+// ---------------------------------------------
 exports.createUser = async (req, res, next) => {
   try {
     const user = await User.create(req.body);
-    res.status(201).json({ status: "success", data: user });
+    res.status(201).json({
+      status: 'success',
+      data: user,
+    });
   } catch (err) {
     next(err);
   }
 };
 
-// LIST ALL (with pagination + HATEOAS)
-exports.getUsers = async (req, res, next) => {
+// ---------------------------------------------
+// List all users with pagination
+// ---------------------------------------------
+exports.getAllUsers = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -23,13 +30,17 @@ exports.getUsers = async (req, res, next) => {
 
     const users = await User.find().skip(skip).limit(limit);
 
-    const usersWithLinks = users.map((user) => ({
+    const usersWithLinks = users.map(user => ({
       ...user.toObject(),
-      links: userLinks(user._id),
+      links: {
+        self: `/api/v1/users/${user._id}`,
+        update: `/api/v1/users/${user._id}`,
+        delete: `/api/v1/users/${user._id}`
+      }
     }));
 
     res.status(200).json({
-      status: "success",
+      status: 'success',
       page,
       limit,
       totalPages,
@@ -39,91 +50,122 @@ exports.getUsers = async (req, res, next) => {
         next: page < totalPages ? `/api/v1/users?page=${page + 1}&limit=${limit}` : null,
         prev: page > 1 ? `/api/v1/users?page=${page - 1}&limit=${limit}` : null,
         first: `/api/v1/users?page=1&limit=${limit}`,
-        last: `/api/v1/users?page=${totalPages}&limit=${limit}`,
+        last: `/api/v1/users?page=${totalPages}&limit=${limit}`
       },
-      data: usersWithLinks,
+      data: usersWithLinks
     });
   } catch (err) {
     next(err);
   }
 };
 
-// GET BY ID
-// GET BY ID
+// ---------------------------------------------
+// Get a single user by ID
+// ---------------------------------------------
 exports.getUserById = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
 
-    if (!user)
-      return res.status(404).json({ status: "fail", message: "User not found" });
+    if (!user) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'User not found'
+      });
+    }
 
     res.status(200).json({
-      status: "success",
+      status: 'success',
       data: {
         ...user.toObject(),
-        links: userLinks(user._id),   // ✅ CORRECT
-      },
+        _links: userLinks(user._id)
+      }
     });
   } catch (err) {
     next(err);
   }
 };
 
-
-// UPDATE (PATCH)
+// ---------------------------------------------
+// Update a user by ID (partial update)
+// ---------------------------------------------
 exports.updateUser = async (req, res, next) => {
   try {
-    const updated = await User.findByIdAndUpdate(req.params.id, req.body, {
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
     });
 
-    if (!updated)
-      return res.status(404).json({ status: "fail", message: "User not found" });
+    if (!user) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'User not found',
+      });
+    }
 
-    res.status(200).json({ status: "success", data: updated });
+    res.status(200).json({
+      status: 'success',
+      data: user,
+    });
   } catch (err) {
     next(err);
   }
 };
 
-// FULL REPLACE (PUT)
-exports.replaceUser = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.params.id);
-
-    if (!user)
-      return res.status(404).json({ status: "fail", message: "User not found" });
-
-    const { _id, ...rest } = req.body;
-    user.overwrite(rest);
-    await user.save();
-
-    res.status(200).json({ status: "success", data: user });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// DELETE ONE
+// ---------------------------------------------
+// Delete a user by ID
+// ---------------------------------------------
 exports.deleteUser = async (req, res, next) => {
   try {
-    const deleted = await User.findByIdAndDelete(req.params.id);
+    const deletedUser = await User.findByIdAndDelete(req.params.id);
 
-    if (!deleted)
-      return res.status(404).json({ status: "fail", message: "User not found" });
+    if (!deletedUser) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'User not found',
+      });
+    }
 
     res.status(204).send();
   } catch (err) {
     next(err);
   }
-}
+};
 
-// DELETE ALL
+// ---------------------------------------------
+// Delete all users
+// ---------------------------------------------
 exports.deleteAllUsers = async (req, res, next) => {
   try {
     await User.deleteMany({});
     res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ---------------------------------------------
+// Full replace (PUT) user by ID
+// ---------------------------------------------
+exports.replaceUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'User not found',
+      });
+    }
+
+    const { _id, ...rest } = req.body;
+    user.overwrite(rest);
+
+    await user.save();
+
+    res.status(200).json({
+      status: 'success',
+      data: user,
+    });
   } catch (err) {
     next(err);
   }
