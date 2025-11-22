@@ -69,47 +69,65 @@ exports.getCourse = async (req, res, next) => {
   }
 };
 
-// ---------------------
 // PUT (full replace)
-// ---------------------
 exports.replaceCourse = async (req, res, next) => {
   try {
-    // FIRST: Check if course exists
-    const course = await Course.findById(req.params.id);
+    const id = req.params.id;
 
-    if (!course) {
-      return res.status(404).json({
-        error: "NotFound",
-        message: "Course not found",
+    // First: validate ObjectId
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        status: "fail",
+        error: "CastError"
       });
     }
 
-    // THEN: Validate required fields
+    // Second: check if course exists
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Course not found"
+      });
+    }
+
+    // Third: check required fields for full replace
     const { name, code } = req.body;
     const missing = [];
     if (!name) missing.push("name");
     if (!code) missing.push("code");
 
     if (missing.length) {
-      const err = new Error(missingFieldsMessage(missing));
-      err.name = "ValidationError";
-      throw err;
+      return res.status(400).json({
+        status: "fail",
+        error: "ValidationError",
+        message: `Missing required fields: ${missing.join(", ")}`
+      });
     }
 
-    // Apply overwrite
+    // Overwrite data
     const { _id, ...rest } = req.body;
     course.overwrite(rest);
+    await course.save();
 
-    await course.save(); // triggers Mongoose validators
-
-    return res.status(200).json({ status: "success", data: course });
+    return res.status(200).json({
+      status: "success",
+      data: course
+    });
 
   } catch (err) {
-    if (err.name === "ValidationError") {
-      return res.status(400).json({ error: "ValidationError" });
-    }
     if (err.name === "CastError") {
-      return res.status(400).json({ error: "CastError" });
+      return res.status(400).json({
+        status: "fail",
+        error: "CastError"
+      });
+    }
+    if (err.name === "ValidationError") {
+      return res.status(400).json({
+        status: "fail",
+        error: "ValidationError",
+        message: err.message
+      });
     }
     next(err);
   }
@@ -139,14 +157,22 @@ exports.updateCourse = async (req, res, next) => {
     });
 
   } catch (err) {
-    if (err.name === "CastError") {
-      return res.status(400).json({ error: "CastError" });
-    }
-    if (err.name === "ValidationError") {
-      return res.status(400).json({ error: "ValidationError" });
-    }
-    next(err);
+  if (err.name === "CastError") {
+    return res.status(400).json({
+      status: "fail",
+      error: "CastError"
+    });
   }
+  if (err.name === "ValidationError") {
+    return res.status(400).json({
+      status: "fail",
+      error: "ValidationError",
+      message: err.message
+    });
+  }
+  next(err);
+}
+
 };
 
 // ---------------------
