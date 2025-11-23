@@ -1,163 +1,19 @@
-// routes/notes.js
-const express = require('express');
-const Note = require('../models/notes');
+const express = require("express");
+const notesController = require("../controllers/notesController");
+
 const router = express.Router();
 
-// ---------------------------------------------
-//  POST /api/v1/notes  (FR4.2 – create note)
-// ---------------------------------------------
-router.post('/', async (req, res, next) => {
-  try {
-    const note = await Note.create(req.body);
-    res.status(201).json({
-      status: 'success',
-      data: note,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+router
+  .route("/")
+  .get(notesController.getNotes)
+  .post(notesController.createNote)
+  .delete(notesController.deleteAllNotes);
 
-// ---------------------------------------------
-//  GET /api/v1/notes
-//  FR4.3: List all notes (Read – collection)
-// ---------------------------------------------
-router.get('/', async (req, res, next) => {
-  try {
-    // later you can add .find(query) with filters (FR9) and/or .populate('course')
-    const notes = await Note.find();
-
-    res.status(200).json({
-      status: 'success',
-      results: notes.length,
-      data: notes,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// ---------------------------------------------
-//  GET /api/v1/notes/:id
-//  FR4.3: Fetch a single note by ID (Read – detail)
-// ---------------------------------------------
-router.get('/:id', async (req, res, next) => {
-  try {
-    // later, for relationship endpoints, you might do: Note.findById(req.params.id).populate('course')
-    const note = await Note.findById(req.params.id);
-
-    // Valid ObjectId, but no note found
-    if (!note) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'Note not found',
-      });
-    }
-
-    res.status(200).json({
-      status: 'success',
-      data: note,
-    });
-  } catch (err) {
-    // Invalid ObjectId -> CastError -> handled by global error handler in app.js
-    next(err);
-  }
-});
-
-// ---------------------------------------------
-// PATCH /api/v1/notes/:id
-// FR4.4: Update note by ID
-// ---------------------------------------------
-router.patch('/:id', async (req, res, next) => {
-  try {
-    const note = await Note.findByIdAndUpdate(req.params.id, req.body, {
-      new: true, // return the updated document
-      runValidators: true, // run schema validators on update
-    });
-
-    if (!note) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'Note not found',
-      });
-    }
-
-    res.status(200).json({
-      status: 'success',
-      data: note,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
-
-//----------------------------------------------
-// DELETE /api/v1/notes/:id
-// FR4.5: Delete note by ID
-//----------------------------------------------
-router.delete('/:id', async (req, res, next) => {
-  try {
-    const deletedNote = await Note.findByIdAndDelete(req.params.id);
-
-    if (!deletedNote) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'Note not found',
-      });
-    }
-
-    //204 No Content
-    return res.status(204).send();
-  } catch (err) {
-    next(err);
-  }
-});
-
-
-//----------------------------------------------
-// DELETE /api/v1/notes
-// Delete all notes
-//----------------------------------------------
-router.delete('/', async (req, res, next) => {
-  try {
-    await Note.deleteMany({});
-    res.status(204).send();
-  } catch (err) {
-    next(err);
-  } 
-});
-
-
-//----------------------------------------------
-// PUT /api/v1/notes/:id (full replace)
-router.put('/:id', async (req, res, next) => {
-  try {
-    const note = await Note.findById(req.params.id);
-
-    if (!note) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'Note not found',
-      });
-    }
-
-    const { _id, ...rest } = req.body;
-    note.overwrite(rest);
-
-    await note.save(); // validates topic, content, course, etc.
-
-    res.status(200).json({
-      status: 'success',
-      data: note,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
-
-
-
-
-
+router
+  .route("/:id")
+  .get(notesController.getNoteById)
+  .patch(notesController.updateNote)
+  .put(notesController.replaceNote)
+  .delete(notesController.deleteNote);
 
 module.exports = router;
