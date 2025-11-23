@@ -95,32 +95,53 @@ exports.patchUser = async (req, res, next) => {
 };
 
 // Overwrite User (PUT)
+// Overwrite User (PUT)
 exports.putUser = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    // Step 1: Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'CastError', message: 'Invalid ID format' });
+      return res.status(400).json({
+        error: 'CastError',
+        message: 'Invalid ID format'
+      });
     }
 
-    // PUT must include required fields; tests expect 400 ValidationError if email missing
+    // Step 2: Check if the user exists *before* validating body
+    const existingUser = await User.findById(id);
+    if (!existingUser) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'User not found'
+      });
+    }
+
+    // Step 3: Required fields check
     if (!req.body.email) {
       const error = new Error('Email is required');
       error.name = 'ValidationError';
       throw error;
     }
 
-    const user = await User.findByIdAndUpdate(id, req.body, {
+    if (!req.body.role) {
+      const error = new Error('Role is required');
+      error.name = 'ValidationError';
+      throw error;
+    }
+
+    // Step 4: Overwrite with validation
+    const updated = await User.findByIdAndUpdate(id, req.body, {
       new: true,
       runValidators: true,
       overwrite: true
     });
 
-    if (!user) {
-      return res.status(404).json({ status: 'fail', message: 'User not found' });
-    }
+    res.status(200).json({
+      status: 'success',
+      data: updated
+    });
 
-    res.status(200).json({ status: 'success', data: user });
   } catch (err) {
     next(err);
   }
