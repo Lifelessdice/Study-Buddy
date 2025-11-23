@@ -1,17 +1,22 @@
 const User = require('../models/users');
 const Quiz = require('../models/quizzes');
 
-// Helper to find quiz creator
+// Helper function to find a quiz creator
 async function findQuizCreatorOr404(creatorId, res) {
   const creator = await User.findOne({ _id: creatorId, role: 'teacher' });
+
   if (!creator) {
-    res.status(404).json({ status: 'fail', message: 'Quiz creator not found' });
+    res.status(404).json({
+      status: 'fail',
+      message: 'Quiz creator not found',
+    });
     return null;
   }
+
   return creator;
 }
 
-// Create a quiz
+// Create a quiz for a specific quiz creator
 exports.createQuiz = async (req, res, next) => {
   try {
     const { creatorId } = req.params;
@@ -20,16 +25,22 @@ exports.createQuiz = async (req, res, next) => {
 
     const { createdBy, ...rest } = req.body;
 
-    const quiz = await Quiz.create({ ...rest, createdBy: creator._id });
+    const quiz = await Quiz.create({
+      ...rest,
+      createdBy: creator._id,
+    });
 
-    res.status(201).json({ status: 'success', data: quiz });
+    res.status(201).json({
+      status: 'success',
+      data: quiz,
+    });
   } catch (err) {
     next(err);
   }
 };
 
-// Get all quizzes for a creator
-exports.getQuizzes = async (req, res, next) => {
+// List all quizzes created by a specific creator
+exports.getQuizzesByCreator = async (req, res, next) => {
   try {
     const { creatorId } = req.params;
     const creator = await findQuizCreatorOr404(creatorId, res);
@@ -37,39 +48,60 @@ exports.getQuizzes = async (req, res, next) => {
 
     const quizzes = await Quiz.find({ createdBy: creator._id });
 
-    res.status(200).json({ status: 'success', results: quizzes.length, data: quizzes });
+    res.status(200).json({
+      status: 'success',
+      results: quizzes.length,
+      data: quizzes,
+    });
   } catch (err) {
     next(err);
   }
 };
 
-// Get a specific quiz
+// Get a specific quiz if it belongs to the creator
 exports.getQuizById = async (req, res, next) => {
   try {
     const { creatorId, quizId } = req.params;
-    const quiz = await Quiz.findOne({ _id: quizId, createdBy: creatorId });
+
+    const quiz = await Quiz.findOne({
+      _id: quizId,
+      createdBy: creatorId,
+    });
 
     if (!quiz) {
-      return res.status(404).json({ status: 'fail', message: 'Quiz not found for this quiz creator' });
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Quiz not found for this quiz creator',
+      });
     }
 
-    res.status(200).json({ status: 'success', data: quiz });
+    res.status(200).json({
+      status: 'success',
+      data: quiz,
+    });
   } catch (err) {
     next(err);
   }
 };
 
-// Delete a quiz
+// Delete a quiz only if it belongs to this creator
 exports.deleteQuiz = async (req, res, next) => {
   try {
     const { creatorId, quizId } = req.params;
-    const deletedQuiz = await Quiz.findOneAndDelete({ _id: quizId, createdBy: creatorId });
+
+    const deletedQuiz = await Quiz.findOneAndDelete({
+      _id: quizId,
+      createdBy: creatorId,
+    });
 
     if (!deletedQuiz) {
-      return res.status(404).json({ status: 'fail', message: 'Quiz not found for this quiz creator' });
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Quiz not found for this quiz creator',
+      });
     }
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (err) {
     next(err);
   }
