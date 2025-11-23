@@ -1,6 +1,6 @@
 const OpenAI = require("openai");
 
-const OPENAI_API_KEY = "my-key";
+const OPENAI_API_KEY = "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";
 
 if (!OPENAI_API_KEY) {
     throw new Error("OpenAI API key is missing. Set it in the code.");
