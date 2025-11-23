@@ -1,12 +1,26 @@
 const Course = require("../models/courses");
+const mongoose = require('mongoose');
+
+
+// Helper for missing fields
+const missingFieldsMessage = (fields) =>
+  `Missing required field${fields.length > 1 ? 's' : ''}: ${fields.join(', ')}`;
 
 // CREATE
 exports.createCourse = async (req, res, next) => {
   try {
+    const { name, code } = req.body;
+    const missing = [];
+    if (!name) missing.push('name');
+    if (!code) missing.push('code');
+    if (missing.length) {
+      return res.status(400).json({ status: 'fail', message: missingFieldsMessage(missing) });
+    }
+
     const course = await Course.create(req.body);
-    res.status(201).json({ status: "success", data: course });
+    return res.status(201).json({ status: 'success', data: course });
   } catch (err) {
-    next(err);
+    next(err); // handled by global error handler in app.js
   }
 };
 
@@ -27,12 +41,14 @@ exports.getCourses = async (req, res, next) => {
 // GET BY ID
 exports.getCourseById = async (req, res, next) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ status: 'fail', message: 'Invalid ID format' });
+    }
     const course = await Course.findById(req.params.id);
-
-    if (!course)
-      return res.status(404).json({ status: "fail", message: "Course not found" });
-
-    res.status(200).json({ status: "success", data: course });
+    if (!course) {
+      return res.status(404).json({ status: 'fail', message: 'Course not found' });
+    }
+    return res.status(200).json({ status: 'success', data: course });
   } catch (err) {
     next(err);
   }
@@ -41,15 +57,17 @@ exports.getCourseById = async (req, res, next) => {
 // UPDATE (PATCH)
 exports.updateCourse = async (req, res, next) => {
   try {
-    const updated = await Course.findByIdAndUpdate(req.params.id, req.body, {
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return res.status(400).json({ status: 'fail', message: 'Request body is empty' });
+    }
+    const course = await Course.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
-      runValidators: true
+      runValidators: true,
     });
-
-    if (!updated)
-      return res.status(404).json({ status: "fail", message: "Course not found" });
-
-    res.status(200).json({ status: "success", data: updated });
+    if (!course) {
+      return res.status(404).json({ status: 'fail', message: 'Course not found' });
+    }
+    return res.status(200).json({ status: 'success', data: course });
   } catch (err) {
     next(err);
   }
@@ -58,17 +76,24 @@ exports.updateCourse = async (req, res, next) => {
 // FULL REPLACE (PUT)
 exports.replaceCourse = async (req, res, next) => {
   try {
-    const course = await Course.findById(req.params.id);
+    const { name, code } = req.body;
+    const missing = [];
+    if (!name) missing.push('name');
+    if (!code) missing.push('code');
+    if (missing.length) {
+      return res.status(400).json({ status: 'fail', message: missingFieldsMessage(missing) });
+    }
 
-    if (!course)
-      return res.status(404).json({ status: "fail", message: "Course not found" });
+    const course = await Course.findById(req.params.id);
+    if (!course) {
+      return res.status(404).json({ status: 'fail', message: 'Course not found' });
+    }
 
     const { _id, ...rest } = req.body;
-
     course.overwrite(rest);
     await course.save();
 
-    res.status(200).json({ status: "success", data: course });
+    return res.status(200).json({ status: 'success', data: course });
   } catch (err) {
     next(err);
   }
@@ -78,11 +103,10 @@ exports.replaceCourse = async (req, res, next) => {
 exports.deleteCourse = async (req, res, next) => {
   try {
     const deleted = await Course.findByIdAndDelete(req.params.id);
-
-    if (!deleted)
-      return res.status(404).json({ status: "fail", message: "Course not found" });
-
-    res.status(204).send();
+    if (!deleted) {
+      return res.status(404).json({ status: 'fail', message: 'Course not found' });
+    }
+    return res.status(204).send();
   } catch (err) {
     next(err);
   }

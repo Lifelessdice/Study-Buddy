@@ -88,12 +88,12 @@ app.use(function (err, req, res, next) {
     console.error(err);
 
     if (err.name === "ValidationError") {
-        return res.status(400).json({
-            error: "ValidationError",
-            message: err.message,
-            details: err.errors,
-        });
+  return res.status(400).json({
+    status: "fail",
+    message: Object.values(err.errors).map(e => e.message).join(", ")
+  });
     }
+
 
     if (err.name === "CastError") {
         return res.status(400).json({
