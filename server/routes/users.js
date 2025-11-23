@@ -7,7 +7,7 @@ const {
   putUser,
   deleteUser,
   bulkDeleteUsers
-} = require('../controllers/userController');
+} = require('../controllers/usersController');
 
 const router = express.Router();
 
