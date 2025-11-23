@@ -1,17 +1,11 @@
 const express = require('express');
+const quizController = require('../controllers/quizController');
+
 const router = express.Router();
-const quizCreatorsController = require('../controllers/quizCreatorsController');
 
-// POST /api/v1/quizcreators/:creatorId/quizzes
-router.post('/:creatorId/quizzes', quizCreatorsController.createQuizForCreator);
-
-// GET /api/v1/quizcreators/:creatorId/quizzes
-router.get('/:creatorId/quizzes', quizCreatorsController.getQuizzesByCreator);
-
-// GET /api/v1/quizcreators/:creatorId/quizzes/:quizId
-router.get('/:creatorId/quizzes/:quizId', quizCreatorsController.getQuizByCreator);
-
-// DELETE /api/v1/quizcreators/:creatorId/quizzes/:quizId
-router.delete('/:creatorId/quizzes/:quizId', quizCreatorsController.deleteQuizByCreator);
+router.post('/:creatorId/quizzes', quizController.createQuiz);
+router.get('/:creatorId/quizzes', quizController.getQuizzes);
+router.get('/:creatorId/quizzes/:quizId', quizController.getQuizById);
+router.delete('/:creatorId/quizzes/:quizId', quizController.deleteQuiz);
 
 module.exports = router;
