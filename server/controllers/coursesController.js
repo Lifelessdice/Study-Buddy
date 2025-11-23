@@ -107,17 +107,18 @@ exports.replaceCourse = async (req, res, next) => {
     }
 
     // Step 3: Required fields check for PUT
-    if (!req.body.name) {
-      const err = new Error("Course name is required");
-      err.name = "ValidationError";
-      throw err;
-    }
+  if (!req.body.code) {
+    const err = new Error("Course code is required");
+    err.name = "ValidationError";
+    throw err;
+  }
 
-    if (!req.body.code) {
-      const err = new Error("Course code is required");
-      err.name = "ValidationError";
-      throw err;
-    }
+  if (!req.body.name) {
+    const err = new Error("Course name is required");
+    err.name = "ValidationError";
+    throw err;
+  }
+
 
     // Step 4: Apply overwrite with validation
     existing.overwrite(req.body);
