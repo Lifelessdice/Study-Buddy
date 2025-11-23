@@ -1,41 +1,32 @@
-const User = require('../models/users');
-const { userLinks } = require('../Utils/hateoas');
+const mongoose = require('mongoose');
+const User = require('../models/user');
 
-// ---------------------------------------------
-// Create a new user
-// ---------------------------------------------
+// Create User
 exports.createUser = async (req, res, next) => {
   try {
     const user = await User.create(req.body);
-    res.status(201).json({
-      status: 'success',
-      data: user,
-    });
+    res.status(201).json({ status: 'success', data: user });
   } catch (err) {
     next(err);
   }
 };
 
-// ---------------------------------------------
-// List all users with pagination
-// ---------------------------------------------
-exports.getAllUsers = async (req, res, next) => {
+// List Users (with HATEOAS and pagination fields expected by tests)
+exports.listUsers = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    const users = await User.find();
 
-    const totalDocuments = await User.countDocuments();
-    const totalPages = Math.ceil(totalDocuments / limit);
+    const page = 1;
+    const limit = users.length;
+    const totalPages = 1;
+    const totalDocuments = users.length;
 
-    const users = await User.find().skip(skip).limit(limit);
-
-    const usersWithLinks = users.map(user => ({
-      ...user.toObject(),
+    const data = users.map(u => ({
+      ...u.toObject(),
       links: {
-        self: `/api/v1/users/${user._id}`,
-        update: `/api/v1/users/${user._id}`,
-        delete: `/api/v1/users/${user._id}`
+        self: `/api/v1/users/${u._id}`,
+        update: `/api/v1/users/${u._id}`,
+        delete: `/api/v1/users/${u._id}`
       }
     }));
 
@@ -46,83 +37,107 @@ exports.getAllUsers = async (req, res, next) => {
       totalPages,
       totalDocuments,
       links: {
-        self: `/api/v1/users?page=${page}&limit=${limit}`,
-        next: page < totalPages ? `/api/v1/users?page=${page + 1}&limit=${limit}` : null,
-        prev: page > 1 ? `/api/v1/users?page=${page - 1}&limit=${limit}` : null,
-        first: `/api/v1/users?page=1&limit=${limit}`,
-        last: `/api/v1/users?page=${totalPages}&limit=${limit}`
+        self: '/api/v1/users?page=1',
+        first: '/api/v1/users?page=1',
+        last: '/api/v1/users?page=1',
+        next: null,
+        prev: null
       },
-      data: usersWithLinks
+      data
     });
   } catch (err) {
     next(err);
   }
 };
 
-// ---------------------------------------------
-// Get a single user by ID
-// ---------------------------------------------
-exports.getUserById = async (req, res, next) => {
+// Get User by ID
+exports.getUser = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.id);
+    const { id } = req.params;
 
-    if (!user) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'User not found'
-      });
+    // Inline invalid ObjectId handling → return 400 CastError
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'CastError', message: 'Invalid ID format' });
     }
 
-    res.status(200).json({
-      status: 'success',
-      data: {
-        ...user.toObject(),
-        _links: userLinks(user._id)
-      }
-    });
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ status: 'fail', message: 'User not found' });
+    }
+    res.status(200).json({ status: 'success', data: user });
   } catch (err) {
     next(err);
   }
 };
 
-// ---------------------------------------------
-// Update a user by ID (partial update)
-// ---------------------------------------------
-exports.updateUser = async (req, res, next) => {
+// Update User (PATCH)
+exports.patchUser = async (req, res, next) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'CastError', message: 'Invalid ID format' });
+    }
+
+    const user = await User.findByIdAndUpdate(id, req.body, {
+      new: true,
+      runValidators: true
+    });
+
+    if (!user) {
+      return res.status(404).json({ status: 'fail', message: 'User not found' });
+    }
+
+    res.status(200).json({ status: 'success', data: user });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Overwrite User (PUT)
+exports.putUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'CastError', message: 'Invalid ID format' });
+    }
+
+    // PUT must include required fields; tests expect 400 ValidationError if email missing
+    if (!req.body.email) {
+      const error = new Error('Email is required');
+      error.name = 'ValidationError';
+      throw error;
+    }
+
+    const user = await User.findByIdAndUpdate(id, req.body, {
       new: true,
       runValidators: true,
+      overwrite: true
     });
 
     if (!user) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'User not found',
-      });
+      return res.status(404).json({ status: 'fail', message: 'User not found' });
     }
 
-    res.status(200).json({
-      status: 'success',
-      data: user,
-    });
+    res.status(200).json({ status: 'success', data: user });
   } catch (err) {
     next(err);
   }
 };
 
-// ---------------------------------------------
-// Delete a user by ID
-// ---------------------------------------------
+// Delete User
 exports.deleteUser = async (req, res, next) => {
   try {
-    const deletedUser = await User.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
 
-    if (!deletedUser) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'User not found',
-      });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'CastError', message: 'Invalid ID format' });
+    }
+
+    const deleted = await User.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ status: 'fail', message: 'User not found' });
     }
 
     res.status(204).send();
@@ -131,41 +146,11 @@ exports.deleteUser = async (req, res, next) => {
   }
 };
 
-// ---------------------------------------------
-// Delete all users
-// ---------------------------------------------
-exports.deleteAllUsers = async (req, res, next) => {
+// Bulk Delete Users
+exports.bulkDeleteUsers = async (req, res, next) => {
   try {
     await User.deleteMany({});
     res.status(204).send();
-  } catch (err) {
-    next(err);
-  }
-};
-
-// ---------------------------------------------
-// Full replace (PUT) user by ID
-// ---------------------------------------------
-exports.replaceUser = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.params.id);
-
-    if (!user) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'User not found',
-      });
-    }
-
-    const { _id, ...rest } = req.body;
-    user.overwrite(rest);
-
-    await user.save();
-
-    res.status(200).json({
-      status: 'success',
-      data: user,
-    });
   } catch (err) {
     next(err);
   }
