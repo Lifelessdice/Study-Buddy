@@ -1,12 +1,73 @@
 const mongoose = require("mongoose");
 const Note = require("../models/notes");
+const Course = require("../models/courses");
+
+function ensureRequiredFields(body) {
+  const required = {
+    topic: "Topic is required",
+    content: "Content is required",
+    course: "Associated course is required"
+  };
+
+  for (const [field, message] of Object.entries(required)) {
+    const value = body[field];
+    if (
+      value === undefined ||
+      value === null ||
+      (typeof value === "string" && value.trim() === "")
+    ) {
+      const err = new Error(message);
+      err.name = "ValidationError";
+      throw err;
+    }
+  }
+}
+
+function ensureNonEmptyIfPresent(body, field, message) {
+  if (Object.prototype.hasOwnProperty.call(body, field)) {
+    const value = body[field];
+    if (
+      value === undefined ||
+      value === null ||
+      (typeof value === "string" && value.trim() === "")
+    ) {
+      const err = new Error(message);
+      err.name = "ValidationError";
+      throw err;
+    }
+  }
+}
+
+async function ensureCourseExists(courseId) {
+  if (!mongoose.Types.ObjectId.isValid(courseId)) {
+    const err = new Error("Invalid course id format");
+    err.name = "CastError";
+    throw err;
+  }
+
+  const course = await Course.findById(courseId);
+  if (!course) {
+    const err = new Error("Course not found");
+    err.name = "NotFound";
+    throw err;
+  }
+}
 
 // CREATE
 exports.createNote = async (req, res, next) => {
   try {
+    ensureRequiredFields(req.body);
+    await ensureCourseExists(req.body.course);
+
     const note = await Note.create(req.body);
     res.status(201).json({ status: "success", data: note });
   } catch (err) {
+    if (err && err.name === "NotFound") {
+      return res.status(404).json({
+        status: "fail",
+        message: err.message
+      });
+    }
     next(err);
   }
 };
@@ -18,7 +79,7 @@ exports.getNotes = async (req, res, next) => {
     res.status(200).json({
       status: "success",
       results: notes.length,
-      data: notes,
+      data: notes
     });
   } catch (err) {
     next(err);
@@ -30,11 +91,11 @@ exports.getNoteById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // Invalid ID → 400 CastError
+    // Invalid ID -> 400 CastError
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         error: "CastError",
-        message: "Invalid ID format",
+        message: "Invalid ID format"
       });
     }
 
@@ -43,7 +104,7 @@ exports.getNoteById = async (req, res, next) => {
     if (!note) {
       return res.status(404).json({
         status: "fail",
-        message: "Note not found",
+        message: "Note not found"
       });
     }
 
@@ -61,24 +122,37 @@ exports.updateNote = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         error: "CastError",
-        message: "Invalid ID format",
+        message: "Invalid ID format"
       });
+    }
+
+    ensureNonEmptyIfPresent(req.body, "topic", "Topic is required");
+    ensureNonEmptyIfPresent(req.body, "content", "Content is required");
+    if (Object.prototype.hasOwnProperty.call(req.body, "course")) {
+      ensureNonEmptyIfPresent(req.body, "course", "Associated course is required");
+      await ensureCourseExists(req.body.course);
     }
 
     const updated = await Note.findByIdAndUpdate(id, req.body, {
       new: true,
-      runValidators: true,
+      runValidators: true
     });
 
     if (!updated) {
       return res.status(404).json({
         status: "fail",
-        message: "Note not found",
+        message: "Note not found"
       });
     }
 
     res.status(200).json({ status: "success", data: updated });
   } catch (err) {
+    if (err && err.name === "NotFound") {
+      return res.status(404).json({
+        status: "fail",
+        message: err.message
+      });
+    }
     next(err);
   }
 };
@@ -92,7 +166,7 @@ exports.replaceNote = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         error: "CastError",
-        message: "Invalid ID format",
+        message: "Invalid ID format"
       });
     }
 
@@ -101,28 +175,13 @@ exports.replaceNote = async (req, res, next) => {
     if (!existing) {
       return res.status(404).json({
         status: "fail",
-        message: "Note not found",
+        message: "Note not found"
       });
     }
 
     // Step 3: Validate required fields for PUT
-    if (!req.body.topic) {
-      const err = new Error("Topic is required");
-      err.name = "ValidationError";
-      throw err;
-    }
-
-    if (!req.body.content) {
-      const err = new Error("Content is required");
-      err.name = "ValidationError";
-      throw err;
-    }
-
-    if (!req.body.course) {
-      const err = new Error("Associated course is required");
-      err.name = "ValidationError";
-      throw err;
-    }
+    ensureRequiredFields(req.body);
+    await ensureCourseExists(req.body.course);
 
     // Step 4: overwrite with validation
     existing.overwrite(req.body);
@@ -130,9 +189,15 @@ exports.replaceNote = async (req, res, next) => {
 
     res.status(200).json({
       status: "success",
-      data: existing,
+      data: existing
     });
   } catch (err) {
+    if (err && err.name === "NotFound") {
+      return res.status(404).json({
+        status: "fail",
+        message: err.message
+      });
+    }
     next(err);
   }
 };
@@ -142,11 +207,11 @@ exports.deleteNote = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // Invalid ID → 400
+    // Invalid ID -> 400
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         error: "CastError",
-        message: "Invalid ID format",
+        message: "Invalid ID format"
       });
     }
 
@@ -155,7 +220,7 @@ exports.deleteNote = async (req, res, next) => {
     if (!deleted) {
       return res.status(404).json({
         status: "fail",
-        message: "Note not found",
+        message: "Note not found"
       });
     }
 
