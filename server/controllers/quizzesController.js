@@ -1,17 +1,77 @@
 const mongoose = require("mongoose");
 const Quiz = require("../models/quizzes");
+const Course = require("../models/courses");
+
+function ensureRequiredFields(body) {
+  const required = {
+    title: "Quiz title is required",
+    course: "Associated course is required"
+  };
+
+  for (const [field, message] of Object.entries(required)) {
+    const value = body[field];
+    if (
+      value === undefined ||
+      value === null ||
+      (typeof value === "string" && value.trim() === "")
+    ) {
+      const err = new Error(message);
+      err.name = "ValidationError";
+      throw err;
+    }
+  }
+}
+
+function ensureNonEmptyIfPresent(body, field, message) {
+  if (Object.prototype.hasOwnProperty.call(body, field)) {
+    const value = body[field];
+    if (
+      value === undefined ||
+      value === null ||
+      (typeof value === "string" && value.trim() === "")
+    ) {
+      const err = new Error(message);
+      err.name = "ValidationError";
+      throw err;
+    }
+  }
+}
+
+async function ensureCourseExists(courseId) {
+  if (!mongoose.Types.ObjectId.isValid(courseId)) {
+    const err = new Error("Invalid course id format");
+    err.name = "CastError";
+    throw err;
+  }
+
+  const course = await Course.findById(courseId);
+  if (!course) {
+    const err = new Error("Course not found");
+    err.name = "NotFound";
+    throw err;
+  }
+}
 
 // ---------------------------------------------
 // Create a new quiz
 // ---------------------------------------------
 exports.createQuiz = async (req, res, next) => {
   try {
+    ensureRequiredFields(req.body);
+    await ensureCourseExists(req.body.course);
+
     const quiz = await Quiz.create(req.body);
     res.status(201).json({
       status: "success",
       data: quiz,
     });
   } catch (err) {
+    if (err && err.name === "NotFound") {
+      return res.status(404).json({
+        status: "fail",
+        message: err.message
+      });
+    }
     next(err);
   }
 };
@@ -29,6 +89,12 @@ exports.getAllQuizzes = async (req, res, next) => {
       data: quizzes,
     });
   } catch (err) {
+    if (err && err.name === "NotFound") {
+      return res.status(404).json({
+        status: "fail",
+        message: err.message
+      });
+    }
     next(err);
   }
 };
@@ -81,6 +147,12 @@ exports.updateQuiz = async (req, res, next) => {
       });
     }
 
+    ensureNonEmptyIfPresent(req.body, "title", "Quiz title is required");
+    if (Object.prototype.hasOwnProperty.call(req.body, "course")) {
+      ensureNonEmptyIfPresent(req.body, "course", "Associated course is required");
+      await ensureCourseExists(req.body.course);
+    }
+
     const quiz = await Quiz.findByIdAndUpdate(id, req.body, {
       new: true,
       runValidators: true,
@@ -127,17 +199,8 @@ exports.replaceQuiz = async (req, res, next) => {
     }
 
     // Step 3: required fields validation for PUT
-    if (!req.body.title) {
-      const err = new Error("Quiz title is required");
-      err.name = "ValidationError";
-      throw err;
-    }
-
-    if (!req.body.course) {
-      const err = new Error("Associated course is required");
-      err.name = "ValidationError";
-      throw err;
-    }
+    ensureRequiredFields(req.body);
+    await ensureCourseExists(req.body.course);
 
     // Step 4: overwrite and validate
     existing.overwrite(req.body);
@@ -148,6 +211,12 @@ exports.replaceQuiz = async (req, res, next) => {
       data: existing,
     });
   } catch (err) {
+    if (err && err.name === "NotFound") {
+      return res.status(404).json({
+        status: "fail",
+        message: err.message
+      });
+    }
     next(err);
   }
 };
