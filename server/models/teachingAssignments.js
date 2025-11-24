@@ -5,12 +5,12 @@ const teachingAssignmentSchema = new mongoose.Schema(
     course: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Course',
-      required: true
+      required: [true, 'Course is required']
     },
     teacher: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true
+      required: [true, 'Teacher is required']
     }
   },
   {
@@ -18,6 +18,7 @@ const teachingAssignmentSchema = new mongoose.Schema(
   }
 );
 
+// prevent duplicate teacher-course assignments
 teachingAssignmentSchema.index({ course: 1, teacher: 1 }, { unique: true });
 
 module.exports = mongoose.model('TeachingAssignment', teachingAssignmentSchema);
