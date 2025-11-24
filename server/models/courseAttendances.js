@@ -5,12 +5,12 @@ const courseAttendanceSchema = new mongoose.Schema(
     course: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Course',
-      required: true
+      required: [true, 'Course is required']
     },
     student: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true
+      required: [true, 'Student is required']
     }
   },
   {

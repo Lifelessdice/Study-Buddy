@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Note = require("../models/notes");
 
 // CREATE
@@ -27,10 +28,24 @@ exports.getNotes = async (req, res, next) => {
 // GET BY ID
 exports.getNoteById = async (req, res, next) => {
   try {
-    const note = await Note.findById(req.params.id).populate("course");
+    const { id } = req.params;
 
-    if (!note)
-      return res.status(404).json({ status: "fail", message: "Note not found" });
+    // Invalid ID → 400 CastError
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: "CastError",
+        message: "Invalid ID format",
+      });
+    }
+
+    const note = await Note.findById(id).populate("course");
+
+    if (!note) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Note not found",
+      });
+    }
 
     res.status(200).json({ status: "success", data: note });
   } catch (err) {
@@ -41,13 +56,26 @@ exports.getNoteById = async (req, res, next) => {
 // UPDATE (PATCH)
 exports.updateNote = async (req, res, next) => {
   try {
-    const updated = await Note.findByIdAndUpdate(req.params.id, req.body, {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: "CastError",
+        message: "Invalid ID format",
+      });
+    }
+
+    const updated = await Note.findByIdAndUpdate(id, req.body, {
       new: true,
       runValidators: true,
     });
 
-    if (!updated)
-      return res.status(404).json({ status: "fail", message: "Note not found" });
+    if (!updated) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Note not found",
+      });
+    }
 
     res.status(200).json({ status: "success", data: updated });
   } catch (err) {
@@ -58,17 +86,52 @@ exports.updateNote = async (req, res, next) => {
 // FULL REPLACE (PUT)
 exports.replaceNote = async (req, res, next) => {
   try {
-    const note = await Note.findById(req.params.id);
+    const { id } = req.params;
 
-    if (!note)
-      return res.status(404).json({ status: "fail", message: "Note not found" });
+    // Step 1: invalid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: "CastError",
+        message: "Invalid ID format",
+      });
+    }
 
-    const { _id, ...rest } = req.body;
+    // Step 2: Check if note exists
+    const existing = await Note.findById(id);
+    if (!existing) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Note not found",
+      });
+    }
 
-    note.overwrite(rest);
-    await note.save();
+    // Step 3: Validate required fields for PUT
+    if (!req.body.topic) {
+      const err = new Error("Topic is required");
+      err.name = "ValidationError";
+      throw err;
+    }
 
-    res.status(200).json({ status: "success", data: note });
+    if (!req.body.content) {
+      const err = new Error("Content is required");
+      err.name = "ValidationError";
+      throw err;
+    }
+
+    if (!req.body.course) {
+      const err = new Error("Associated course is required");
+      err.name = "ValidationError";
+      throw err;
+    }
+
+    // Step 4: overwrite with validation
+    existing.overwrite(req.body);
+    await existing.save({ validateBeforeSave: true });
+
+    res.status(200).json({
+      status: "success",
+      data: existing,
+    });
   } catch (err) {
     next(err);
   }
@@ -77,10 +140,24 @@ exports.replaceNote = async (req, res, next) => {
 // DELETE ONE
 exports.deleteNote = async (req, res, next) => {
   try {
-    const deleted = await Note.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
 
-    if (!deleted)
-      return res.status(404).json({ status: "fail", message: "Note not found" });
+    // Invalid ID → 400
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: "CastError",
+        message: "Invalid ID format",
+      });
+    }
+
+    const deleted = await Note.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Note not found",
+      });
+    }
 
     res.status(204).send();
   } catch (err) {

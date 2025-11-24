@@ -1,17 +1,37 @@
+const mongoose = require('mongoose');
 const QuizParticipation = require('../models/quizparticipations');
 const User = require('../models/users');
 const Quiz = require('../models/quizzes');
 
-// Helper to validate student + quiz
+/**
+ * Helper: validate student + quiz exist and student has role 'student'
+ * Returns { student, quiz } or throws to be handled by caller
+ */
 async function validateStudentAndQuiz(studentId, quizId) {
+  // validate ids first
+  if (!mongoose.Types.ObjectId.isValid(studentId)) {
+    const err = new Error('Invalid student id format');
+    err.name = 'CastError';
+    throw err;
+  }
+  if (!mongoose.Types.ObjectId.isValid(quizId)) {
+    const err = new Error('Invalid quiz id format');
+    err.name = 'CastError';
+    throw err;
+  }
+
   const student = await User.findOne({ _id: studentId, role: 'student' });
   if (!student) {
-    return { error: 'Student not found' };
+    const err = new Error('Student not found');
+    err.name = 'NotFound';
+    throw err;
   }
 
   const quiz = await Quiz.findById(quizId);
   if (!quiz) {
-    return { error: 'Quiz not found' };
+    const err = new Error('Quiz not found');
+    err.name = 'NotFound';
+    throw err;
   }
 
   return { student, quiz };
@@ -25,14 +45,22 @@ exports.createParticipation = async (req, res, next) => {
   try {
     const { student, quiz, answers, score } = req.body;
 
-    const result = await validateStudentAndQuiz(student, quiz);
-    if (result.error) {
-      return res.status(404).json({
-        status: 'fail',
-        message: result.error,
-      });
+    // Required fields check for POST - explicit ValidationError shape
+    if (!student) {
+      const err = new Error('Student is required');
+      err.name = 'ValidationError';
+      throw err;
+    }
+    if (!quiz) {
+      const err = new Error('Quiz is required');
+      err.name = 'ValidationError';
+      throw err;
     }
 
+    // Validate existence and formats
+    await validateStudentAndQuiz(student, quiz);
+
+    // Create - duplicate key (unique index) will throw code 11000 from Mongo
     const participation = await QuizParticipation.create({
       student,
       quiz,
@@ -45,6 +73,38 @@ exports.createParticipation = async (req, res, next) => {
       data: participation,
     });
   } catch (err) {
+    // Duplicate key -> 409 Conflict
+    if (err && err.code === 11000) {
+      return res.status(409).json({
+        error: 'DuplicateKey',
+        message: 'A participation for this student and quiz already exists',
+      });
+    }
+
+    // Mongoose validation errors (schema-level)
+    if (err && err.name === 'ValidationError') {
+      return res.status(400).json({
+        error: 'ValidationError',
+        message: err.message,
+      });
+    }
+
+    // our helper uses name 'CastError' for invalid id format
+    if (err && err.name === 'CastError') {
+      return res.status(400).json({
+        error: 'CastError',
+        message: err.message || 'Invalid ID format',
+      });
+    }
+
+    // helper throws NotFound
+    if (err && err.name === 'NotFound') {
+      return res.status(404).json({
+        status: 'fail',
+        message: err.message,
+      });
+    }
+
     next(err);
   }
 };
@@ -56,8 +116,25 @@ exports.createParticipation = async (req, res, next) => {
 exports.getAllParticipations = async (req, res, next) => {
   try {
     const filter = {};
-    if (req.query.student) filter.student = req.query.student;
-    if (req.query.quiz) filter.quiz = req.query.quiz;
+    // If filters present, validate ObjectId format
+    if (req.query.student) {
+      if (!mongoose.Types.ObjectId.isValid(req.query.student)) {
+        return res.status(400).json({
+          error: 'CastError',
+          message: 'Invalid student id format',
+        });
+      }
+      filter.student = req.query.student;
+    }
+    if (req.query.quiz) {
+      if (!mongoose.Types.ObjectId.isValid(req.query.quiz)) {
+        return res.status(400).json({
+          error: 'CastError',
+          message: 'Invalid quiz id format',
+        });
+      }
+      filter.quiz = req.query.quiz;
+    }
 
     const list = await QuizParticipation.find(filter);
 
@@ -77,7 +154,16 @@ exports.getAllParticipations = async (req, res, next) => {
 // ------------------------------------------------------
 exports.getParticipationById = async (req, res, next) => {
   try {
-    const part = await QuizParticipation.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: 'CastError',
+        message: 'Invalid ID format',
+      });
+    }
+
+    const part = await QuizParticipation.findById(id);
     if (!part) {
       return res.status(404).json({
         status: 'fail',
@@ -100,7 +186,16 @@ exports.getParticipationById = async (req, res, next) => {
 // ------------------------------------------------------
 exports.deleteParticipation = async (req, res, next) => {
   try {
-    const deleted = await QuizParticipation.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: 'CastError',
+        message: 'Invalid ID format',
+      });
+    }
+
+    const deleted = await QuizParticipation.findByIdAndDelete(id);
     if (!deleted) {
       return res.status(404).json({
         status: 'fail',
@@ -108,6 +203,7 @@ exports.deleteParticipation = async (req, res, next) => {
       });
     }
 
+    // no content
     res.status(204).send();
   } catch (err) {
     next(err);

@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Course = require("../models/courses");
 
 // CREATE
@@ -27,10 +28,24 @@ exports.getCourses = async (req, res, next) => {
 // GET BY ID
 exports.getCourseById = async (req, res, next) => {
   try {
-    const course = await Course.findById(req.params.id);
+    const { id } = req.params;
 
-    if (!course)
-      return res.status(404).json({ status: "fail", message: "Course not found" });
+    // Invalid ObjectId → 400 CastError
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: "CastError",
+        message: "Invalid ID format"
+      });
+    }
+
+    const course = await Course.findById(id);
+
+    if (!course) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Course not found"
+      });
+    }
 
     res.status(200).json({ status: "success", data: course });
   } catch (err) {
@@ -41,13 +56,26 @@ exports.getCourseById = async (req, res, next) => {
 // UPDATE (PATCH)
 exports.updateCourse = async (req, res, next) => {
   try {
-    const updated = await Course.findByIdAndUpdate(req.params.id, req.body, {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: "CastError",
+        message: "Invalid ID format"
+      });
+    }
+
+    const updated = await Course.findByIdAndUpdate(id, req.body, {
       new: true,
       runValidators: true
     });
 
-    if (!updated)
-      return res.status(404).json({ status: "fail", message: "Course not found" });
+    if (!updated) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Course not found"
+      });
+    }
 
     res.status(200).json({ status: "success", data: updated });
   } catch (err) {
@@ -58,17 +86,49 @@ exports.updateCourse = async (req, res, next) => {
 // FULL REPLACE (PUT)
 exports.replaceCourse = async (req, res, next) => {
   try {
-    const course = await Course.findById(req.params.id);
+    const { id } = req.params;
 
-    if (!course)
-      return res.status(404).json({ status: "fail", message: "Course not found" });
+    // Step 1: Invalid ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: "CastError",
+        message: "Invalid ID format"
+      });
+    }
 
-    const { _id, ...rest } = req.body;
+    // Step 2: Check if course exists
+    const existing = await Course.findById(id);
 
-    course.overwrite(rest);
-    await course.save();
+    if (!existing) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Course not found"
+      });
+    }
 
-    res.status(200).json({ status: "success", data: course });
+    // Step 3: Required fields check for PUT
+  if (!req.body.code) {
+    const err = new Error("Course code is required");
+    err.name = "ValidationError";
+    throw err;
+  }
+
+  if (!req.body.name) {
+    const err = new Error("Course name is required");
+    err.name = "ValidationError";
+    throw err;
+  }
+
+
+    // Step 4: Apply overwrite with validation
+    existing.overwrite(req.body);
+    await existing.save({ validateBeforeSave: true });
+
+    res.status(200).json({
+      status: "success",
+      data: existing
+    });
+
   } catch (err) {
     next(err);
   }
@@ -77,10 +137,24 @@ exports.replaceCourse = async (req, res, next) => {
 // DELETE ONE
 exports.deleteCourse = async (req, res, next) => {
   try {
-    const deleted = await Course.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
 
-    if (!deleted)
-      return res.status(404).json({ status: "fail", message: "Course not found" });
+    // Invalid ID → 400
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: "CastError",
+        message: "Invalid ID format"
+      });
+    }
+
+    const deleted = await Course.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Course not found"
+      });
+    }
 
     res.status(204).send();
   } catch (err) {
