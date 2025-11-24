@@ -1,9 +1,45 @@
 const mongoose = require("mongoose");
 const Course = require("../models/courses");
 
+function ensureRequiredFields(body) {
+  const required = {
+    name: "Course name is required",
+    code: "Course code is required"
+  };
+
+  for (const [field, message] of Object.entries(required)) {
+    const value = body[field];
+    if (
+      value === undefined ||
+      value === null ||
+      (typeof value === "string" && value.trim() === "")
+    ) {
+      const err = new Error(message);
+      err.name = "ValidationError";
+      throw err;
+    }
+  }
+}
+
+function ensureNonEmptyIfPresent(body, field, message) {
+  if (Object.prototype.hasOwnProperty.call(body, field)) {
+    const value = body[field];
+    if (
+      value === undefined ||
+      value === null ||
+      (typeof value === "string" && value.trim() === "")
+    ) {
+      const err = new Error(message);
+      err.name = "ValidationError";
+      throw err;
+    }
+  }
+}
+
 // CREATE
 exports.createCourse = async (req, res, next) => {
   try {
+    ensureRequiredFields(req.body);
     const course = await Course.create(req.body);
     res.status(201).json({ status: "success", data: course });
   } catch (err) {
@@ -65,6 +101,9 @@ exports.updateCourse = async (req, res, next) => {
       });
     }
 
+    ensureNonEmptyIfPresent(req.body, "name", "Course name is required");
+    ensureNonEmptyIfPresent(req.body, "code", "Course code is required");
+
     const updated = await Course.findByIdAndUpdate(id, req.body, {
       new: true,
       runValidators: true
@@ -107,18 +146,7 @@ exports.replaceCourse = async (req, res, next) => {
     }
 
     // Step 3: Required fields check for PUT
-  if (!req.body.code) {
-    const err = new Error("Course code is required");
-    err.name = "ValidationError";
-    throw err;
-  }
-
-  if (!req.body.name) {
-    const err = new Error("Course name is required");
-    err.name = "ValidationError";
-    throw err;
-  }
-
+    ensureRequiredFields(req.body);
 
     // Step 4: Apply overwrite with validation
     existing.overwrite(req.body);

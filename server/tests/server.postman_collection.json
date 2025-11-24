@@ -911,7 +911,12 @@
 					],
 					"request": {
 						"method": "PUT",
-						"header": [],
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
 						"body": {
 							"mode": "raw",
 							"raw": "{\r\n  \"name\": \"Course Without Code\",\r\n  \"material\": \"Whatever\",\r\n  \"degree\": \"Bachelor\"\r\n}\r\n"
@@ -1145,6 +1150,42 @@
 				{
 					"name": "Create Note",
 					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Ensure a fresh course exists for notes\r",
+									"const baseUrl = pm.environment.get(\"baseUrl\");\r",
+									"\r",
+									"pm.sendRequest({\r",
+									"  url: `${baseUrl}/courses`,\r",
+									"  method: \"POST\",\r",
+									"  header: { \"Content-Type\": \"application/json\" },\r",
+									"  body: {\r",
+									"    mode: \"raw\",\r",
+									"    raw: JSON.stringify({\r",
+									"      name: \"Notes Course\",\r",
+									"      code: `NOTE-${Date.now()}`,\r",
+									"      material: \"Canvas\",\r",
+									"      degree: \"BSc\"\r",
+									"    })\r",
+									"  }\r",
+									"}, function (err, res) {\r",
+									"  if (!err && res && res.code === 201) {\r",
+									"    const created = res.json();\r",
+									"    if (created && created.data && created.data._id) {\r",
+									"      pm.environment.set(\"courseId\", created.data._id);\r",
+									"    }\r",
+									"  }\r",
+									"  if (typeof done === \"function\") { done(); }\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
 						{
 							"listen": "test",
 							"script": {
@@ -1681,6 +1722,74 @@
 				{
 					"name": "Create Quiz",
 					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Ensure courseId and userId exist before creating a quiz\r",
+									"const baseUrl = pm.environment.get(\"baseUrl\");\r",
+									"\r",
+									"function ensureCourse(next) {\r",
+									"  pm.sendRequest({\r",
+									"    url: `${baseUrl}/courses`,\r",
+									"    method: \"POST\",\r",
+									"    header: { \"Content-Type\": \"application/json\" },\r",
+									"    body: {\r",
+									"      mode: \"raw\",\r",
+									"      raw: JSON.stringify({\r",
+									"        name: \"Quiz Course\",\r",
+									"        code: `QUIZ-${Date.now()}`,\r",
+									"        material: \"Canvas\",\r",
+									"        degree: \"BSc\"\r",
+									"      })\r",
+									"    }\r",
+									"  }, function (err, res) {\r",
+									"    if (!err && res && res.code === 201) {\r",
+									"      const created = res.json();\r",
+									"      if (created && created.data && created.data._id) {\r",
+									"        pm.environment.set(\"courseId\", created.data._id);\r",
+									"      }\r",
+									"    }\r",
+									"    next();\r",
+									"  });\r",
+									"}\r",
+									"\r",
+									"function ensureUser(next) {\r",
+									"  pm.sendRequest({\r",
+									"    url: `${baseUrl}/users`,\r",
+									"    method: \"POST\",\r",
+									"    header: { \"Content-Type\": \"application/json\" },\r",
+									"    body: {\r",
+									"      mode: \"raw\",\r",
+									"      raw: JSON.stringify({\r",
+									"        name: \"Quiz Author\",\r",
+									"        email: `quiz-author-${Date.now()}@example.com`,\r",
+									"        role: \"teacher\"\r",
+									"      })\r",
+									"    }\r",
+									"  }, function (err, res) {\r",
+									"    if (!err && res && res.code === 201) {\r",
+									"      const created = res.json();\r",
+									"      if (created && created.data && created.data._id) {\r",
+									"        pm.environment.set(\"userId\", created.data._id);\r",
+									"      }\r",
+									"    }\r",
+									"    next();\r",
+									"  });\r",
+									"}\r",
+									"\r",
+									"ensureCourse(function () {\r",
+									"  ensureUser(function () {\r",
+									"    if (typeof done === \"function\") { done(); }\r",
+									"  });\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
 						{
 							"listen": "test",
 							"script": {

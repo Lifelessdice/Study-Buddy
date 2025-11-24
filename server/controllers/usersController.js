@@ -1,9 +1,46 @@
 const mongoose = require('mongoose');
 const User = require('../models/users');
 
+function ensureRequiredFields(body) {
+  const required = {
+    email: 'Email is required',
+    role: 'Role is required'
+  };
+
+  for (const [field, message] of Object.entries(required)) {
+    const value = body[field];
+    if (
+      value === undefined ||
+      value === null ||
+      (typeof value === 'string' && value.trim() === '')
+    ) {
+      const err = new Error(message);
+      err.name = 'ValidationError';
+      throw err;
+    }
+  }
+}
+
+function ensureNonEmptyIfPresent(body, field, message) {
+  if (Object.prototype.hasOwnProperty.call(body, field)) {
+    const value = body[field];
+    if (
+      value === undefined ||
+      value === null ||
+      (typeof value === 'string' && value.trim() === '')
+    ) {
+      const err = new Error(message);
+      err.name = 'ValidationError';
+      throw err;
+    }
+  }
+}
+
 // Create User
 exports.createUser = async (req, res, next) => {
   try {
+    ensureRequiredFields(req.body);
+    ensureNonEmptyIfPresent(req.body, 'name', 'Name cannot be blank');
     const user = await User.create(req.body);
     res.status(201).json({ status: 'success', data: user });
   } catch (err) {
@@ -79,6 +116,10 @@ exports.patchUser = async (req, res, next) => {
       return res.status(400).json({ error: 'CastError', message: 'Invalid ID format' });
     }
 
+    ensureNonEmptyIfPresent(req.body, 'email', 'Email is required');
+    ensureNonEmptyIfPresent(req.body, 'role', 'Role is required');
+    ensureNonEmptyIfPresent(req.body, 'name', 'Name cannot be blank');
+
     const user = await User.findByIdAndUpdate(id, req.body, {
       new: true,
       runValidators: true
@@ -118,17 +159,8 @@ exports.putUser = async (req, res, next) => {
     }
 
     // Step 3: Required fields check
-    if (!req.body.email) {
-      const error = new Error('Email is required');
-      error.name = 'ValidationError';
-      throw error;
-    }
-
-    if (!req.body.role) {
-      const error = new Error('Role is required');
-      error.name = 'ValidationError';
-      throw error;
-    }
+    ensureRequiredFields(req.body);
+    ensureNonEmptyIfPresent(req.body, 'name', 'Name cannot be blank');
 
     // Step 4: Overwrite with validation
     const updated = await User.findByIdAndUpdate(id, req.body, {
