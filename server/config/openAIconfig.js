@@ -88,8 +88,52 @@ ${text}
     }
 }
 
+/**
+ * Generate flashcards (question & answer pairs) from note content
+ */
+async function generateFlashcards(text) {
+    const response = await client.responses.create({
+        model: "gpt-5-nano",
+        input: `
+Create a set of flashcards from the following study notes.
+Return the flashcards in JSON format ONLY as an array of objects:
+[
+  {
+    "question": "string",
+    "answer": "string"
+  }
+]
+
+Notes:
+${text}
+`
+    });
+
+    // Use output_text for safer extraction
+    const raw = response.output_text?.trim();
+    if (!raw) throw new Error("OpenAI returned empty output for flashcards");
+
+    // Locate JSON array
+    let jsonStart = raw.indexOf('[');
+    let jsonEnd = raw.lastIndexOf(']') + 1;
+    if (jsonStart === -1 || jsonEnd === -1) {
+        console.error("Raw AI flashcards output:", raw);
+        throw new Error("AI did not return valid flashcards JSON format.");
+    }
+
+    const jsonString = raw.slice(jsonStart, jsonEnd);
+
+    try {
+        return JSON.parse(jsonString);
+    } catch (e) {
+        console.error("Failed to parse flashcards JSON:", jsonString);
+        throw new Error("AI did not return a valid flashcards JSON format.");
+    }
+}
+
 
 module.exports = {
     summarizeText,
-    generateQuiz
+    generateQuiz,
+    generateFlashcards
 };

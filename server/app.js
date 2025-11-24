@@ -21,6 +21,7 @@ var courseAttendancesRoutes = require('./routes/courseAttendances');
 var teachingAssignmentRoutes = require('./routes/teachingAssignments');
 var noteSummariesRoutes = require('./routes/noteSummaries');
 var noteAIquizRoutes = require('./routes/noteAIquiz');
+var noteFlashcardsRoutes = require('./routes/noteFlashcards');
 
 
 
@@ -71,6 +72,7 @@ app.use(API_PREFIX + "/courses", courseAttendancesRoutes);
 app.use(API_PREFIX + "/courses", teachingAssignmentRoutes);
 app.use(API_PREFIX + "/notes", noteSummariesRoutes);
 app.use(API_PREFIX + "/notes", noteAIquizRoutes);
+app.use(API_PREFIX + "/notes", noteFlashcardsRoutes);
 
 
 
