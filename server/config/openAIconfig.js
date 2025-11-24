@@ -17,8 +17,29 @@ async function summarizeText(text) {
         input: `Summarize the following note in a clear and concise way:\n\n${text}`
     });
 
-    return response.output[0].content[0].text;
+    console.log("OpenAI raw response:", JSON.stringify(response, null, 2));
+
+    // Try to extract text in multiple possible places
+    if (response.output && response.output.length > 0) {
+        for (const item of response.output) {
+            if (item.content && item.content.length > 0) {
+                for (const c of item.content) {
+                    if (c.type === "output_text" && c.text) {
+                        return c.text;
+                    }
+                    // fallback: sometimes it might be plain text directly
+                    if (c.text) {
+                        return c.text;
+                    }
+                }
+            }
+        }
+    }
+
+    throw new Error("Failed to extract summary from OpenAI response");
 }
+
+
 
 /**
  * Generate quiz questions from note content
@@ -43,17 +64,30 @@ ${text}
 `
     });
 
-    // Extract raw text
-    const raw = response.output[0].content[0].text;
+    // Use output_text for safer extraction
+    const raw = response.output_text?.trim();
+    if (!raw) {
+        throw new Error("OpenAI returned empty output");
+    }
 
-    // Try parsing JSON safely
+    // Clean up possible extra text before parsing
+    let jsonStart = raw.indexOf('[');
+    let jsonEnd = raw.lastIndexOf(']') + 1;
+    if (jsonStart === -1 || jsonEnd === -1) {
+        console.error("Raw AI output:", raw);
+        throw new Error("AI did not return a valid quiz JSON format.");
+    }
+
+    const jsonString = raw.slice(jsonStart, jsonEnd);
+
     try {
-        return JSON.parse(raw);
+        return JSON.parse(jsonString);
     } catch (e) {
-        console.error("Failed to parse quiz JSON:", raw);
+        console.error("Failed to parse quiz JSON:", jsonString);
         throw new Error("AI did not return a valid quiz JSON format.");
     }
 }
+
 
 module.exports = {
     summarizeText,
