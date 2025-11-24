@@ -1,108 +1,196 @@
-const User = require('../models/users');
-const Quiz = require('../models/quizzes');
+const mongoose = require("mongoose");
+const User = require("../models/users");
+const Quiz = require("../models/quizzes");
 
-// Helper function to find a quiz creator
-async function findQuizCreatorOr404(creatorId, res) {
-  const creator = await User.findOne({ _id: creatorId, role: 'teacher' });
+// Validate ObjectId helper
+function validateId(id, label) {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    const err = new Error(`Invalid ${label} id format`);
+    err.name = "CastError";
+    throw err;
+  }
+}
+
+// Helper function: find creator or 404
+async function findQuizCreatorOr404(creatorId) {
+  validateId(creatorId, "creator");
+
+  const creator = await User.findOne({ _id: creatorId, role: "teacher" });
 
   if (!creator) {
-    res.status(404).json({
-      status: 'fail',
-      message: 'Quiz creator not found',
-    });
-    return null;
+    const err = new Error("Quiz creator not found");
+    err.name = "NotFound";
+    throw err;
   }
 
   return creator;
 }
 
-// Create a quiz for a specific quiz creator
+// --------------------------------------------------------
+// CREATE QUIZ
+// POST /api/v1/quizcreators/:creatorId/quizzes
+// --------------------------------------------------------
 exports.createQuiz = async (req, res, next) => {
   try {
     const { creatorId } = req.params;
-    const creator = await findQuizCreatorOr404(creatorId, res);
-    if (!creator) return;
 
-    const { createdBy, ...rest } = req.body;
+    const creator = await findQuizCreatorOr404(creatorId);
+
+    // IMPORTANT: prevent user from overriding createdBy
+    const { createdBy, ...payload } = req.body;
+
+    // Required fields validation (if your schema requires them)
+    // If the Quiz schema already enforces required fields, mongoose will throw ValidationError.
 
     const quiz = await Quiz.create({
-      ...rest,
-      createdBy: creator._id,
+      ...payload,
+      createdBy: creator._id
     });
 
-    res.status(201).json({
-      status: 'success',
-      data: quiz,
+    return res.status(201).json({
+      status: "success",
+      data: quiz
     });
+
   } catch (err) {
+    // Validation error (missing fields)
+    if (err && err.name === "ValidationError") {
+      return res.status(400).json({
+        error: "ValidationError",
+        message: err.message
+      });
+    }
+
+    // Invalid objectId
+    if (err && err.name === "CastError") {
+      return res.status(400).json({
+        error: "CastError",
+        message: err.message
+      });
+    }
+
+    // creator not found
+    if (err && err.name === "NotFound") {
+      return res.status(404).json({
+        status: "fail",
+        message: err.message
+      });
+    }
+
     next(err);
   }
 };
 
-// List all quizzes created by a specific creator
+// --------------------------------------------------------
+// LIST QUIZZES BY CREATOR
+// GET /api/v1/quizcreators/:creatorId/quizzes
+// --------------------------------------------------------
 exports.getQuizzesByCreator = async (req, res, next) => {
   try {
     const { creatorId } = req.params;
-    const creator = await findQuizCreatorOr404(creatorId, res);
-    if (!creator) return;
+
+    const creator = await findQuizCreatorOr404(creatorId);
 
     const quizzes = await Quiz.find({ createdBy: creator._id });
 
-    res.status(200).json({
-      status: 'success',
+    return res.status(200).json({
+      status: "success",
       results: quizzes.length,
-      data: quizzes,
+      data: quizzes
     });
+
   } catch (err) {
+    if (err && err.name === "CastError") {
+      return res.status(400).json({
+        error: "CastError",
+        message: err.message
+      });
+    }
+
+    if (err && err.name === "NotFound") {
+      return res.status(404).json({
+        status: "fail",
+        message: err.message
+      });
+    }
+
     next(err);
   }
 };
 
-// Get a specific quiz if it belongs to the creator
+// --------------------------------------------------------
+// GET SPECIFIC QUIZ BY CREATOR
+// GET /api/v1/quizcreators/:creatorId/quizzes/:quizId
+// --------------------------------------------------------
 exports.getQuizById = async (req, res, next) => {
   try {
     const { creatorId, quizId } = req.params;
 
+    validateId(creatorId, "creator");
+    validateId(quizId, "quiz");
+
     const quiz = await Quiz.findOne({
       _id: quizId,
-      createdBy: creatorId,
+      createdBy: creatorId
     });
 
     if (!quiz) {
       return res.status(404).json({
-        status: 'fail',
-        message: 'Quiz not found for this quiz creator',
+        status: "fail",
+        message: "Quiz not found for this quiz creator"
       });
     }
 
-    res.status(200).json({
-      status: 'success',
-      data: quiz,
+    return res.status(200).json({
+      status: "success",
+      data: quiz
     });
+
   } catch (err) {
+    if (err && err.name === "CastError") {
+      return res.status(400).json({
+        error: "CastError",
+        message: err.message
+      });
+    }
+
     next(err);
   }
 };
 
-// Delete a quiz only if it belongs to this creator
+// --------------------------------------------------------
+// DELETE QUIZ
+// DELETE /api/v1/quizcreators/:creatorId/quizzes/:quizId
+// --------------------------------------------------------
 exports.deleteQuiz = async (req, res, next) => {
   try {
     const { creatorId, quizId } = req.params;
 
-    const deletedQuiz = await Quiz.findOneAndDelete({
+    validateId(creatorId, "creator");
+    validateId(quizId, "quiz");
+
+    const deleted = await Quiz.findOneAndDelete({
       _id: quizId,
-      createdBy: creatorId,
+      createdBy: creatorId
     });
 
-    if (!deletedQuiz) {
+    if (!deleted) {
       return res.status(404).json({
-        status: 'fail',
-        message: 'Quiz not found for this quiz creator',
+        status: "fail",
+        message: "Quiz not found for this quiz creator"
       });
     }
 
     return res.status(204).send();
+
   } catch (err) {
+    if (err && err.name === "CastError") {
+      return res.status(400).json({
+        error: "CastError",
+        message: err.message
+      });
+    }
+
     next(err);
   }
 };
