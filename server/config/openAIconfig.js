@@ -134,5 +134,6 @@ ${text}
 
 module.exports = {
     summarizeText,
-    generateQuiz
+    generateQuiz,
+    generateFlashcards
 };
