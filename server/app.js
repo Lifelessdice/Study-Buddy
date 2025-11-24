@@ -19,6 +19,9 @@ var quizCreatorRoutes = require('./routes/quizCreators');
 var quizParticipationRoutes = require('./routes/quizParticipations');
 var courseAttendancesRoutes = require('./routes/courseAttendances');
 var teachingAssignmentRoutes = require('./routes/teachingAssignments');
+var noteSummariesRoutes = require('./routes/noteSummaries');
+var noteAIquizRoutes = require('./routes/noteAIquiz');
+
 
 
 // ---------------------------------------------
@@ -66,6 +69,8 @@ app.use(API_PREFIX + "/quizparticipations", quizParticipationRoutes);
 // Relationship routes under /courses
 app.use(API_PREFIX + "/courses", courseAttendancesRoutes);
 app.use(API_PREFIX + "/courses", teachingAssignmentRoutes);
+app.use(API_PREFIX + "/notes", noteSummariesRoutes);
+app.use(API_PREFIX + "/notes", noteAIquizRoutes);
 
 
 
