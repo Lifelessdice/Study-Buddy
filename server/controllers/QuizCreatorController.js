@@ -39,7 +39,6 @@ exports.createQuiz = async (req, res, next) => {
     // IMPORTANT: prevent user from overriding createdBy
     const { createdBy, ...payload } = req.body;
 
-    // Required fields validation (if your schema requires them)
     // If the Quiz schema already enforces required fields, mongoose will throw ValidationError.
 
     const quiz = await Quiz.create({
