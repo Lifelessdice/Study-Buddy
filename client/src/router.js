@@ -7,6 +7,7 @@ import Dashboard from './views/Dashboard.vue'
 import CoursesPage from './views/courses/CoursesPage.vue'
 import CreateCourse from './views/courses/CreateCourse.vue'
 import EditCourse from './views/courses/EditCourse.vue'
+import AllCoursesPage from './views/courses/AllCoursesPage.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -23,6 +24,12 @@ const routes = [
     path: '/courses',
     name: 'Courses',
     component: CoursesPage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/courses/all',
+    name: 'AllCourses',
+    component: AllCoursesPage,
     meta: { requiresAuth: true }
   },
   {

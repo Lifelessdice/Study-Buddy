@@ -6,6 +6,9 @@
         <router-link v-if="isTeacher" to="/courses/create" class="btn btn-primary">
           + Create Course
         </router-link>
+        <router-link to="/courses/all" class="btn btn-outline-secondary ms-2">
+          See All Courses
+        </router-link>
       </div>
     </div>
 
