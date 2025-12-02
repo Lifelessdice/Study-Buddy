@@ -6,6 +6,33 @@
     "_exporter_id": "50133852",
     "_collection_link": "https://rahatm7552-2835840.postman.co/workspace/Default-workspace~3b952101-de34-458d-accc-db13267c9a01/collection/50133852-c133e0a1-0e8d-44bc-8c9a-c2141c50ed0a?action=share&source=collection_link&creator=50133852"
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Ensure Authorization header is attached when auth_token is present",
+          "const token = pm.environment.get(\"auth_token\");",
+          "if (token) {",
+          "  pm.request.headers.upsert({ key: \"Authorization\", value: `Bearer ${token}` });",
+          "}"
+        ],
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {}
+      }
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
   "item": [
     {
       "name": "Auth",
@@ -181,7 +208,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"testuser@example.com\",\n  \"role\": \"student\",\n  \"password\": \"TestUser123!\"\n}\n",
@@ -299,7 +331,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/users",
               "host": [
@@ -356,7 +393,12 @@
           },
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"name\": \"Test User\",\r\n  \"email\": \"testuser@example.com\",\r\n  \"role\": \"student\"\r\n}\r\n"
@@ -405,6 +447,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
               }
             ],
             "body": {
@@ -465,7 +511,12 @@
           ],
           "request": {
             "method": "PUT",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Put Updated User\",\n  \"email\": \"put.updated.user@example.com\",\n  \"role\": \"teacher\",\n  \"password\": \"PutUser123!\"\n}\n",
@@ -514,7 +565,12 @@
           ],
           "request": {
             "method": "PUT",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"name\": \"Invalid User  Email\",\r\n  \"role\": \"student\"\r\n}\r\n",
@@ -559,7 +615,12 @@
           ],
           "request": {
             "method": "PUT",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/users/123",
               "host": [
@@ -596,7 +657,12 @@
           ],
           "request": {
             "method": "PUT",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/users/000000000000000000000000",
               "host": [
@@ -634,6 +700,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
               }
             ],
             "body": {
@@ -683,6 +753,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
               }
             ],
             "body": {
@@ -722,7 +796,12 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/users",
               "host": [
@@ -757,7 +836,12 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/users/123",
               "host": [
@@ -772,6 +856,73 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Auth Refresh",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const ts = Date.now();",
+              "pm.environment.set(\"auth_email\", `auth-refresh-${ts}@example.com`);",
+              "pm.environment.set(\"auth_password\", \"password123\");"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Auth refresh: status 200 or 201\", function () {",
+              "  pm.expect([200,201]).to.include(pm.response.code);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.test(\"Auth refresh: has token\", function () {",
+              "  pm.expect(body).to.have.property(\"token\");",
+              "});",
+              "pm.environment.set(\"auth_user_id\", body.data.user._id);",
+              "pm.environment.set(\"auth_token\", body.token);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"name\": \"Auth Refresh User\",\r\n  \"email\": \"{{auth_email}}\",\r\n  \"password\": \"{{auth_password}}\",\r\n  \"role\": \"student\"\r\n}\r\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
     },
     {
       "name": "Courses",
@@ -806,7 +957,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"name\": \"Web Engineering\",\r\n  \"code\": \"DIT343\",\r\n  \"material\": \"Canvas\",\r\n  \"degree\": \"BSc\"\r\n}\r\n",
@@ -861,7 +1017,12 @@
           },
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"name\": \"Web Engineering\",\r\n  \"code\": \"DIT343\",\r\n  \"material\": \"Canvas\",\r\n  \"degree\": \"BSc\"\r\n}\r\n"
@@ -914,7 +1075,12 @@
           },
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"name\": \"Web Engineering\",\r\n  \"code\": \"DIT343\",\r\n  \"material\": \"Canvas\",\r\n  \"degree\": \"BSc\"\r\n}\r\n"
@@ -961,7 +1127,12 @@
           ],
           "request": {
             "method": "PATCH",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"material\": \"Updated Material\"\r\n}\r\n"
@@ -1008,7 +1179,12 @@
           ],
           "request": {
             "method": "PUT",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"name\": \"Put Updated Web Engineering\",\r\n  \"code\": \"DIT343\",\r\n  \"material\": \"Updated material via PUT\",\r\n  \"degree\": \"Master\"\r\n}\r\n",
@@ -1061,6 +1237,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
               }
             ],
             "body": {
@@ -1102,7 +1282,12 @@
           ],
           "request": {
             "method": "PUT",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/courses/123",
               "host": [
@@ -1139,7 +1324,12 @@
           ],
           "request": {
             "method": "PUT",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/courses/000000000000000000000000",
               "host": [
@@ -1173,7 +1363,12 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/courses/{{courseId}}",
               "host": [
@@ -1207,7 +1402,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/courses{{courseId}}",
               "host": [
@@ -1240,7 +1440,12 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/courses",
               "host": [
@@ -1274,7 +1479,12 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/courses/123",
               "host": [
@@ -1306,7 +1516,7 @@
                   "pm.sendRequest({\r",
                   "  url: `${baseUrl}/courses`,\r",
                   "  method: \"POST\",\r",
-                  "  header: { \"Content-Type\": \"application/json\" },\r",
+                  "  header: { \"Content-Type\": \"application/json\", \"Authorization\": `Bearer ${pm.environment.get(\"auth_token\")}` },\r",
                   "  body: {\r",
                   "    mode: \"raw\",\r",
                   "    raw: JSON.stringify({\r",
@@ -1939,7 +2149,7 @@
                   "  pm.sendRequest({\r",
                   "    url: `${baseUrl}/courses`,\r",
                   "    method: \"POST\",\r",
-                  "    header: { \"Content-Type\": \"application/json\" },\r",
+                  "    header: { \"Content-Type\": \"application/json\", \"Authorization\": `Bearer ${pm.environment.get(\"auth_token\")}` },\r",
                   "    body: {\r",
                   "      mode: \"raw\",\r",
                   "      raw: JSON.stringify({\r",
@@ -1964,7 +2174,7 @@
                   "  pm.sendRequest({\r",
                   "    url: `${baseUrl}/users`,\r",
                   "    method: \"POST\",\r",
-                  "    header: { \"Content-Type\": \"application/json\" },\r",
+                  "    header: { \"Content-Type\": \"application/json\", \"Authorization\": `Bearer ${pm.environment.get(\"auth_token\")}` },\r",
                   "    body: {\r",
                   "      mode: \"raw\",\r",
                   "      raw: JSON.stringify({\r",
@@ -2023,7 +2233,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"title\": \"Sample Quiz\",\r\n  \"course\": \"{{courseId}}\",\r\n  \"createdBy\": \"{{userId}}\",\r\n  \"questions\": [\r\n    {\r\n      \"text\": \"What does CRUD stand for?\",\r\n      \"answers\": [\"Create, Read, Update, Delete\", \"Crash, Run, Undo, Debug\"],\r\n      \"correctAnswerIndex\": 0\r\n    }\r\n  ]\r\n}\r\n",
@@ -2078,7 +2293,12 @@
           },
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"title\": \"Sample Quiz\",\r\n  \"course\": \"{{courseId}}\",\r\n  \"createdBy\": \"{{userId}}\",\r\n  \"questions\": [\r\n    {\r\n      \"text\": \"What does CRUD stand for?\",\r\n      \"answers\": [\"Create, Read, Update, Delete\", \"Crash, Run, Undo, Debug\"],\r\n      \"correctAnswerIndex\": 0\r\n    }\r\n  ]\r\n}\r\n"
@@ -2131,7 +2351,12 @@
           },
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"title\": \"Sample Quiz\",\r\n  \"course\": \"{{courseId}}\",\r\n  \"createdBy\": \"{{userId}}\",\r\n  \"questions\": [\r\n    {\r\n      \"text\": \"What does CRUD stand for?\",\r\n      \"answers\": [\"Create, Read, Update, Delete\", \"Crash, Run, Undo, Debug\"],\r\n      \"correctAnswerIndex\": 0\r\n    }\r\n  ]\r\n}\r\n"
@@ -2178,7 +2403,12 @@
           ],
           "request": {
             "method": "PATCH",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"title\": \"Updated Sample Quiz\"\r\n}\r\n",
@@ -2229,7 +2459,12 @@
           ],
           "request": {
             "method": "PUT",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"title\": \"PUT Updated Quiz\",\r\n  \"course\": \"{{courseId}}\",\r\n  \"createdBy\": \"{{userId}}\",\r\n  \"questions\": [\r\n    {\r\n      \"text\": \"What does PUT do?\",\r\n      \"answers\": [\"Partial update\", \"Full replace\"],\r\n      \"correctAnswerIndex\": 1\r\n    }\r\n  ]\r\n}\r\n",
@@ -2278,7 +2513,12 @@
           ],
           "request": {
             "method": "PUT",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"course\": \"{{courseId}}\",\r\n  \"questions\": [\r\n    {\r\n      \"text\": \"Question without quiz title\",\r\n      \"answers\": [\"A\", \"B\"],\r\n      \"correctAnswerIndex\": 0\r\n    }\r\n  ]\r\n}\r\n",
@@ -2323,7 +2563,12 @@
           ],
           "request": {
             "method": "PUT",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/quizzes/123",
               "host": [
@@ -2360,7 +2605,12 @@
           ],
           "request": {
             "method": "PUT",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/quizzes/000000000000000000000000",
               "host": [
@@ -2394,7 +2644,12 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/quizzes/{{quizId}}",
               "host": [
@@ -2435,6 +2690,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
               }
             ],
             "body": {
@@ -2474,7 +2733,12 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/quizzes",
               "host": [
@@ -2508,7 +2772,12 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/quizzes/123",
               "host": [
@@ -2557,7 +2826,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"testuser01@example.com\",\n  \"role\": \"teacher\",\n  \"password\": \"CreatorPass123!\"\n}\n",
@@ -2615,7 +2889,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"title\": \"MS1 relationship quiz\",\r\n  \"course\": \"{{courseId}}\",\r\n  \"questions\": [\r\n    {\r\n      \"text\": \"What is 2 + 2?\",\r\n      \"answers\": [\"3\", \"4\"],\r\n      \"correctAnswerIndex\": 1\r\n    }\r\n  ]\r\n}\r\n",
@@ -2673,7 +2952,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/quizcreators/{{quizCreatorId}}/quizzes",
               "host": [
@@ -2718,7 +3002,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/quizcreators/{{quizCreatorId}}/quizzes/{{quizIdForCreator}}",
               "host": [
@@ -2764,7 +3053,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Student Test\",\n  \"email\": \"Student011@example.com\",\n  \"role\": \"student\",\n  \"password\": \"StudentPass123!\"\n}\n",
@@ -2818,7 +3112,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"student\": \"{{studentId}}\",\r\n  \"quiz\": \"{{quizIdForCreator}}\",\r\n  \"answers\": [1],\r\n  \"score\": 100\r\n}\r\n",
@@ -2873,7 +3172,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/quizparticipations?student={{studentId}}&quiz={{quizIdForCreator}}",
               "host": [
@@ -2924,7 +3228,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/quizparticipations/{{quizParticipationId}}",
               "host": [
@@ -2958,7 +3267,12 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/quizparticipations/{{quizParticipationId}}",
               "host": [
@@ -2997,7 +3311,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"student\": \"{{quizCreatorId}}\",\r\n  \"quiz\": \"{{quizIdForCreator}}\"\r\n}\r\n",
@@ -3042,7 +3361,12 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/quizcreators/{{quizCreatorId}}/quizzes/{{quizIdForCreator}}",
               "host": [
@@ -3085,7 +3409,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/quizcreators/{{quizCreatorId}}/quizzes/{{quizId}}",
               "host": [
@@ -3127,7 +3456,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/quizcreators/123/quizzes",
               "host": [
@@ -3177,7 +3511,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"name\": \"Web Engineering\",\r\n  \"code\": \"DIT343\",\r\n  \"material\": \"Canvas\",\r\n  \"degree\": \"BSc\"\r\n}\r\n",
@@ -3240,7 +3579,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"student\": \"{{studentId}}\"\r\n}\r\n",
@@ -3306,7 +3650,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/courses/{{courseId}}/attendances",
               "host": [
@@ -3356,7 +3705,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/courses/{{courseId}}/attendances/{{attendanceId}}",
               "host": [
@@ -3413,7 +3767,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"teacher\": \"{{quizCreatorId}}\"\r\n}\r\n",
@@ -3479,7 +3838,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/courses/{{courseId}}/teachingAssignments",
               "host": [
@@ -3529,7 +3893,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/courses/{{courseId}}/teachingAssignments/{{teachingAssignmentId}}",
               "host": [
@@ -3571,7 +3940,12 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "",
@@ -3621,7 +3995,12 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/courses/{{courseId}}/teachingAssignments/{{teachingAssignmentId}}",
               "host": [
@@ -3657,7 +4036,12 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/courses/{{courseId}}",
               "host": [

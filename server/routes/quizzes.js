@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const quizzesController = require('../controllers/quizzesController');
+const protect = require('../middleware/protect');
 
 // POST /api/v1/quizzes
-router.post('/', quizzesController.createQuiz);
+router.post('/', protect, quizzesController.createQuiz);
 
 // GET /api/v1/quizzes
 router.get('/', quizzesController.getAllQuizzes);
@@ -12,15 +13,15 @@ router.get('/', quizzesController.getAllQuizzes);
 router.get('/:id', quizzesController.getQuizById);
 
 // PATCH /api/v1/quizzes/:id
-router.patch('/:id', quizzesController.updateQuiz);
+router.patch('/:id', protect, quizzesController.updateQuiz);
 
 // DELETE /api/v1/quizzes/:id
-router.delete('/:id', quizzesController.deleteQuiz);
+router.delete('/:id', protect, quizzesController.deleteQuiz);
 
 // DELETE /api/v1/quizzes
-router.delete('/', quizzesController.deleteAllQuizzes);
+router.delete('/', protect, quizzesController.deleteAllQuizzes);
 
 // PUT /api/v1/quizzes/:id
-router.put('/:id', quizzesController.replaceQuiz);
+router.put('/:id', protect, quizzesController.replaceQuiz);
 
 module.exports = router;
