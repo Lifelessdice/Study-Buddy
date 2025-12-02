@@ -23,27 +23,26 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Password is required'],
       minlength: [6, 'Password must be at least 6 characters'],
-      select: false          // don’t include password in normal queries
+      select: false          // So that it doesn't include password in normal queries
     }
   },
   { timestamps: true }
 );
 
-/**
- * Hash password before saving the user
- */
+ // Hash the  password before saving the user
+
+
 userSchema.pre('save', async function (next) {
-  // Only hash if password is new or modified
+  // Only hashes if password is new or modified
   if (!this.isModified('password')) return next();
 
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });
 
-/**
- * Compare a candidate password with the stored hash
- * Usage: await user.correctPassword(inputPassword, user.password)
- */
+
+//Compare a candidate password with the stored hash
+
 userSchema.methods.correctPassword = async function (
   candidatePassword,
   userPassword
