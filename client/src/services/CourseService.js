@@ -27,6 +27,17 @@ export default {
     return Api.delete(`/courses/${id}`)
   },
 
+  // Course attendances (students)
+  addStudent(courseId, studentId) {
+    return Api.post(`/courses/${courseId}/attendances`, { student: studentId })
+  },
+  getStudents(courseId) {
+    return Api.get(`/courses/${courseId}/attendances`)
+  },
+  removeStudent(courseId, attendanceId) {
+    return Api.delete(`/courses/${courseId}/attendances/${attendanceId}`)
+  },
+
   // Teaching assignment: assign teacher to course
   assignTeacher(courseId, teacherId) {
     return Api.post(`/courses/${courseId}/teachingAssignments`, { teacher: teacherId })

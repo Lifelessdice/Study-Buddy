@@ -61,7 +61,15 @@ exports.createUser = async (req, res, next) => {
 // List Users (with HATEOAS and pagination fields expected by tests)
 exports.listUsers = async (req, res, next) => {
   try {
-    const users = await User.find();
+    const filter = {};
+    if (req.query.role) {
+      filter.role = req.query.role;
+    }
+    if (req.query.email) {
+      filter.email = req.query.email;
+    }
+
+    const users = await User.find(filter);
 
     const page = 1;
     const limit = users.length;

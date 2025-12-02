@@ -175,6 +175,10 @@ exports.deleteAttendance = async (req, res, next) => {
     validateId(courseId, "course");
     validateId(attendanceId, "attendance");
 
+    if (!req.user || req.user.role !== "teacher") {
+      return res.status(403).json({ status: "fail", message: "Forbidden" });
+    }
+
     const deleted = await CourseAttendance.findOneAndDelete({
       _id: attendanceId,
       course: courseId,
