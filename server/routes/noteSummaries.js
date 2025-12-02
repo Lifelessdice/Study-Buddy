@@ -5,7 +5,7 @@ const Note = require("../models/notes");
 const { summarizeText } = require("../config/openAIconfig");
 
 // POST /notes/:id/summarize
-router.post("/:id/summarize", async (req, res) => {
+router.post("/:id/summaries", async (req, res) => {
     try {
         // 1. Validate ID
         const noteId = req.params.id;

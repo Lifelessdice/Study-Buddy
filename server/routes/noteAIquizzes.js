@@ -8,7 +8,7 @@ const { generateQuiz } = require("../config/openAIconfig");
 // POST /api/v1/notes/:id/quiz
 // Generate an AI quiz from a note
 // ---------------------------------------------
-router.post("/:id/quiz", async (req, res, next) => {
+router.post("/:id/aiquizzes", async (req, res, next) => {
     try {
         const note = await Note.findById(req.params.id);
 

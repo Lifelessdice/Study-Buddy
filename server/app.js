@@ -20,7 +20,7 @@ var quizParticipationRoutes = require('./routes/quizParticipations');
 var courseAttendancesRoutes = require('./routes/courseAttendances');
 var teachingAssignmentRoutes = require('./routes/teachingAssignments');
 var noteSummariesRoutes = require('./routes/noteSummaries');
-var noteAIquizRoutes = require('./routes/noteAIquiz');
+var noteAIquizRoutes = require('./routes/noteAIquizzes');
 var noteFlashcardsRoutes = require('./routes/noteFlashcards');
 
 
