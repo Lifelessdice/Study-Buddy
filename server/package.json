@@ -15,7 +15,7 @@
     "ci-test": "npm run newman-server",
     "newman-server": "cross-env PORT=3001 npm-run-all dropdb --parallel --race start newman-wait",
     "newman-wait": "wait-on http://localhost:3001/api && npm run newman",
-    "newman": "newman run ./tests/server.postman_collection.json --env-var baseUrl=http://localhost:3001/api/v1",
+    "newman": "newman run ./tests/server.postman_collection.json --env-var baseUrl=http://localhost:3001/api/v1 --reporters cli,junit --reporter-junit-export ../newman-results.xml",
     "dropdb": "node ./tests/dropdb.js"
   },
   "repository": {

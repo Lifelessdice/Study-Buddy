@@ -1,10 +1,13 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/users');
 
-// helper to sign JWT
+// helper to sign JWT (fallback secret for CI/test environments)
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-test-secret';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
+
 function signToken(id) {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '1h', // token expiration time after which a user has to log in agian
+  return jwt.sign({ id }, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN, // token expiration time after which a user has to log in again
   });
 }
 
