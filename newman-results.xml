@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="StudyBuddy Backend MS1" tests="75" time="4.998">
+  <testsuite name="Auth / Register Auth Test User" id="ea3a5c34-2e55-484b-9cc7-fff77e1ff0ca" timestamp="2025-12-02T17:33:32.904Z" tests="3" failures="0" errors="0" time="0.545">
+    <testcase name="Register: status 200 or 201" time="0.545" classname="AuthRegisterAuthTestUser"/>
+    <testcase name="Register: has token" time="0.545" classname="AuthRegisterAuthTestUser"/>
+    <testcase name="Register: has user object" time="0.545" classname="AuthRegisterAuthTestUser"/>
+  </testsuite>
+  <testsuite name="Auth / Login Auth Test User" id="a317ec42-c62c-44a1-9441-544fc0c1a132" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.471">
+    <testcase name="Login: status 200" time="0.471" classname="AuthLoginAuthTestUser"/>
+    <testcase name="Login: has token" time="0.471" classname="AuthLoginAuthTestUser"/>
+  </testsuite>
+  <testsuite name="Users / Create User" id="b7091d9a-2ab5-454d-9833-ebe7e59dde12" timestamp="2025-12-02T17:33:32.904Z" tests="3" failures="0" errors="0" time="0.924">
+    <testcase name="Create User: status 201" time="0.924" classname="UsersCreateUser"/>
+    <testcase name="Create User: status=success" time="0.924" classname="UsersCreateUser"/>
+    <testcase name="Create User: password not returned" time="0.924" classname="UsersCreateUser"/>
+  </testsuite>
+  <testsuite name="Users / List Users" id="b176aad8-e441-4451-8031-23231ddfa046" timestamp="2025-12-02T17:33:32.904Z" tests="9" failures="0" errors="0" time="0.009">
+    <testcase name="Status code is 200" time="0.009" classname="UsersListUsers"/>
+    <testcase name="Response has success status" time="0.009" classname="UsersListUsers"/>
+    <testcase name="Pagination fields exist" time="0.009" classname="UsersListUsers"/>
+    <testcase name="Pagination values are numbers" time="0.009" classname="UsersListUsers"/>
+    <testcase name="Response contains HATEOAS links" time="0.009" classname="UsersListUsers"/>
+    <testcase name="Next/Prev links are correct type" time="0.009" classname="UsersListUsers"/>
+    <testcase name="Data array exists and is an array" time="0.009" classname="UsersListUsers"/>
+    <testcase name="Each user entry contains HATEOAS links" time="0.009" classname="UsersListUsers"/>
+    <testcase name="Saved user_id for later tests" time="0.009" classname="UsersListUsers"/>
+  </testsuite>
+  <testsuite name="Users / Get User by ID" id="0a6bbecb-6426-4042-af5b-aa1eb848e106" timestamp="2025-12-02T17:33:32.904Z" tests="3" failures="0" errors="0" time="0.010">
+    <testcase name="Get User by ID: status 200" time="0.010" classname="UsersGetUserById"/>
+    <testcase name="Get User by ID: response structure" time="0.010" classname="UsersGetUserById"/>
+    <testcase name="Get User by ID: correct ID" time="0.010" classname="UsersGetUserById"/>
+  </testsuite>
+  <testsuite name="Users / Update User" id="126e23e0-4b55-446c-b620-2bb85d39bc75" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.013">
+    <testcase name="Update User: status 200" time="0.013" classname="UsersUpdateUser"/>
+    <testcase name="Update User: name updated" time="0.013" classname="UsersUpdateUser"/>
+  </testsuite>
+  <testsuite name="Users / Overwrite User" id="13e4241c-714b-46ef-9fa4-f69db019579f" timestamp="2025-12-02T17:33:32.904Z" tests="3" failures="0" errors="0" time="0.017">
+    <testcase name="PUT /users/:id â†’ 200 OK" time="0.017" classname="UsersOverwriteUser"/>
+    <testcase name="PUT /users/:id â†’ success status and correct shape" time="0.017" classname="UsersOverwriteUser"/>
+    <testcase name="PUT /users/:id â†’ updated _id matches original" time="0.017" classname="UsersOverwriteUser"/>
+  </testsuite>
+  <testsuite name="Users / Overwrite Validator" id="d246ff90-1b08-4079-baeb-3424c618f94c" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.011">
+    <testcase name="PUT /users/:id missing email â†’ 400" time="0.011" classname="UsersOverwriteValidator"/>
+    <testcase name="PUT /users/:id missing email â†’ ValidationError body" time="0.011" classname="UsersOverwriteValidator"/>
+  </testsuite>
+  <testsuite name="Users / Invalid ID" id="13c47c82-5280-422f-bbbe-a27fcb37e576" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.008">
+    <testcase name="PUT /users/123 â†’ 400 CastError" time="0.008" classname="UsersInvalidId"/>
+  </testsuite>
+  <testsuite name="Users / Valid but Non-existing ID" id="a51cd685-b43f-421a-9737-cceb26d3256c" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.009">
+    <testcase name="PUT non-existing user â†’ 404" time="0.009" classname="UsersValidButNonExistingId"/>
+  </testsuite>
+  <testsuite name="Users / Delete Users" id="1092b616-dac5-43c9-aa77-9f8d76d13964" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.011">
+    <testcase name="DELETE /users/:id returns 204" time="0.011" classname="UsersDeleteUsers"/>
+  </testsuite>
+  <testsuite name="Users / Id after delete" id="2ee13847-e888-4d8f-b537-4d53000a89d3" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.009">
+    <testcase name="GET deleted user returns 404" time="0.009" classname="UsersIdAfterDelete"/>
+  </testsuite>
+  <testsuite name="Users / Bulk Delete Users" id="05329048-5c35-47ce-b753-b8f8c479c69f" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.009">
+    <testcase name="Bulk delete users â†’ 204" time="0.009" classname="UsersBulkDeleteUsers"/>
+  </testsuite>
+  <testsuite name="Users / Invalid User ID" id="ae185c7d-53a0-49ce-b2a6-dd964671a021" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.003">
+    <testcase name="Invalid user id returns 400 (CastError)" time="0.003" classname="UsersInvalidUserId"/>
+  </testsuite>
+  <testsuite name="Auth Refresh" id="9d4ee6e4-b647-4797-99f0-6695411b49f0" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.455">
+    <testcase name="Auth refresh: status 200 or 201" time="0.455" classname="AuthRefresh"/>
+    <testcase name="Auth refresh: has token" time="0.455" classname="AuthRefresh"/>
+  </testsuite>
+  <testsuite name="Courses / Create Course" id="55bb13ba-88fd-4fef-9577-23539e2b8fd5" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.016">
+    <testcase name="Create Course: status 201" time="0.016" classname="CoursesCreateCourse"/>
+    <testcase name="Create Course: status=success" time="0.016" classname="CoursesCreateCourse"/>
+  </testsuite>
+  <testsuite name="Courses / List Courses" id="98dcaf43-152a-4624-9ed8-ecba011d4150" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.009">
+    <testcase name="List Courses: status 200" time="0.009" classname="CoursesListCourses"/>
+    <testcase name="List Courses: response shape" time="0.009" classname="CoursesListCourses"/>
+  </testsuite>
+  <testsuite name="Courses / Get Courses by ID" id="6b4e074c-0dd1-4f1c-83d3-7afe01a341de" timestamp="2025-12-02T17:33:32.904Z" tests="3" failures="0" errors="0" time="0.009">
+    <testcase name="Get Course by ID: status 200" time="0.009" classname="CoursesGetCoursesById"/>
+    <testcase name="Get Course by ID: response shape" time="0.009" classname="CoursesGetCoursesById"/>
+    <testcase name="Get Course by ID: correct ID" time="0.009" classname="CoursesGetCoursesById"/>
+  </testsuite>
+  <testsuite name="Courses / Update Course" id="530438c1-7617-4dcc-87de-022f77301cd1" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.012">
+    <testcase name="Update Course: status 200" time="0.012" classname="CoursesUpdateCourse"/>
+    <testcase name="Update Course: material field exists" time="0.012" classname="CoursesUpdateCourse"/>
+  </testsuite>
+  <testsuite name="Courses / Overwrite Course" id="224e3f6b-3834-4081-8c31-e472e5aede63" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.015">
+    <testcase name="PUT /courses/:id â†’ 200 OK" time="0.015" classname="CoursesOverwriteCourse"/>
+    <testcase name="PUT /courses/:id â†’ success &amp; correct data" time="0.015" classname="CoursesOverwriteCourse"/>
+  </testsuite>
+  <testsuite name="Courses / Overwrite Validator" id="c849e223-a942-4b7b-bf67-f594498f546f" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.012">
+    <testcase name="PUT /courses/:id missing code â†’ 400" time="0.012" classname="CoursesOverwriteValidator"/>
+    <testcase name="PUT /courses/:id missing code â†’ ValidationError" time="0.012" classname="CoursesOverwriteValidator"/>
+  </testsuite>
+  <testsuite name="Courses / Invalid ID" id="e2971535-6ce7-4c06-8ab7-c6faca42dd56" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.008">
+    <testcase name="PUT /courses/123 â†’ 400 CastError" time="0.008" classname="CoursesInvalidId"/>
+  </testsuite>
+  <testsuite name="Courses / Valid but Non-existing ID" id="b866a1d4-4c4a-416d-8901-3aac6084a148" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.012">
+    <testcase name="PUT non-existing course â†’ 404" time="0.012" classname="CoursesValidButNonExistingId"/>
+  </testsuite>
+  <testsuite name="Courses / Delete Course" id="d111fb80-97ef-48a2-adc7-84c219b6affc" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.009">
+    <testcase name="DELETE course returns 204" time="0.009" classname="CoursesDeleteCourse"/>
+  </testsuite>
+  <testsuite name="Courses / Delete Course ID" id="c1220886-7a52-4ccd-b36f-47a57d87e75f" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.004">
+    <testcase name="Deleted course returns 404" time="0.004" classname="CoursesDeleteCourseId"/>
+  </testsuite>
+  <testsuite name="Courses / Bulk delete Courses" id="70a26066-34ee-4e18-be1f-2707faa17575" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.011">
+    <testcase name="Bulk delete courses â†’ 204" time="0.011" classname="CoursesBulkDeleteCourses"/>
+  </testsuite>
+  <testsuite name="Courses / Invalid Course ID" id="4ea95a87-14e2-4475-853f-0b8d0be83694" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.008">
+    <testcase name="Invalid id â†’ CastError (400)" time="0.008" classname="CoursesInvalidCourseId"/>
+  </testsuite>
+  <testsuite name="Notes / Create Note" id="51c388cc-b09a-4dcb-9013-89996d23d08d" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.016">
+    <testcase name="Create Note: status 201" time="0.016" classname="NotesCreateNote"/>
+    <testcase name="Create Note: status=success" time="0.016" classname="NotesCreateNote"/>
+  </testsuite>
+  <testsuite name="Notes / List Notes" id="7a3a577d-64d1-4778-8b3a-16444bd31ac6" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.020">
+    <testcase name="List Notes: status 200" time="0.020" classname="NotesListNotes"/>
+    <testcase name="List Notes: response shape" time="0.020" classname="NotesListNotes"/>
+  </testsuite>
+  <testsuite name="Notes / Get Note by ID" id="06b2a69e-19bb-4930-bff6-b2d962e01507" timestamp="2025-12-02T17:33:32.904Z" tests="3" failures="0" errors="0" time="0.014">
+    <testcase name="Get Note by ID: status 200" time="0.014" classname="NotesGetNoteById"/>
+    <testcase name="Get Note by ID: response shape" time="0.014" classname="NotesGetNoteById"/>
+    <testcase name="Get Note by ID: correct ID" time="0.014" classname="NotesGetNoteById"/>
+  </testsuite>
+  <testsuite name="Notes / Update Note" id="777edd12-c912-41b4-85ff-20c533284720" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.014">
+    <testcase name="Update Note: status 200" time="0.014" classname="NotesUpdateNote"/>
+    <testcase name="Update Note: content field exists" time="0.014" classname="NotesUpdateNote"/>
+  </testsuite>
+  <testsuite name="Notes / Overwrite Note" id="21c094b5-29cd-43ff-86d0-bae0e5140754" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.021">
+    <testcase name="PUT /notes/:id â†’ 200 OK" time="0.021" classname="NotesOverwriteNote"/>
+    <testcase name="PUT /notes/:id â†’ success &amp; updated fields" time="0.021" classname="NotesOverwriteNote"/>
+  </testsuite>
+  <testsuite name="Notes / Overwrite Validator" id="483c0257-bcb0-4505-a69f-7fdba3de7fb7" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.013">
+    <testcase name="PUT /notes/:id missing topic â†’ 400" time="0.013" classname="NotesOverwriteValidator"/>
+    <testcase name="PUT /notes/:id missing topic â†’ ValidationError" time="0.013" classname="NotesOverwriteValidator"/>
+  </testsuite>
+  <testsuite name="Notes / Invalid ID" id="7465a669-691d-413a-bae8-1a6fb5d68abb" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.011">
+    <testcase name="PUT /notes/123 â†’ 400 CastError" time="0.011" classname="NotesInvalidId"/>
+  </testsuite>
+  <testsuite name="Notes / Valid but Non-existing ID" id="5a350fa0-b520-4afb-b99e-f20a6e9d4bfa" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.011">
+    <testcase name="PUT non-existing note â†’ 404" time="0.011" classname="NotesValidButNonExistingId"/>
+  </testsuite>
+  <testsuite name="Notes / Delete Notes" id="83ef451d-c03e-4f8b-9f11-ff8276523a30" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.010">
+    <testcase name="DELETE note returns 204" time="0.010" classname="NotesDeleteNotes"/>
+  </testsuite>
+  <testsuite name="Notes / Delete Note ID" id="818b610a-3009-42a2-8c30-2fb126946fec" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.008">
+    <testcase name="Deleted note returns 404" time="0.008" classname="NotesDeleteNoteId"/>
+  </testsuite>
+  <testsuite name="Notes / Bulk Delete Notes" id="3465db1e-d1d8-453b-accb-8f2cd0cd89e2" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.012">
+    <testcase name="Bulk delete notes â†’ 204" time="0.012" classname="NotesBulkDeleteNotes"/>
+  </testsuite>
+  <testsuite name="Notes / Invalid Note ID" id="f8bbba7d-0e2b-4b7f-bc44-12b928cf9247" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.008">
+    <testcase name="Invalid id â†’ CastError (400)" time="0.008" classname="NotesInvalidNoteId"/>
+  </testsuite>
+  <testsuite name="Quizzes / Create Quiz" id="d01f9e4e-c476-46cc-bca2-a1016dc5e880" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.023">
+    <testcase name="Create Quiz: status 201" time="0.023" classname="QuizzesCreateQuiz"/>
+    <testcase name="Create Quiz: status=success" time="0.023" classname="QuizzesCreateQuiz"/>
+  </testsuite>
+  <testsuite name="Quizzes / List Quizzes" id="456176bc-c69f-421a-8ea1-6e6c5746348c" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.010">
+    <testcase name="List Quizzes: status 200" time="0.010" classname="QuizzesListQuizzes"/>
+    <testcase name="List Quizzes: response shape" time="0.010" classname="QuizzesListQuizzes"/>
+  </testsuite>
+  <testsuite name="Quizzes / Get Quiz by ID" id="dc167d14-3fea-4eb3-9029-f95d42881c60" timestamp="2025-12-02T17:33:32.904Z" tests="3" failures="0" errors="0" time="0.009">
+    <testcase name="Get Quiz by ID: status 200" time="0.009" classname="QuizzesGetQuizById"/>
+    <testcase name="Get Quiz by ID: response shape" time="0.009" classname="QuizzesGetQuizById"/>
+    <testcase name="Get Quiz by ID: correct ID" time="0.009" classname="QuizzesGetQuizById"/>
+  </testsuite>
+  <testsuite name="Quizzes / Update Quiz" id="46f3e409-7daa-4809-a071-e20d1a180df2" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.009">
+    <testcase name="Update Quiz: status 200" time="0.009" classname="QuizzesUpdateQuiz"/>
+    <testcase name="Update Quiz: title field exists" time="0.009" classname="QuizzesUpdateQuiz"/>
+  </testsuite>
+  <testsuite name="Quizzes / Overwrite Quiz" id="2087d3ae-e4f0-4e56-9843-befba9c36ee2" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.023">
+    <testcase name="PUT /quizzes/:id â†’ 200 OK" time="0.023" classname="QuizzesOverwriteQuiz"/>
+    <testcase name="PUT /quizzes/:id â†’ success &amp; updated quiz" time="0.023" classname="QuizzesOverwriteQuiz"/>
+  </testsuite>
+  <testsuite name="Quizzes / Overwrite Validator" id="052ae00e-d091-4ce7-81b5-741b5cf27543" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.012">
+    <testcase name="PUT /quizzes/:id missing title â†’ 400" time="0.012" classname="QuizzesOverwriteValidator"/>
+    <testcase name="PUT /quizzes/:id missing title â†’ ValidationError" time="0.012" classname="QuizzesOverwriteValidator"/>
+  </testsuite>
+  <testsuite name="Quizzes / Invalid ID" id="554963e8-68b9-49d3-81cc-fc55571ee314" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.007">
+    <testcase name="PUT /quizzes/123 â†’ 400 CastError" time="0.007" classname="QuizzesInvalidId"/>
+  </testsuite>
+  <testsuite name="Quizzes / Valid but Non-existing ID" id="0ede6c0b-f301-45b0-9ce9-5a4e299c7186" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.011">
+    <testcase name="PUT non-existing quiz â†’ 404" time="0.011" classname="QuizzesValidButNonExistingId"/>
+  </testsuite>
+  <testsuite name="Quizzes / Delete Quizzes" id="9fadcbd0-fea6-4a1c-8bfb-d9febf271407" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.011">
+    <testcase name="DELETE quiz returns 204" time="0.011" classname="QuizzesDeleteQuizzes"/>
+  </testsuite>
+  <testsuite name="Quizzes / Delete Quiz ID" id="85865bd9-c479-4b85-9cfd-8c9408cc2530" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.007">
+    <testcase name="Deleted quiz returns 404" time="0.007" classname="QuizzesDeleteQuizId"/>
+  </testsuite>
+  <testsuite name="Quizzes / Bulk Delete Quizzes" id="d169f61c-382d-4ae9-b4cd-131edcd1ca9c" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.011">
+    <testcase name="Bulk delete quizzes â†’ 204" time="0.011" classname="QuizzesBulkDeleteQuizzes"/>
+  </testsuite>
+  <testsuite name="Quizzes / Invalid Quiz ID" id="72b33381-b619-4b5b-b63e-f197f30c28a1" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.008">
+    <testcase name="Invalid id â†’ CastError (400)" time="0.008" classname="QuizzesInvalidQuizId"/>
+  </testsuite>
+  <testsuite name="QuizCreatorsParticipants / Create Creator" id="73cd5ec6-80da-49b2-848a-d568d558a859" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.887">
+    <testcase name="Create User: status 201" time="0.887" classname="QuizCreatorsParticipantsCreateCreator"/>
+    <testcase name="Create User: status=success" time="0.887" classname="QuizCreatorsParticipantsCreateCreator"/>
+  </testsuite>
+  <testsuite name="QuizCreatorsParticipants / Create Quiz for Creator" id="4ede9a9e-6de1-4ae2-8d4e-7c3d69ccf767" timestamp="2025-12-02T17:33:32.904Z" tests="3" failures="0" errors="0" time="0.016">
+    <testcase name="status is 201" time="0.016" classname="QuizCreatorsParticipantsCreateQuizForCreator"/>
+    <testcase name="response has success status" time="0.016" classname="QuizCreatorsParticipantsCreateQuizForCreator"/>
+    <testcase name="quiz is linked to creator and course" time="0.016" classname="QuizCreatorsParticipantsCreateQuizForCreator"/>
+  </testsuite>
+  <testsuite name="QuizCreatorsParticipants / List Quizzes for Creator" id="e5b71345-4c47-4dd6-9c33-b0304e999496" timestamp="2025-12-02T17:33:32.904Z" tests="3" failures="0" errors="0" time="0.009">
+    <testcase name="status is 200" time="0.009" classname="QuizCreatorsParticipantsListQuizzesForCreator"/>
+    <testcase name="response shape is correct" time="0.009" classname="QuizCreatorsParticipantsListQuizzesForCreator"/>
+    <testcase name="list contains the created quiz" time="0.009" classname="QuizCreatorsParticipantsListQuizzesForCreator"/>
+  </testsuite>
+  <testsuite name="QuizCreatorsParticipants / Specific Quit for Creator" id="bc7902b2-1c92-4bc2-974c-4f9509a28f1a" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.009">
+    <testcase name="status is 200" time="0.009" classname="QuizCreatorsParticipantsSpecificQuitForCreator"/>
+    <testcase name="correct quiz returned" time="0.009" classname="QuizCreatorsParticipantsSpecificQuitForCreator"/>
+  </testsuite>
+  <testsuite name="QuizCreatorsParticipants / Create Participant" id="5d9f8795-3348-4f67-bfb3-53f82493ccfc" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.863">
+    <testcase name="Create User: status 201" time="0.863" classname="QuizCreatorsParticipantsCreateParticipant"/>
+    <testcase name="Create User: status=success" time="0.863" classname="QuizCreatorsParticipantsCreateParticipant"/>
+  </testsuite>
+  <testsuite name="QuizCreatorsParticipants / Create Quiz Participation" id="f4c46641-9dad-4898-b693-2925b6f834c9" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.018">
+    <testcase name="status is 201" time="0.018" classname="QuizCreatorsParticipantsCreateQuizParticipation"/>
+    <testcase name="response has participation object" time="0.018" classname="QuizCreatorsParticipantsCreateQuizParticipation"/>
+  </testsuite>
+  <testsuite name="QuizCreatorsParticipants / Get Students or Quizzes by ID" id="ffff4d07-98cc-4b6a-b1c1-f1cbcf066bf6" timestamp="2025-12-02T17:33:32.904Z" tests="3" failures="0" errors="0" time="0.011">
+    <testcase name="status is 200" time="0.011" classname="QuizCreatorsParticipantsGetStudentsOrQuizzesById"/>
+    <testcase name="returns array of participations" time="0.011" classname="QuizCreatorsParticipantsGetStudentsOrQuizzesById"/>
+    <testcase name="contains our created participation" time="0.011" classname="QuizCreatorsParticipantsGetStudentsOrQuizzesById"/>
+  </testsuite>
+  <testsuite name="QuizCreatorsParticipants / Get Single Participation by ID" id="ca839084-8bf4-4cbe-8c8f-be07217c6ea7" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.008">
+    <testcase name="status is 200" time="0.008" classname="QuizCreatorsParticipantsGetSingleParticipationById"/>
+    <testcase name="correct participation loaded" time="0.008" classname="QuizCreatorsParticipantsGetSingleParticipationById"/>
+  </testsuite>
+  <testsuite name="QuizCreatorsParticipants / Delete Participation" id="38bc2998-7efb-4f2c-b2f4-cddfde184017" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.012">
+    <testcase name="status is 204" time="0.012" classname="QuizCreatorsParticipantsDeleteParticipation"/>
+  </testsuite>
+  <testsuite name="QuizCreatorsParticipants / Create Participant with Non-Student" id="a4a19c39-488e-491c-9ea6-4c757232e151" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.013">
+    <testcase name="non-student rejected" time="0.013" classname="QuizCreatorsParticipantsCreateParticipantWithNonStudent"/>
+    <testcase name="message mentions student not found" time="0.013" classname="QuizCreatorsParticipantsCreateParticipantWithNonStudent"/>
+  </testsuite>
+  <testsuite name="QuizCreatorsParticipants / Delete Quiz for Quiz Creator" id="edefbda9-c2ab-4305-b1f9-dae2b3b0b2e7" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.009">
+    <testcase name="status is 204" time="0.009" classname="QuizCreatorsParticipantsDeleteQuizForQuizCreator"/>
+  </testsuite>
+  <testsuite name="QuizCreatorsParticipants / ID after Delete" id="7fd58d2c-f047-4a87-8ac0-00ab13c319aa" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.008">
+    <testcase name="status is 404 after delete" time="0.008" classname="QuizCreatorsParticipantsIdAfterDelete"/>
+    <testcase name="returns fail status" time="0.008" classname="QuizCreatorsParticipantsIdAfterDelete"/>
+  </testsuite>
+  <testsuite name="QuizCreatorsParticipants / Invalid Cast Error" id="3c13f839-e854-43f1-ad04-0eee0a579420" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.005">
+    <testcase name="invalid ObjectId gives 400" time="0.005" classname="QuizCreatorsParticipantsInvalidCastError"/>
+    <testcase name="error type is CastError" time="0.005" classname="QuizCreatorsParticipantsInvalidCastError"/>
+  </testsuite>
+  <testsuite name="CourseAttendances / Create Course Copy" id="9d85e4d7-129a-4671-8b3b-28fef4db0b2e" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.012">
+    <testcase name="Create Course: status 201" time="0.012" classname="CourseAttendancesCreateCourseCopy"/>
+    <testcase name="Create Course: status=success" time="0.012" classname="CourseAttendancesCreateCourseCopy"/>
+  </testsuite>
+  <testsuite name="CourseAttendances / Create course attendances" id="e6cc1f45-7b9a-4128-8a7d-19dd95ea4286" timestamp="2025-12-02T17:33:32.904Z" tests="5" failures="0" errors="0" time="0.016">
+    <testcase name="Status code is 201" time="0.016" classname="CourseAttendancesCreateCourseAttendances"/>
+    <testcase name="Response status is success" time="0.016" classname="CourseAttendancesCreateCourseAttendances"/>
+    <testcase name="Attendance has an _id" time="0.016" classname="CourseAttendancesCreateCourseAttendances"/>
+    <testcase name="Attendance course matches requested course" time="0.016" classname="CourseAttendancesCreateCourseAttendances"/>
+    <testcase name="Attendance student matches requested student" time="0.016" classname="CourseAttendancesCreateCourseAttendances"/>
+  </testsuite>
+  <testsuite name="CourseAttendances / List all attendances" id="35205c17-3a26-4f12-a350-a5a01ba5fd62" timestamp="2025-12-02T17:33:32.904Z" tests="5" failures="0" errors="0" time="0.014">
+    <testcase name="Status code is 200" time="0.014" classname="CourseAttendancesListAllAttendances"/>
+    <testcase name="Response status is success" time="0.014" classname="CourseAttendancesListAllAttendances"/>
+    <testcase name="results field matches array length" time="0.014" classname="CourseAttendancesListAllAttendances"/>
+    <testcase name="Contains at least one attendance" time="0.014" classname="CourseAttendancesListAllAttendances"/>
+    <testcase name="Every attendance has course and student" time="0.014" classname="CourseAttendancesListAllAttendances"/>
+  </testsuite>
+  <testsuite name="CourseAttendances / Get Single Attendance" id="48af3d04-8502-4bed-b0e5-120006a9f09f" timestamp="2025-12-02T17:33:32.904Z" tests="4" failures="0" errors="0" time="0.013">
+    <testcase name="Status code is 200" time="0.013" classname="CourseAttendancesGetSingleAttendance"/>
+    <testcase name="Response status is success" time="0.013" classname="CourseAttendancesGetSingleAttendance"/>
+    <testcase name="Correct attendance returned" time="0.013" classname="CourseAttendancesGetSingleAttendance"/>
+    <testcase name="Course and student fields present" time="0.013" classname="CourseAttendancesGetSingleAttendance"/>
+  </testsuite>
+  <testsuite name="CourseAttendances / Create Teaching Assignmnet" id="18a47c04-c632-425d-95eb-962d6fa5d540" timestamp="2025-12-02T17:33:32.904Z" tests="5" failures="0" errors="0" time="0.019">
+    <testcase name="Status code is 201" time="0.019" classname="CourseAttendancesCreateTeachingAssignmnet"/>
+    <testcase name="Response status is success" time="0.019" classname="CourseAttendancesCreateTeachingAssignmnet"/>
+    <testcase name="TeachingAssignment has an _id" time="0.019" classname="CourseAttendancesCreateTeachingAssignmnet"/>
+    <testcase name="TeachingAssignment course matches requested course" time="0.019" classname="CourseAttendancesCreateTeachingAssignmnet"/>
+    <testcase name="TeachingAssignment teacher matches requested teacher" time="0.019" classname="CourseAttendancesCreateTeachingAssignmnet"/>
+  </testsuite>
+  <testsuite name="CourseAttendances / List Teaching Assignments for a Course" id="8a77a59e-62f8-4b2b-8bde-acebd3231efb" timestamp="2025-12-02T17:33:32.904Z" tests="5" failures="0" errors="0" time="0.015">
+    <testcase name="Status code is 200" time="0.015" classname="CourseAttendancesListTeachingAssignmentsForACourse"/>
+    <testcase name="Response status is success" time="0.015" classname="CourseAttendancesListTeachingAssignmentsForACourse"/>
+    <testcase name="results equals data length" time="0.015" classname="CourseAttendancesListTeachingAssignmentsForACourse"/>
+    <testcase name="Has at least one teaching assignment" time="0.015" classname="CourseAttendancesListTeachingAssignmentsForACourse"/>
+    <testcase name="Every assignment has course and teacher" time="0.015" classname="CourseAttendancesListTeachingAssignmentsForACourse"/>
+  </testsuite>
+  <testsuite name="CourseAttendances / Get Single Teaching Attendance" id="60cdab22-6315-4625-9388-c4367b71e8f6" timestamp="2025-12-02T17:33:32.904Z" tests="4" failures="0" errors="0" time="0.012">
+    <testcase name="Status code is 200" time="0.012" classname="CourseAttendancesGetSingleTeachingAttendance"/>
+    <testcase name="Response status is success" time="0.012" classname="CourseAttendancesGetSingleTeachingAttendance"/>
+    <testcase name="Correct teaching assignment returned" time="0.012" classname="CourseAttendancesGetSingleTeachingAttendance"/>
+    <testcase name="Has course and teacher fields" time="0.012" classname="CourseAttendancesGetSingleTeachingAttendance"/>
+  </testsuite>
+  <testsuite name="CourseAttendances / Delete Attendance" id="d78d4f06-1e24-4c34-af00-2e53816d635a" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.012">
+    <testcase name="Status code is 204" time="0.012" classname="CourseAttendancesDeleteAttendance"/>
+    <testcase name="Body is empty or minimal" time="0.012" classname="CourseAttendancesDeleteAttendance"/>
+  </testsuite>
+  <testsuite name="CourseAttendances / Delete Teaching Assignment" id="72f29e7b-50c3-4572-a259-c2c4d579c979" timestamp="2025-12-02T17:33:32.904Z" tests="2" failures="0" errors="0" time="0.012">
+    <testcase name="Status code is 204" time="0.012" classname="CourseAttendancesDeleteTeachingAssignment"/>
+    <testcase name="Body is empty or minimal" time="0.012" classname="CourseAttendancesDeleteTeachingAssignment"/>
+  </testsuite>
+  <testsuite name="CourseAttendances / Delete Course Copy 2" id="dd5ccd30-c606-4956-afc9-bd521931d6e2" timestamp="2025-12-02T17:33:32.904Z" tests="1" failures="0" errors="0" time="0.012">
+    <testcase name="DELETE course returns 204" time="0.012" classname="CourseAttendancesDeleteCourseCopy2"/>
+  </testsuite>
+  <testsuite name="New Request" id="10f25055-093d-4900-9c56-6711f5b98d40" timestamp="2025-12-02T17:33:32.904Z" tests="0" failures="0" errors="0" time="0.003"/>
+</testsuites>

@@ -23,6 +23,11 @@
           </select>
         </div>
 
+        <div class="mb-3">
+          <label class="form-label">Password *</label>
+          <input v-model="password" class="form-control" type="password" required minlength="6">
+        </div>
+
         <button class="btn btn-primary w-100">Create Account</button>
 
         <p class="mt-3 text-center">
@@ -42,16 +47,18 @@ export default {
     return {
       name: '',
       email: '',
-      role: ''
+      role: '',
+      password: ''
     }
   },
   methods: {
     async signup() {
       try {
-        const res = await api.post('/users', {
+        const res = await api.post('/auth/register', {
           name: this.name,
           email: this.email,
-          role: this.role
+          role: this.role,
+          password: this.password
         })
 
         alert('Account created! You can now log in.')

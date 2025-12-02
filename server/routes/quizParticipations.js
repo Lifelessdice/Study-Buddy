@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const quizParticipationsController = require('../controllers/quizParticipationsController');
+const protect = require('../middleware/protect');
 
 // POST /api/v1/quizparticipations
-router.post('/', quizParticipationsController.createParticipation);
+router.post('/', protect, quizParticipationsController.createParticipation);
 
 // GET /api/v1/quizparticipations
 router.get('/', quizParticipationsController.getAllParticipations);
@@ -12,6 +13,6 @@ router.get('/', quizParticipationsController.getAllParticipations);
 router.get('/:id', quizParticipationsController.getParticipationById);
 
 // DELETE /api/v1/quizparticipations/:id
-router.delete('/:id', quizParticipationsController.deleteParticipation);
+router.delete('/:id', protect, quizParticipationsController.deleteParticipation);
 
 module.exports = router;
