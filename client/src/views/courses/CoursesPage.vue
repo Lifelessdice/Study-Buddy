@@ -54,6 +54,12 @@ export default {
       if (!u) return false
       const user = JSON.parse(u)
       return user.role === 'teacher'
+    },
+    isStudent() {
+      const u = localStorage.getItem('user')
+      if (!u) return false
+      const user = JSON.parse(u)
+      return user.role === 'student'
     }
   },
   methods: {
@@ -68,6 +74,12 @@ export default {
             // If teacher fetch fails (e.g., not assigned yet), fall back to all
             res = await CourseService.getAll()
           }
+        } else if (this.isStudent) {
+          // students: show courses they are enrolled in (from attendances)
+          const enrollments = await CourseService.getStudentEnrollments()
+          const data = enrollments.data.data || enrollments.data || []
+          this.courses = data.map(att => att.course).filter(Boolean)
+          return
         } else {
           res = await CourseService.getAll()
         }

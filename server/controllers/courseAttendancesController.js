@@ -126,6 +126,30 @@ exports.getAllAttendances = async (req, res, next) => {
 };
 
 // ---------------------------------------------
+// List attendances for logged-in student
+// GET /api/v1/courses/attendances/mine
+// ---------------------------------------------
+exports.getMyAttendances = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ status: "fail", message: "Not authenticated" });
+    }
+
+    const attendances = await CourseAttendance.find({ student: req.user._id })
+      .populate("course")
+      .exec();
+
+    res.status(200).json({
+      status: "success",
+      results: attendances.length,
+      data: attendances,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ---------------------------------------------
 // Get single attendance record
 // GET /api/v1/courses/:courseId/attendances/:attendanceId
 // ---------------------------------------------
