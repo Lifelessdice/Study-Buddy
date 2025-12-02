@@ -7,6 +7,10 @@ export default {
     return Api.get('/courses')
   },
 
+  getMine() {
+    return Api.get('/courses/mine')
+  },
+
   getById(id) {
     return Api.get(`/courses/${id}`)
   },
@@ -21,6 +25,17 @@ export default {
 
   remove(id) {
     return Api.delete(`/courses/${id}`)
+  },
+
+  // Course attendances (students)
+  addStudent(courseId, studentId) {
+    return Api.post(`/courses/${courseId}/attendances`, { student: studentId })
+  },
+  getStudents(courseId) {
+    return Api.get(`/courses/${courseId}/attendances`)
+  },
+  removeStudent(courseId, attendanceId) {
+    return Api.delete(`/courses/${courseId}/attendances/${attendanceId}`)
   },
 
   // Teaching assignment: assign teacher to course

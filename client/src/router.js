@@ -7,16 +7,40 @@ import Dashboard from './views/Dashboard.vue'
 import CoursesPage from './views/courses/CoursesPage.vue'
 import CreateCourse from './views/courses/CreateCourse.vue'
 import EditCourse from './views/courses/EditCourse.vue'
+import AllCoursesPage from './views/courses/AllCoursesPage.vue'
+import CourseDashboard from './views/courses/CourseDashboard.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
   { path: '/signup', name: 'Signup', component: Signup },
   { path: '/login', name: 'Login', component: Login },
-  { path: '/dashboard', name: 'Dashboard', component: Dashboard, meta: { requiresAuth: true } },
-
+  {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: Dashboard,
+    meta: { requiresAuth: true }
+  },
   // Courses (teacher)
-  { path: '/courses', name: 'Courses', component: CoursesPage, meta: { requiresAuth: true } },
-  { 
+  {
+    path: '/courses',
+    name: 'Courses',
+    component: CoursesPage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/courses/:id',
+    name: 'CourseDashboard',
+    component: CourseDashboard,
+    props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/courses/all',
+    name: 'AllCourses',
+    component: AllCoursesPage,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/courses/create',
     name: 'CreateCourse',
     component: CreateCourse,

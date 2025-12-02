@@ -62,7 +62,7 @@ export default {
         const user = userJson ? JSON.parse(userJson) : null
         if (user && user._id) {
           try {
-            await CourseService.assignTeacher(created._id || created._id)
+            await CourseService.assignTeacher(created._id, user._id)
           } catch (errAssign) {
             // if assignment fails, show a non-fatal warning
             console.warn('Assignment failed', errAssign)
