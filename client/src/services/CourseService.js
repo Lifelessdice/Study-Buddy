@@ -7,6 +7,10 @@ export default {
     return Api.get('/courses')
   },
 
+  getMine() {
+    return Api.get('/courses/mine')
+  },
+
   getById(id) {
     return Api.get(`/courses/${id}`)
   },

@@ -12,11 +12,20 @@ const routes = [
   { path: '/', name: 'Home', component: Home },
   { path: '/signup', name: 'Signup', component: Signup },
   { path: '/login', name: 'Login', component: Login },
-  { path: '/dashboard', name: 'Dashboard', component: Dashboard, meta: { requiresAuth: true } },
-
+  {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: Dashboard,
+    meta: { requiresAuth: true }
+  },
   // Courses (teacher)
-  { path: '/courses', name: 'Courses', component: CoursesPage, meta: { requiresAuth: true } },
-  { 
+  {
+    path: '/courses',
+    name: 'Courses',
+    component: CoursesPage,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/courses/create',
     name: 'CreateCourse',
     component: CreateCourse,

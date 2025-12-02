@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Course = require("../models/courses");
+const TeachingAssignment = require("../models/teachingAssignments");
 
 function ensureRequiredFields(body) {
   const required = {
@@ -41,6 +42,22 @@ exports.createCourse = async (req, res, next) => {
   try {
     ensureRequiredFields(req.body);
     const course = await Course.create(req.body);
+
+    // If a teacher is creating the course, auto-assign them
+    if (req.user && req.user.role === "teacher") {
+      try {
+        await TeachingAssignment.create({
+          course: course._id,
+          teacher: req.user._id
+        });
+      } catch (assignErr) {
+        // Ignore duplicate assignment errors
+        if (!(assignErr && assignErr.code === 11000)) {
+          console.warn("Failed to auto-assign teacher to course:", assignErr.message);
+        }
+      }
+    }
+
     res.status(201).json({ status: "success", data: course });
   } catch (err) {
     next(err);
@@ -51,6 +68,32 @@ exports.createCourse = async (req, res, next) => {
 exports.getCourses = async (req, res, next) => {
   try {
     const courses = await Course.find();
+    res.status(200).json({
+      status: "success",
+      results: courses.length,
+      data: courses
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// LIST courses for the logged-in teacher
+exports.getMyCourses = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ status: "fail", message: "Not authenticated" });
+    }
+
+    if (req.user.role !== "teacher") {
+      return res.status(403).json({ status: "fail", message: "Only teachers can view their courses" });
+    }
+
+    const assignments = await TeachingAssignment.find({ teacher: req.user._id }).populate("course");
+    const courses = assignments
+      .map(a => a.course)
+      .filter(Boolean);
+
     res.status(200).json({
       status: "success",
       results: courses.length,

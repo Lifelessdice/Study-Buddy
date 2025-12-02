@@ -4,6 +4,7 @@ const protect = require("../middleware/protect");
 const router = express.Router();
 
 router.post("/", protect, ctrl.createCourse);
+router.get("/mine", protect, ctrl.getMyCourses);
 router.get("/", ctrl.getCourses);
 router.get("/:id", ctrl.getCourseById);
 router.patch("/:id", protect, ctrl.updateCourse);

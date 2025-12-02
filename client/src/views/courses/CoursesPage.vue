@@ -72,7 +72,9 @@ export default {
     async fetchCourses() {
       try {
         this.loading = true
-        const res = await CourseService.getAll()
+        const res = this.isTeacher
+          ? await CourseService.getMine()
+          : await CourseService.getAll()
         this.courses = res.data.data || res.data // sometimes API uses data.data or data
       } catch (err) {
         this.error = err
