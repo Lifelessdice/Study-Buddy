@@ -10,12 +10,8 @@
         </div>
 
         <div class="mb-3">
-          <label class="form-label">Role</label>
-          <select v-model="role" class="form-select" required>
-            <option value="">Select role</option>
-            <option value="student">Student</option>
-            <option value="teacher">Teacher</option>
-          </select>
+          <label class="form-label">Password</label>
+          <input v-model="password" class="form-control" type="password" required>
         </div>
 
         <button class="btn btn-success w-100">Log In</button>
@@ -36,30 +32,25 @@ export default {
   data() {
     return {
       email: '',
-      role: ''
+      password: ''
     }
   },
   methods: {
     async login() {
       try {
-        const res = await api.get('/users')
-        const users = res.data.data
+        const res = await api.post('/auth/login', {
+          email: this.email,
+          password: this.password
+        })
 
-        const match = users.find(
-          u => u.email === this.email && u.role === this.role
-        )
-
-        if (!match) {
-          alert('Invalid email or role')
-          return
-        }
-
-        // Save user to localStorage
-        localStorage.setItem('user', JSON.stringify(match))
+        const { token, data } = res.data
+        const user = data.user
+        localStorage.setItem('token', token)
+        localStorage.setItem('user', JSON.stringify(user))
 
         this.$router.push('/dashboard')
       } catch (err) {
-        alert('Login error')
+        alert(err.response?.data?.message || 'Login error')
       }
     }
   }
