@@ -3,6 +3,9 @@ const router = express.Router();
 const courseAttendancesController = require('../controllers/courseAttendancesController');
 const protect = require('../middleware/protect');
 
+// GET attendances for logged-in student
+router.get('/attendances/mine', protect, courseAttendancesController.getMyAttendances);
+
 // POST /api/v1/courses/:courseId/attendances
 router.post('/:courseId/attendances', protect, courseAttendancesController.createAttendance);
 

@@ -16,8 +16,10 @@
           <li class="nav-item" v-if="user">
             <router-link class="nav-link" to="/dashboard">Dashboard</router-link>
           </li>
-          <li class="nav-item" v-if="user && user.role === 'teacher'">
-            <router-link class="nav-link" to="/courses">Courses</router-link>
+          <li class="nav-item" v-if="user && (user.role === 'teacher' || user.role === 'student')">
+            <router-link class="nav-link" to="/courses">
+              {{ user.role === 'teacher' ? 'Courses' : 'My Courses' }}
+            </router-link>
           </li>
         </ul>
         <div class="d-flex align-items-center" v-if="user">
