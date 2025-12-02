@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const User = require('../models/users');
 
 function ensureRequiredFields(body) {
   const required = {
     email: 'Email is required',
-    role: 'Role is required'
+    role: 'Role is required',
+    password: 'Password is required'
   };
 
   for (const [field, message] of Object.entries(required)) {
@@ -41,8 +43,16 @@ exports.createUser = async (req, res, next) => {
   try {
     ensureRequiredFields(req.body);
     ensureNonEmptyIfPresent(req.body, 'name', 'Name cannot be blank');
+
+    if (req.body.password) {
+      req.body.password = await bcrypt.hash(req.body.password, 12);
+    }
+
     const user = await User.create(req.body);
-    res.status(201).json({ status: 'success', data: user });
+    const safeUser = user.toObject();
+    delete safeUser.password;
+
+    res.status(201).json({ status: 'success', data: safeUser });
   } catch (err) {
     next(err);
   }
@@ -92,7 +102,7 @@ exports.getUser = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // Inline invalid ObjectId handling → return 400 CastError
+    // Inline invalid ObjectId handling -> return 400 CastError
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: 'CastError', message: 'Invalid ID format' });
     }
@@ -101,7 +111,10 @@ exports.getUser = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ status: 'fail', message: 'User not found' });
     }
-    res.status(200).json({ status: 'success', data: user });
+    const safeUser = user.toObject();
+    delete safeUser.password;
+
+    res.status(200).json({ status: 'success', data: safeUser });
   } catch (err) {
     next(err);
   }
@@ -119,6 +132,11 @@ exports.patchUser = async (req, res, next) => {
     ensureNonEmptyIfPresent(req.body, 'email', 'Email is required');
     ensureNonEmptyIfPresent(req.body, 'role', 'Role is required');
     ensureNonEmptyIfPresent(req.body, 'name', 'Name cannot be blank');
+    ensureNonEmptyIfPresent(req.body, 'password', 'Password is required');
+
+    if (req.body.password) {
+      req.body.password = await bcrypt.hash(req.body.password, 12);
+    }
 
     const user = await User.findByIdAndUpdate(id, req.body, {
       new: true,
@@ -169,9 +187,12 @@ exports.putUser = async (req, res, next) => {
       overwrite: true
     });
 
+    const safeUser = updated.toObject();
+    delete safeUser.password;
+
     res.status(200).json({
       status: 'success',
-      data: updated
+      data: safeUser
     });
 
   } catch (err) {

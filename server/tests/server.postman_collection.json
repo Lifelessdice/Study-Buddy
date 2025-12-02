@@ -381,17 +381,17 @@
               "listen": "test",
               "script": {
                 "exec": [
-                    "pm.test(\"Update User: status 200\", function () {\r",
-                    "    pm.response.to.have.status(200);\r",
-                    "});\r",
-                    "\r",
-                    "const body = pm.response.json();\r",
-                    "\r",
-                    "pm.test(\"Update User: name updated\", function () {\r",
-                    "    pm.expect(body.status).to.eql(\"success\");\r",
-                    "    pm.expect(body.data).to.have.property(\"name\", \"Updated Test User\");\r",
-                    "});\r",
-                    ""
+                  "pm.test(\"Update User: status 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "const body = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Update User: name updated\", function () {\r",
+                  "    pm.expect(body.status).to.eql(\"success\");\r",
+                  "    pm.expect(body.data).to.have.property(\"name\", \"Updated Test User\");\r",
+                  "});\r",
+                  ""
                 ],
                 "type": "text/javascript",
                 "packages": {},
@@ -401,7 +401,12 @@
           ],
           "request": {
             "method": "PATCH",
-            "header": [],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"name\": \"Updated Test User\"\r\n}\r\n"
