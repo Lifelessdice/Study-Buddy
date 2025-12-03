@@ -15,8 +15,8 @@
         </div>
 
         <div class="mb-3">
-          <label class="form-label">Material</label>
-          <input v-model="form.material" type="text" class="form-control" />
+          <label class="form-label">Overview</label>
+          <input v-model="form.overview" type="text" class="form-control" />
         </div>
 
         <div class="mb-3">
@@ -44,7 +44,7 @@ export default {
       form: {
         name: '',
         code: '',
-        material: '',
+        overview: '',
         degree: ''
       },
       submitting: false

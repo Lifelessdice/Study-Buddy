@@ -11,7 +11,7 @@ const courseSchema = new mongoose.Schema(
       required: [true, "Course code is required"],
       trim: true
     },
-    material: {
+    overview: {
       type: String,
       default: ""
     },
@@ -22,5 +22,14 @@ const courseSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Keep legacy "material" compatibility on responses
+courseSchema.methods.toJSON = function () {
+  const obj = this.toObject();
+  if (obj.overview !== undefined) {
+    obj.material = obj.overview;
+  }
+  return obj;
+};
 
 module.exports = mongoose.model("Course", courseSchema);

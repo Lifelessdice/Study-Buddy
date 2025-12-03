@@ -2,14 +2,14 @@
   <div class="container mt-4" v-if="course">
     <div class="hero card mb-3">
       <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start flex-wrap">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
           <div>
             <p class="text-uppercase small text-muted mb-1">Course</p>
             <h2 class="mb-1">{{ course.name }}</h2>
             <div class="text-muted fw-bold">{{ course.code }}</div>
           </div>
           <div class="d-flex gap-2 flex-wrap justify-content-end">
-            <router-link to="/courses" class="btn btn-outline-secondary btn-sm">Back to My Courses</router-link>
+            <router-link to="/courses" class="btn btn-outline-secondary btn-sm">Back</router-link>
             <router-link to="/courses/all" class="btn btn-outline-secondary btn-sm">All Courses</router-link>
             <template v-if="isTeacher">
               <router-link :to="`/courses/${course._id}/edit`" class="btn btn-outline-primary btn-sm">Edit</router-link>
@@ -21,10 +21,10 @@
         <hr>
         <div class="row gy-2 small text-muted">
           <div class="col-md-6">
-            <strong>Degree:</strong> {{ course.degree || '—' }}
+            <strong>Degree:</strong> {{ course.degree || '-' }}
           </div>
           <div class="col-md-6 text-md-end">
-            <strong>Teacher:</strong> {{ courseTeacher || '—' }}
+            <strong>Teacher:</strong> {{ courseTeacher || '-' }}
           </div>
           <div class="col-md-6">
             <strong>Created:</strong> {{ formatDate(course.createdAt) }}
@@ -40,7 +40,7 @@
       <div class="d-flex align-items-center gap-3 flex-wrap">
         <span class="tab" :class="{ active: currentTab === 'overview' }" @click="setTab('overview')">Overview</span>
         <span class="tab disabled">Notes</span>
-        <span class="tab disabled">Quizzes</span>
+        <span class="tab" :class="{ active: currentTab === 'quizzes' }" @click="setTab('quizzes')">Quizzes</span>
         <span class="tab" :class="{ active: currentTab === 'students' }" @click="setTab('students')">Students</span>
       </div>
     </div>
@@ -48,32 +48,79 @@
     <div v-if="currentTab === 'overview'">
       <div class="card mb-3">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Course Overview</h5>
-          </div>
-          <div v-if="isTeacher">
-            <textarea v-model="overviewDraft" class="form-control mb-2" rows="4"></textarea>
-            <button class="btn btn-outline-primary btn-sm" :disabled="savingOverview" @click="saveOverview">
-              {{ savingOverview ? 'Saving…' : 'Save Overview' }}
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <p class="text-uppercase small text-muted mb-1">Overview</p>
+              <h5 class="mb-0">Course Overview</h5>
+            </div>
+            <button
+              v-if="isTeacher"
+              class="btn btn-outline-primary btn-sm"
+              @click="toggleOverviewEdit"
+            >
+              {{ overviewEditing ? 'Cancel' : 'Edit Overview' }}
             </button>
           </div>
-          <p class="text-muted" v-else>
-            {{ overviewDraft || 'No overview provided yet.' }}
-          </p>
+          <div v-if="overviewEditing && isTeacher">
+            <textarea v-model="overviewDraft" class="form-control mb-2" rows="4"></textarea>
+            <div class="d-flex gap-2">
+              <button class="btn btn-primary btn-sm" :disabled="savingOverview" @click="saveOverview">
+                {{ savingOverview ? 'Saving...' : 'Save Overview' }}
+              </button>
+              <button class="btn btn-link btn-sm" type="button" @click="cancelOverviewEdit">Discard</button>
+            </div>
+          </div>
+          <div v-else>
+            <p class="text-muted mb-0">
+              {{ course.overview || 'No overview provided yet.' }}
+            </p>
+          </div>
         </div>
       </div>
+    </div>
 
-      <div class="card mb-3">
-        <div class="card-body">
-          <h5 class="mb-2">Course Material</h5>
-          <p class="text-muted mb-0">Material: {{ course.material || 'No material specified.' }}</p>
+    <div v-if="currentTab === 'quizzes'" class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">Quizzes</h5>
+          <router-link
+            v-if="isTeacher"
+            class="btn btn-outline-primary btn-sm"
+            :to="{ name: 'CreateQuiz', params: { id: course._id } }"
+          >
+            + Create Quiz
+          </router-link>
         </div>
-      </div>
 
-      <div class="card mb-3">
-        <div class="card-body">
-          <h5 class="mb-2">Upcoming Activities</h5>
-          <p class="text-muted mb-0">No scheduled activities.</p>
+        <div v-if="loadingQuizzes" class="text-muted">Loading quizzes...</div>
+        <div v-else-if="quizError" class="text-danger">Failed to load quizzes.</div>
+        <div v-else>
+          <div v-if="!quizzes.length" class="alert alert-info">
+            No quizzes have been created for this course yet.
+            <span v-if="isTeacher">Click "Create Quiz" to add one.</span>
+          </div>
+
+          <div v-for="quiz in quizzes" :key="quiz._id" class="quiz-card mb-3 p-3 border rounded">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <h6 class="mb-1">{{ quiz.title }}</h6>
+                <div class="small text-muted">
+                  Questions: {{ (quiz.questions && quiz.questions.length) || 0 }}
+                </div>
+                <div class="small text-muted">Created: {{ formatDate(quiz.createdAt) }}</div>
+              </div>
+              <div class="d-flex gap-2">
+                <router-link
+                  v-if="isTeacher"
+                  class="btn btn-sm btn-outline-secondary"
+                  :to="{ name: 'EditQuiz', params: { quizId: quiz._id } }"
+                >
+                  Edit
+                </router-link>
+                <button v-if="isTeacher" class="btn btn-sm btn-outline-danger" @click="promptDeleteQuiz(quiz)">Delete</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -147,6 +194,18 @@
         </div>
       </div>
     </div>
+
+    <!-- Delete Quiz overlay -->
+    <div v-if="showDeleteConfirm" class="overlay">
+      <div class="overlay-card">
+        <h5 class="text-danger">Delete Quiz</h5>
+        <p class="mb-3">Are you sure you want to delete "{{ quizToDelete?.title }}"?</p>
+        <div class="d-flex justify-content-end gap-2">
+          <button class="btn btn-outline-secondary" @click="cancelDeleteQuiz">Cancel</button>
+          <button class="btn btn-danger" @click="deleteQuizConfirmed">Delete</button>
+        </div>
+      </div>
+    </div>
   </div>
   <div v-else class="container mt-4">Loading...</div>
 </template>
@@ -154,6 +213,7 @@
 <script>
 import CourseService from '@/services/CourseService'
 import Api from '@/Api'
+import QuizService from '@/services/QuizService'
 
 export default {
   name: 'CourseDashboard',
@@ -161,16 +221,21 @@ export default {
   data() {
     return {
       course: null,
-      isTeacher: false,
       addStudentEmail: '',
       adding: false,
       enrolled: [],
       showAdd: false,
       allStudents: [],
       overviewDraft: '',
+      overviewEditing: false,
       savingOverview: false,
       currentTab: 'overview',
-      studentSearch: ''
+      studentSearch: '',
+      quizzes: [],
+      loadingQuizzes: false,
+      quizError: null,
+      showDeleteConfirm: false,
+      quizToDelete: null
     }
   },
   computed: {
@@ -203,6 +268,13 @@ export default {
       return user.role === 'teacher'
     }
   },
+  watch: {
+    '$route.query.tab'(val) {
+      if (val && this.currentTab !== val) {
+        this.setTab(val)
+      }
+    }
+  },
   methods: {
     setTab(tab) {
       this.currentTab = tab
@@ -213,11 +285,14 @@ export default {
           }
         })
       }
+      if (tab === 'quizzes') {
+        this.fetchQuizzes()
+      }
     },
     async fetchCourse() {
       const res = await CourseService.getById(this.$route.params.id)
       this.course = res.data.data || res.data
-      this.overviewDraft = this.course.material || ''
+      this.overviewDraft = this.course.overview || ''
       await this.fetchEnrolled()
     },
     async fetchEnrolled() {
@@ -228,8 +303,20 @@ export default {
         console.error(err)
       }
     },
+    async fetchQuizzes() {
+      try {
+        this.loadingQuizzes = true
+        const res = await QuizService.getAll({ course: this.course._id })
+        this.quizzes = res.data.data || res.data
+      } catch (err) {
+        this.quizError = err
+        console.error(err)
+      } finally {
+        this.loadingQuizzes = false
+      }
+    },
     formatDate(d) {
-      if (!d) return '—'
+      if (!d) return '-'
       return new Date(d).toLocaleString()
     },
     async removeCourse() {
@@ -281,8 +368,9 @@ export default {
       if (!this.isTeacher) return
       this.savingOverview = true
       try {
-        await CourseService.update(this.course._id, { material: this.overviewDraft })
-        this.course.material = this.overviewDraft
+        await CourseService.update(this.course._id, { overview: this.overviewDraft })
+        this.course.overview = this.overviewDraft
+        this.overviewEditing = false
         alert('Overview saved')
       } catch (err) {
         console.error(err)
@@ -290,6 +378,16 @@ export default {
       } finally {
         this.savingOverview = false
       }
+    },
+    toggleOverviewEdit() {
+      this.overviewEditing = !this.overviewEditing
+      if (this.overviewEditing) {
+        this.overviewDraft = this.course.overview || ''
+      }
+    },
+    cancelOverviewEdit() {
+      this.overviewEditing = false
+      this.overviewDraft = this.course.overview || ''
     },
     async removeStudent(attendanceId) {
       if (!confirm('Remove this student from the course?')) return
@@ -300,10 +398,34 @@ export default {
         console.error(err)
         alert('Failed to remove student')
       }
+    },
+    promptDeleteQuiz(quiz) {
+      this.quizToDelete = quiz
+      this.showDeleteConfirm = true
+    },
+    async deleteQuizConfirmed() {
+      if (!this.quizToDelete) return
+      try {
+        await QuizService.remove(this.quizToDelete._id)
+        this.quizToDelete = null
+        this.showDeleteConfirm = false
+        await this.fetchQuizzes()
+      } catch (err) {
+        console.error(err)
+        alert('Failed to delete quiz')
+      }
+    },
+    cancelDeleteQuiz() {
+      this.quizToDelete = null
+      this.showDeleteConfirm = false
     }
   },
   async mounted() {
+    if (this.$route.query.tab) {
+      this.currentTab = this.$route.query.tab
+    }
     await this.fetchCourse()
+    await this.fetchQuizzes()
   }
 }
 </script>
@@ -341,5 +463,24 @@ export default {
   cursor: pointer;
   z-index: 2000;
 }
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+.overlay-card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 640px;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+.overlay-card.wide {
+  max-width: 720px;
+}
 </style>
-";fs.writeFileSync(path,content);`\"}"} ಈ note: removed ${course._id}. need to use string literal correctly. We'll adjust. However patch invalid. Let's use apply_patch add file content again but with placeholders? Need to avoid template literal referencing course variable within file creation. In add file content we can write static string using apply_patch? easier: use apply_patch add file with content we wrote but ensure no use of `${` interfering with patch? apply_patch add file as usual. Should be fine. Let's retry with apply_patch add file with correct syntax. Already file deleted; apply add file using apply_patch with *** Add File. Need to ensure no stray template literal. Let's do with apply_patch. We'll copy content but replace backtick usage with Vue syntax inside file. Done. Let's rerun add file. We can use apply_patch with Add File. Ensure no `course._id` replaced? there is string interpolation uses template literal inside Vue file; that's fine. Let's try. 

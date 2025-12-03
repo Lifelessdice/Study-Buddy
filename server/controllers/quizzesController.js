@@ -81,7 +81,18 @@ exports.createQuiz = async (req, res, next) => {
 // ---------------------------------------------
 exports.getAllQuizzes = async (req, res, next) => {
   try {
-    const quizzes = await Quiz.find();
+    const filter = {};
+    if (req.query.course) {
+      if (!mongoose.Types.ObjectId.isValid(req.query.course)) {
+        return res.status(400).json({
+          error: "CastError",
+          message: "Invalid course id format",
+        });
+      }
+      filter.course = req.query.course;
+    }
+
+    const quizzes = await Quiz.find(filter);
 
     res.status(200).json({
       status: "success",
