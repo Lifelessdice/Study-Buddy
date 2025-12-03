@@ -48,25 +48,33 @@
     <div v-if="currentTab === 'overview'">
       <div class="card mb-3">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Course Overview</h5>
-          </div>
-          <div v-if="isTeacher">
-            <textarea v-model="overviewDraft" class="form-control mb-2" rows="4"></textarea>
-            <button class="btn btn-outline-primary btn-sm" :disabled="savingOverview" @click="saveOverview">
-              {{ savingOverview ? 'Saving...' : 'Save Overview' }}
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <p class="text-uppercase small text-muted mb-1">Overview</p>
+              <h5 class="mb-0">Course Overview</h5>
+            </div>
+            <button
+              v-if="isTeacher"
+              class="btn btn-outline-primary btn-sm"
+              @click="toggleOverviewEdit"
+            >
+              {{ overviewEditing ? 'Cancel' : 'Edit Overview' }}
             </button>
           </div>
-          <p class="text-muted" v-else>
-            {{ overviewDraft || 'No overview provided yet.' }}
-          </p>
-        </div>
-      </div>
-
-      <div class="card mb-3">
-        <div class="card-body">
-          <h5 class="mb-2">Course Overview</h5>
-          <p class="text-muted mb-0">Overview: {{ course.overview || 'No overview specified.' }}</p>
+          <div v-if="overviewEditing && isTeacher">
+            <textarea v-model="overviewDraft" class="form-control mb-2" rows="4"></textarea>
+            <div class="d-flex gap-2">
+              <button class="btn btn-primary btn-sm" :disabled="savingOverview" @click="saveOverview">
+                {{ savingOverview ? 'Saving...' : 'Save Overview' }}
+              </button>
+              <button class="btn btn-link btn-sm" type="button" @click="cancelOverviewEdit">Discard</button>
+            </div>
+          </div>
+          <div v-else>
+            <p class="text-muted mb-0">
+              {{ course.overview || 'No overview provided yet.' }}
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -219,6 +227,7 @@ export default {
       showAdd: false,
       allStudents: [],
       overviewDraft: '',
+      overviewEditing: false,
       savingOverview: false,
       currentTab: 'overview',
       studentSearch: '',
@@ -361,6 +370,7 @@ export default {
       try {
         await CourseService.update(this.course._id, { overview: this.overviewDraft })
         this.course.overview = this.overviewDraft
+        this.overviewEditing = false
         alert('Overview saved')
       } catch (err) {
         console.error(err)
@@ -368,6 +378,16 @@ export default {
       } finally {
         this.savingOverview = false
       }
+    },
+    toggleOverviewEdit() {
+      this.overviewEditing = !this.overviewEditing
+      if (this.overviewEditing) {
+        this.overviewDraft = this.course.overview || ''
+      }
+    },
+    cancelOverviewEdit() {
+      this.overviewEditing = false
+      this.overviewDraft = this.course.overview || ''
     },
     async removeStudent(attendanceId) {
       if (!confirm('Remove this student from the course?')) return
