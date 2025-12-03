@@ -48,7 +48,10 @@
         <div v-if="showFilters" class="row g-2 align-items-end mt-3">
           <div class="col-md-4">
             <label class="form-label">Degree</label>
-            <input v-model="degree" type="text" class="form-control" placeholder="e.g. BSc">
+            <select v-model="degree" class="form-select">
+              <option value="">Any</option>
+              <option v-for="opt in degreeOptions" :key="opt" :value="opt">{{ opt }}</option>
+            </select>
           </div>
         </div>
       </div>
@@ -89,7 +92,8 @@ export default {
       error: null,
       search: '',
       degree: '',
-      showFilters: false
+      showFilters: false,
+      degreeOptions: ['BSc', 'Master', 'PhD', 'Diploma']
     }
   },
   computed: {
