@@ -7,6 +7,10 @@ export default {
     return Api.get('/courses')
   },
 
+  removeAll() {
+    return Api.delete('/courses')
+  },
+
   getStudentEnrollments() {
     return Api.get('/courses/attendances/mine')
   },

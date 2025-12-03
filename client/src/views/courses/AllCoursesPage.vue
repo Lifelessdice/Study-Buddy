@@ -5,6 +5,11 @@
       <router-link to="/courses" class="btn btn-outline-secondary">
         Back to My Courses
       </router-link>
+      <div class="ms-auto" v-if="isTeacher">
+        <router-link to="/courses/delete-all" class="btn btn-outline-danger">
+          Delete All Courses
+        </router-link>
+      </div>
     </div>
 
     <div v-if="loading">Loading courses...</div>
@@ -40,6 +45,14 @@ export default {
       courses: [],
       loading: false,
       error: null
+    }
+  },
+  computed: {
+    isTeacher() {
+      const u = localStorage.getItem('user')
+      if (!u) return false
+      const user = JSON.parse(u)
+      return user.role === 'teacher'
     }
   },
   methods: {
