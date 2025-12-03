@@ -13,6 +13,7 @@ import DeleteAllCourses from './views/courses/DeleteAllCourses.vue'
 import CreateQuiz from './views/quizzes/CreateQuiz.vue'
 import EditQuiz from './views/quizzes/EditQuiz.vue'
 import TakeQuiz from './views/quizzes/TakeQuiz.vue'
+import StudentResults from './views/quizzes/StudentResults.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -82,6 +83,12 @@ const routes = [
     name: 'TakeQuiz',
     component: TakeQuiz,
     props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/results',
+    name: 'StudentResults',
+    component: StudentResults,
     meta: { requiresAuth: true }
   }
 ]
