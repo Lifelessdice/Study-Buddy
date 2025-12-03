@@ -16,6 +16,15 @@
               <router-link :to="{ path: `/courses/${course._id}/edit`, query: { mode: 'overwrite' } }" class="btn btn-outline-primary btn-sm">Overwrite</router-link>
               <button class="btn btn-outline-danger btn-sm" @click="removeCourse">Delete</button>
             </template>
+            <template v-else>
+              <button
+                v-if="myAttendance"
+                class="btn btn-outline-danger btn-sm"
+                @click="showLeaveConfirm = true"
+              >
+                Leave Course
+              </button>
+            </template>
           </div>
         </div>
         <hr>
@@ -93,7 +102,6 @@
         </div>
 
         <div v-if="loadingQuizzes" class="text-muted">Loading quizzes...</div>
-        <div v-else-if="quizError" class="text-danger">Failed to load quizzes.</div>
         <div v-else>
           <div v-if="!quizzes.length" class="alert alert-info">
             No quizzes have been created for this course yet.
@@ -108,6 +116,9 @@
                   Questions: {{ (quiz.questions && quiz.questions.length) || 0 }}
                 </div>
                 <div class="small text-muted">Created: {{ formatDate(quiz.createdAt) }}</div>
+                <div v-if="!isTeacher && myParticipationByQuiz[quiz._id]" class="small text-success">
+                  Score: {{ myParticipationByQuiz[quiz._id].score ?? '—' }}%
+                </div>
               </div>
               <div class="d-flex gap-2">
                 <router-link
@@ -117,6 +128,20 @@
                 >
                   Edit
                 </router-link>
+                <router-link
+                  v-else-if="!myParticipationByQuiz[quiz._id]"
+                  class="btn btn-sm btn-outline-primary"
+                  :to="{ name: 'TakeQuiz', params: { quizId: quiz._id } }"
+                >
+                  Take Quiz
+                </router-link>
+                <button
+                  v-if="isTeacher"
+                  class="btn btn-sm btn-outline-secondary"
+                  @click="viewAttempts(quiz)"
+                >
+                  View Attempts
+                </button>
                 <button v-if="isTeacher" class="btn btn-sm btn-outline-danger" @click="promptDeleteQuiz(quiz)">Delete</button>
               </div>
             </div>
@@ -195,7 +220,6 @@
       </div>
     </div>
 
-    <!-- Delete Quiz overlay -->
     <div v-if="showDeleteConfirm" class="overlay">
       <div class="overlay-card">
         <h5 class="text-danger">Delete Quiz</h5>
@@ -203,6 +227,50 @@
         <div class="d-flex justify-content-end gap-2">
           <button class="btn btn-outline-secondary" @click="cancelDeleteQuiz">Cancel</button>
           <button class="btn btn-danger" @click="deleteQuizConfirmed">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showAttemptsModal" class="overlay">
+      <div class="overlay-card wide">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="mb-0">Quiz Attempts — {{ attemptsQuizTitle }}</h5>
+          <button class="btn btn-sm btn-outline-secondary" @click="closeAttempts">Close</button>
+        </div>
+        <div v-if="attemptsLoading" class="text-muted">Loading attempts...</div>
+        <div v-else-if="!attempts.length" class="alert alert-info mb-0">No attempts yet.</div>
+        <div v-else class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Student</th>
+                <th>Email</th>
+                <th>Score</th>
+                <th>Submitted</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(att, idx) in attempts" :key="att._id">
+                <td>{{ idx + 1 }}</td>
+                <td>{{ att.student?.name || 'Unknown' }}</td>
+                <td>{{ att.student?.email || '—' }}</td>
+                <td>{{ att.score ?? '—' }}%</td>
+                <td>{{ formatDate(att.createdAt) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showLeaveConfirm" class="overlay">
+      <div class="overlay-card">
+        <h5 class="text-danger">Leave Course</h5>
+        <p class="mb-3">Are you sure you want to leave "{{ course.name }}"?</p>
+        <div class="d-flex justify-content-end gap-2">
+          <button class="btn btn-outline-secondary" @click="showLeaveConfirm = false">Cancel</button>
+          <button class="btn btn-danger" @click="leaveCourse">Leave</button>
         </div>
       </div>
     </div>
@@ -214,6 +282,7 @@
 import CourseService from '@/services/CourseService'
 import Api from '@/Api'
 import QuizService from '@/services/QuizService'
+import QuizParticipationService from '@/services/QuizParticipationService'
 
 export default {
   name: 'CourseDashboard',
@@ -235,7 +304,13 @@ export default {
       loadingQuizzes: false,
       quizError: null,
       showDeleteConfirm: false,
-      quizToDelete: null
+      quizToDelete: null,
+      showLeaveConfirm: false,
+      showAttemptsModal: false,
+      attemptsLoading: false,
+      attempts: [],
+      attemptsQuizTitle: '',
+      myParticipations: {}
     }
   },
   computed: {
@@ -246,10 +321,13 @@ export default {
         .filter(stu => (stu.email || '').toLowerCase().includes(term) || (stu.name || '').toLowerCase().includes(term))
         .slice(0, 5)
     },
-    courseTeacher() {
+    currentUser() {
       const u = localStorage.getItem('user')
-      if (!u) return null
-      const user = JSON.parse(u)
+      return u ? JSON.parse(u) : null
+    },
+    courseTeacher() {
+      const user = this.currentUser
+      if (!user) return null
       return user.name || user.email || null
     },
     filteredEnrolled() {
@@ -262,10 +340,15 @@ export default {
       })
     },
     isTeacher() {
-      const u = localStorage.getItem('user')
-      if (!u) return false
-      const user = JSON.parse(u)
-      return user.role === 'teacher'
+      const user = this.currentUser
+      return user?.role === 'teacher'
+    },
+    myAttendance() {
+      if (!this.currentUser || !Array.isArray(this.enrolled)) return null
+      return this.enrolled.find(att => att.student?._id === this.currentUser._id) || null
+    },
+    myParticipationByQuiz() {
+      return this.myParticipations || {}
     }
   },
   watch: {
@@ -294,6 +377,9 @@ export default {
       this.course = res.data.data || res.data
       this.overviewDraft = this.course.overview || ''
       await this.fetchEnrolled()
+      if (this.currentTab === 'quizzes') {
+        await this.fetchQuizzes()
+      }
     },
     async fetchEnrolled() {
       try {
@@ -304,15 +390,51 @@ export default {
       }
     },
     async fetchQuizzes() {
+      if (!this.course || !this.course._id) {
+        return
+      }
+      this.loadingQuizzes = true
+      this.quizError = null
       try {
-        this.loadingQuizzes = true
-        const res = await QuizService.getAll({ course: this.course._id })
-        this.quizzes = res.data.data || res.data
+        const res = await QuizService.getAll({ course: this.course._id, t: Date.now() })
+        const payload = res?.data
+        const list = (payload && (payload.data || payload)) || []
+        if (res.status === 200 || res.status === 201) {
+          this.quizzes = Array.isArray(list) ? list : []
+        } else if (res.status === 304) {
+          // keep existing
+        } else {
+          this.quizError = payload?.message || 'Failed to load quizzes.'
+          this.quizzes = []
+        }
+        if (!this.isTeacher) {
+          await this.fetchMyParticipations()
+        }
       } catch (err) {
-        this.quizError = err
-        console.error(err)
+        console.error('fetchQuizzes error', err)
+        this.quizError = err?.response?.data?.message || 'Failed to load quizzes.'
+        this.quizzes = []
       } finally {
         this.loadingQuizzes = false
+      }
+    },
+    async fetchMyParticipations() {
+      if (!this.currentUser) return
+      try {
+        const res = await QuizParticipationService.getAll({
+          student: this.currentUser._id
+        })
+        const data = res.data.data || res.data || []
+        const map = {}
+        data.forEach(p => {
+          if (p.quiz) {
+            const quizId = typeof p.quiz === 'object' && p.quiz._id ? p.quiz._id : p.quiz
+            map[quizId] = p
+          }
+        })
+        this.myParticipations = map
+      } catch (err) {
+        console.error(err)
       }
     },
     formatDate(d) {
@@ -399,6 +521,18 @@ export default {
         alert('Failed to remove student')
       }
     },
+    async leaveCourse() {
+      if (!this.myAttendance) return
+      try {
+        await CourseService.removeStudent(this.course._id, this.myAttendance._id)
+        this.$router.push({ name: 'Courses' })
+      } catch (err) {
+        console.error(err)
+        alert('Failed to leave course')
+      } finally {
+        this.showLeaveConfirm = false
+      }
+    },
     promptDeleteQuiz(quiz) {
       this.quizToDelete = quiz
       this.showDeleteConfirm = true
@@ -418,6 +552,26 @@ export default {
     cancelDeleteQuiz() {
       this.quizToDelete = null
       this.showDeleteConfirm = false
+    },
+    async viewAttempts(quiz) {
+      this.attemptsQuizTitle = quiz.title
+      this.showAttemptsModal = true
+      this.attemptsLoading = true
+      this.attempts = []
+      try {
+        const res = await QuizParticipationService.getAll({ quiz: quiz._id })
+        this.attempts = res.data.data || res.data || []
+      } catch (err) {
+        console.error(err)
+        alert('Failed to load attempts')
+      } finally {
+        this.attemptsLoading = false
+      }
+    },
+    closeAttempts() {
+      this.showAttemptsModal = false
+      this.attempts = []
+      this.attemptsQuizTitle = ''
     }
   },
   async mounted() {
@@ -425,7 +579,6 @@ export default {
       this.currentTab = this.$route.query.tab
     }
     await this.fetchCourse()
-    await this.fetchQuizzes()
   }
 }
 </script>

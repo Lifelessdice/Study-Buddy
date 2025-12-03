@@ -136,7 +136,9 @@ exports.getAllParticipations = async (req, res, next) => {
       filter.quiz = req.query.quiz;
     }
 
-    const list = await QuizParticipation.find(filter);
+    const list = await QuizParticipation.find(filter)
+      .populate('student', 'name email')
+      .populate('quiz', 'title course');
 
     res.status(200).json({
       status: 'success',
@@ -163,7 +165,9 @@ exports.getParticipationById = async (req, res, next) => {
       });
     }
 
-    const part = await QuizParticipation.findById(id);
+    const part = await QuizParticipation.findById(id)
+      .populate('student', 'name email')
+      .populate('quiz', 'title course');
     if (!part) {
       return res.status(404).json({
         status: 'fail',

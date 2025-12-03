@@ -1,8 +1,19 @@
 import Api from '@/Api'
 
 export default {
-  getAll(params) {
-    return Api.get('/quizzes', { params })
+  getAll(params, config = {}) {
+    return Api.get('/quizzes', {
+      params,
+      headers: {
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
+        'If-None-Match': '',
+        'If-Modified-Since': '0'
+      },
+      // accept all statuses; caller decides
+      validateStatus: () => true,
+      ...config
+    })
   },
   get(id) {
     return Api.get(`/quizzes/${id}`)

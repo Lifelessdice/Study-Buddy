@@ -12,6 +12,7 @@ import CourseDashboard from './views/courses/CourseDashboard.vue'
 import DeleteAllCourses from './views/courses/DeleteAllCourses.vue'
 import CreateQuiz from './views/quizzes/CreateQuiz.vue'
 import EditQuiz from './views/quizzes/EditQuiz.vue'
+import TakeQuiz from './views/quizzes/TakeQuiz.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -75,6 +76,13 @@ const routes = [
     component: EditQuiz,
     props: true,
     meta: { requiresAuth: true, requiresTeacher: true }
+  },
+  {
+    path: '/quizzes/:quizId/take',
+    name: 'TakeQuiz',
+    component: TakeQuiz,
+    props: true,
+    meta: { requiresAuth: true }
   }
 ]
 
