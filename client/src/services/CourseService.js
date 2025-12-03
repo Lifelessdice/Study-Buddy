@@ -3,8 +3,8 @@ import Api from '@/Api'
 
 export default {
   // Courses
-  getAll() {
-    return Api.get('/courses')
+  getAll(params) {
+    return Api.get('/courses', { params })
   },
 
   removeAll() {
