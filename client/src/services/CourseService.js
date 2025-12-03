@@ -7,6 +7,10 @@ export default {
     return Api.get('/courses')
   },
 
+  getStudentEnrollments() {
+    return Api.get('/courses/attendances/mine')
+  },
+
   getMine() {
     return Api.get('/courses/mine')
   },
