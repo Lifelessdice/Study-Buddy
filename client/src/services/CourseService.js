@@ -3,8 +3,12 @@ import Api from '@/Api'
 
 export default {
   // Courses
-  getAll() {
-    return Api.get('/courses')
+  getAll(params) {
+    return Api.get('/courses', { params })
+  },
+
+  removeAll() {
+    return Api.delete('/courses')
   },
 
   getStudentEnrollments() {
@@ -25,6 +29,10 @@ export default {
 
   update(id, payload) {
     return Api.patch(`/courses/${id}`, payload)
+  },
+
+  replace(id, payload) {
+    return Api.put(`/courses/${id}`, payload)
   },
 
   remove(id) {

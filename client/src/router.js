@@ -9,6 +9,7 @@ import CreateCourse from './views/courses/CreateCourse.vue'
 import EditCourse from './views/courses/EditCourse.vue'
 import AllCoursesPage from './views/courses/AllCoursesPage.vue'
 import CourseDashboard from './views/courses/CourseDashboard.vue'
+import DeleteAllCourses from './views/courses/DeleteAllCourses.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -39,6 +40,12 @@ const routes = [
     name: 'AllCourses',
     component: AllCoursesPage,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/courses/delete-all',
+    name: 'DeleteAllCourses',
+    component: DeleteAllCourses,
+    meta: { requiresAuth: true, requiresTeacher: true }
   },
   {
     path: '/courses/create',

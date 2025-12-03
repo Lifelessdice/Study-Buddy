@@ -64,13 +64,46 @@ exports.createCourse = async (req, res, next) => {
   }
 };
 
-// LIST ALL
+// LIST ALL (with optional filters, basic pagination, and sorting)
 exports.getCourses = async (req, res, next) => {
   try {
-    const courses = await Course.find();
+    const filter = {};
+
+    if (req.query.name) {
+      filter.name = { $regex: req.query.name, $options: 'i' };
+    }
+    if (req.query.code) {
+      filter.code = { $regex: req.query.code, $options: 'i' };
+    }
+    if (req.query.degree) {
+      filter.degree = req.query.degree;
+    }
+
+    // Basic pagination
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit, 10) || 50, 1);
+    const skip = (page - 1) * limit;
+
+    const sort = req.query.sort || '-createdAt';
+
+    const [courses, total] = await Promise.all([
+      Course.find(filter).sort(sort).skip(skip).limit(limit),
+      Course.countDocuments(filter)
+    ]);
+
+    // collect unique degrees in this result set
+    const degreeSet = new Set();
+    courses.forEach(c => {
+      if (c.degree) degreeSet.add(c.degree);
+    });
+
     res.status(200).json({
       status: "success",
+      page,
+      limit,
+      total,
       results: courses.length,
+      degrees: Array.from(degreeSet),
       data: courses
     });
   } catch (err) {
