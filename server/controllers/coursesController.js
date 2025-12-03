@@ -2,6 +2,13 @@ const mongoose = require("mongoose");
 const Course = require("../models/courses");
 const TeachingAssignment = require("../models/teachingAssignments");
 
+function normalizeCourseBody(body) {
+  // Allow legacy "material" field to map into new "overview"
+  if (body && body.material && !body.overview) {
+    body.overview = body.material;
+  }
+}
+
 function ensureRequiredFields(body) {
   const required = {
     name: "Course name is required",
@@ -40,6 +47,7 @@ function ensureNonEmptyIfPresent(body, field, message) {
 // CREATE
 exports.createCourse = async (req, res, next) => {
   try {
+    normalizeCourseBody(req.body);
     ensureRequiredFields(req.body);
     const course = await Course.create(req.body);
 
@@ -179,6 +187,7 @@ exports.updateCourse = async (req, res, next) => {
 
     ensureNonEmptyIfPresent(req.body, "name", "Course name is required");
     ensureNonEmptyIfPresent(req.body, "code", "Course code is required");
+    normalizeCourseBody(req.body);
 
     const updated = await Course.findByIdAndUpdate(id, req.body, {
       new: true,
@@ -223,6 +232,7 @@ exports.replaceCourse = async (req, res, next) => {
 
     // Step 3: Required fields check for PUT
     ensureRequiredFields(req.body);
+    normalizeCourseBody(req.body);
 
     // Step 4: Apply overwrite with validation
     existing.overwrite(req.body);

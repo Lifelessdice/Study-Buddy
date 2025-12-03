@@ -15,8 +15,8 @@
         </div>
 
         <div class="mb-3">
-          <label class="form-label">Material</label>
-          <input v-model="form.material" type="text" class="form-control" />
+          <label class="form-label">Overview</label>
+          <input v-model="form.overview" type="text" class="form-control" />
         </div>
 
         <div class="mb-3">
@@ -49,7 +49,7 @@ export default {
       form: {
         name: '',
         code: '',
-        material: '',
+        overview: '',
         degree: ''
       },
       loaded: false,
@@ -63,7 +63,7 @@ export default {
       const c = res.data.data || res.data
       this.form.name = c.name
       this.form.code = c.code
-      this.form.material = c.material || ''
+      this.form.overview = c.overview || ''
       this.form.degree = c.degree || ''
       this.loaded = true
     } catch (err) {

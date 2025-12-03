@@ -65,8 +65,8 @@
 
       <div class="card mb-3">
         <div class="card-body">
-          <h5 class="mb-2">Course Material</h5>
-          <p class="text-muted mb-0">Material: {{ course.material || 'No material specified.' }}</p>
+          <h5 class="mb-2">Course Overview</h5>
+          <p class="text-muted mb-0">Overview: {{ course.overview || 'No overview specified.' }}</p>
         </div>
       </div>
     </div>
@@ -283,7 +283,7 @@ export default {
     async fetchCourse() {
       const res = await CourseService.getById(this.$route.params.id)
       this.course = res.data.data || res.data
-      this.overviewDraft = this.course.material || ''
+      this.overviewDraft = this.course.overview || ''
       await this.fetchEnrolled()
     },
     async fetchEnrolled() {
@@ -359,8 +359,8 @@ export default {
       if (!this.isTeacher) return
       this.savingOverview = true
       try {
-        await CourseService.update(this.course._id, { material: this.overviewDraft })
-        this.course.material = this.overviewDraft
+        await CourseService.update(this.course._id, { overview: this.overviewDraft })
+        this.course.overview = this.overviewDraft
         alert('Overview saved')
       } catch (err) {
         console.error(err)

@@ -70,7 +70,7 @@
             <h5 class="card-title">
               {{ course.name }} <small class="text-muted">({{ course.code }})</small>
             </h5>
-            <p class="card-text" v-if="course.material"><strong>Material:</strong> {{ course.material }}</p>
+            <p class="card-text" v-if="course.overview"><strong>Overview:</strong> {{ course.overview }}</p>
             <p class="card-text" v-if="course.degree"><strong>Degree:</strong> {{ course.degree }}</p>
             <p class="card-text"><small class="text-muted">Created: {{ formatDate(course.createdAt) }}</small></p>
           </div>
