@@ -22,11 +22,13 @@
     </div>
 
     <div class="d-flex gap-2 mb-3" v-if="isTeacher">
-      <router-link :to="`/courses/${course._id}/edit`" class="btn btn-primary btn-hover">
+      <router-link :to="`/courses/${course._id}/edit`" class="btn btn-outline-primary btn-hover">
         Edit Course
       </router-link>
+      <router-link :to="{ path: `/courses/${course._id}/edit`, query: { mode: 'overwrite' } }" class="btn btn-outline-primary btn-hover">
+        Overwrite Course
+      </router-link>
       <button class="btn btn-danger btn-hover" @click="removeCourse">Delete Course</button>
-      <button class="btn btn-outline-primary btn-hover" @click="viewAssignments">View Assignments</button>
     </div>
 
     <div v-if="isTeacher" class="card mb-3">

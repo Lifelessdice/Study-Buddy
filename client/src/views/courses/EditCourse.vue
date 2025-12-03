@@ -24,11 +24,13 @@
           <input v-model="form.degree" type="text" class="form-control" />
         </div>
 
-        <button class="btn btn-primary" :disabled="submitting">
-          {{ submitting ? 'Saving…' : 'Save Changes' }}
-        </button>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary" :disabled="submitting" type="submit">
+            {{ submitting ? 'Saving…' : submitLabel }}
+          </button>
+          <router-link to="/courses" class="btn btn-link ms-2">Cancel</router-link>
+        </div>
 
-        <router-link to="/courses" class="btn btn-link ms-2">Cancel</router-link>
       </form>
     </div>
 
@@ -74,13 +76,25 @@ export default {
       try {
         this.submitting = true
         const courseId = this.$route.params.id
-        await CourseService.update(courseId, this.form)
+        if (this.isOverwrite) {
+          await CourseService.replace(courseId, this.form)
+        } else {
+          await CourseService.update(courseId, this.form)
+        }
         this.$router.push({ name: 'Courses' })
       } catch (err) {
         alert('Failed to save changes')
       } finally {
         this.submitting = false
       }
+    }
+  },
+  computed: {
+    isOverwrite() {
+      return this.$route.query.mode === 'overwrite'
+    },
+    submitLabel() {
+      return this.isOverwrite ? 'Save Changes' : 'Save Changes'
     }
   }
 }

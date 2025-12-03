@@ -23,6 +23,10 @@ export default {
     return Api.patch(`/courses/${id}`, payload)
   },
 
+  replace(id, payload) {
+    return Api.put(`/courses/${id}`, payload)
+  },
+
   remove(id) {
     return Api.delete(`/courses/${id}`)
   },
