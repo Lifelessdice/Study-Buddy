@@ -91,12 +91,19 @@ exports.getCourses = async (req, res, next) => {
       Course.countDocuments(filter)
     ]);
 
+    // collect unique degrees in this result set
+    const degreeSet = new Set();
+    courses.forEach(c => {
+      if (c.degree) degreeSet.add(c.degree);
+    });
+
     res.status(200).json({
       status: "success",
       page,
       limit,
       total,
       results: courses.length,
+      degrees: Array.from(degreeSet),
       data: courses
     });
   } catch (err) {

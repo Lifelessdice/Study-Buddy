@@ -93,7 +93,7 @@ export default {
       search: '',
       degree: '',
       showFilters: false,
-      degreeOptions: ['BSc', 'Master', 'PhD', 'Diploma']
+      degreeOptions: []
     }
   },
   computed: {
@@ -127,6 +127,9 @@ export default {
 
         const res = await CourseService.getAll(params)
         this.courses = res.data.data || res.data
+        if (res.data && Array.isArray(res.data.degrees)) {
+          this.degreeOptions = res.data.degrees
+        }
       } catch (err) {
         this.error = err
         console.error(err)
@@ -154,3 +157,14 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.suggestion-list {
+  z-index: 2000;
+  max-height: 250px;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  background: #fff;
+  border: 1px solid #dee2e6;
+}
+</style>
