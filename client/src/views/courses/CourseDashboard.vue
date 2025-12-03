@@ -41,6 +41,7 @@
         <span class="tab" :class="{ active: currentTab === 'overview' }" @click="setTab('overview')">Overview</span>
         <span class="tab disabled">Notes</span>
         <span class="tab disabled">Quizzes</span>
+        <span class="tab" :class="{ active: currentTab === 'quizzes' }" @click="setTab('quizzes')">Quizzes</span>
         <span class="tab" :class="{ active: currentTab === 'students' }" @click="setTab('students')">Students</span>
       </div>
     </div>
@@ -74,6 +75,45 @@
         <div class="card-body">
           <h5 class="mb-2">Upcoming Activities</h5>
           <p class="text-muted mb-0">No scheduled activities.</p>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="currentTab === 'quizzes'" class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">Quizzes for this course</h5>
+          <button v-if="isTeacher" class="btn btn-outline-primary btn-sm" @click="createQuiz">
+            + Create Quiz
+          </button>
+        </div>
+
+        <div v-if="loadingQuizzes" class="text-muted">Loading quizzes...</div>
+        <div v-else-if="quizError" class="text-danger">Failed to load quizzes.</div>
+        <div v-else>
+          <div v-if="!quizzes.length" class="alert alert-info">
+            No quizzes have been created for this course yet.
+            <span v-if="isTeacher">Click "Create Quiz" to add one.</span>
+          </div>
+
+          <div v-for="quiz in quizzes" :key="quiz._id" class="quiz-card mb-3 p-3 border rounded">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <h6 class="mb-1">{{ quiz.title }}</h6>
+                <div class="small text-muted">
+                  Questions: {{ (quiz.questions && quiz.questions.length) || 0 }}
+                </div>
+                <div class="small text-muted">Created: {{ formatDate(quiz.createdAt) }}</div>
+              </div>
+              <div class="d-flex gap-2">
+                <button v-if="isTeacher" class="btn btn-sm btn-outline-secondary" @click="previewQuiz(quiz)">Preview</button>
+                <button class="btn btn-sm btn-outline-primary" @click="takeQuiz(quiz)">
+                  {{ isTeacher ? 'Take quiz' : 'Take quiz' }}
+                </button>
+                <button v-if="isTeacher" class="btn btn-sm btn-outline-danger" @click="deleteQuiz(quiz)">Delete</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -154,6 +194,7 @@
 <script>
 import CourseService from '@/services/CourseService'
 import Api from '@/Api'
+import QuizService from '@/services/QuizService'
 
 export default {
   name: 'CourseDashboard',
@@ -170,7 +211,10 @@ export default {
       overviewDraft: '',
       savingOverview: false,
       currentTab: 'overview',
-      studentSearch: ''
+      studentSearch: '',
+      quizzes: [],
+      loadingQuizzes: false,
+      quizError: null
     }
   },
   computed: {
@@ -180,6 +224,18 @@ export default {
       return this.allStudents
         .filter(stu => (stu.email || '').toLowerCase().includes(term) || (stu.name || '').toLowerCase().includes(term))
         .slice(0, 5)
+    },
+    async fetchQuizzes() {
+      try {
+        this.loadingQuizzes = true
+        const res = await this.$quizService.getAll({ course: this.course._id })
+        this.quizzes = res.data.data || res.data
+      } catch (err) {
+        this.quizError = err
+        console.error(err)
+      } finally {
+        this.loadingQuizzes = false
+      }
     },
     courseTeacher() {
       const u = localStorage.getItem('user')
@@ -213,6 +269,9 @@ export default {
           }
         })
       }
+      if (tab === 'quizzes') {
+        this.fetchQuizzes()
+      }
     },
     async fetchCourse() {
       const res = await CourseService.getById(this.$route.params.id)
@@ -226,6 +285,37 @@ export default {
         this.enrolled = res.data.data || res.data
       } catch (err) {
         console.error(err)
+      }
+    },
+    async createQuiz() {
+      if (!this.isTeacher) return
+      try {
+        const payload = {
+          title: 'New Quiz',
+          course: this.course._id,
+          questions: []
+        }
+        await this.$quizService.create(payload)
+        await this.fetchQuizzes()
+      } catch (err) {
+        console.error(err)
+        alert('Failed to create quiz')
+      }
+    },
+    previewQuiz(quiz) {
+      alert(`Preview quiz: ${quiz.title}`)
+    },
+    takeQuiz(quiz) {
+      alert(`Take quiz: ${quiz.title}`)
+    },
+    async deleteQuiz(quiz) {
+      if (!confirm('Delete this quiz?')) return
+      try {
+        await this.$quizService.remove(quiz._id)
+        await this.fetchQuizzes()
+      } catch (err) {
+        console.error(err)
+        alert('Failed to delete quiz')
       }
     },
     formatDate(d) {
@@ -304,6 +394,7 @@ export default {
   },
   async mounted() {
     await this.fetchCourse()
+    this.$quizService = QuizService
   }
 }
 </script>
