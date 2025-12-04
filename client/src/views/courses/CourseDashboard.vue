@@ -217,8 +217,8 @@
           </table>
           <div class="text-muted small">Total enrolled: {{ filteredEnrolled.length }} students</div>
         </div>
-      </div>
     </div>
+  </div>
 
     <div v-if="currentTab === 'notes'" class="card mb-3">
   <div class="card-body">
@@ -278,6 +278,173 @@
     </div>
   </div>
 </div>
+
+    <div v-if="currentTab === 'notes'" class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">Course Materials (PDF)</h5>
+        </div>
+
+        <div v-if="isTeacher" class="mb-3">
+          <div v-if="uploadError" class="alert alert-danger mb-2">{{ uploadError }}</div>
+          <div class="row g-2">
+            <div class="col-md-6">
+              <input
+                v-model="newMaterial.title"
+                type="text"
+                class="form-control"
+                placeholder="Title"
+              />
+            </div>
+            <div class="col-md-6">
+              <input
+                ref="materialFile"
+                type="file"
+                class="form-control"
+                accept="application/pdf"
+                @change="onFileChange"
+              />
+            </div>
+            <div class="col-12">
+              <textarea
+                v-model="newMaterial.description"
+                class="form-control"
+                rows="2"
+                placeholder="Description (optional)"
+              ></textarea>
+            </div>
+            <div class="col-12">
+              <button class="btn btn-primary btn-sm" :disabled="uploading" @click="handleUpload">
+                {{ uploading ? 'Uploading...' : 'Upload PDF' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="loadingMaterials" class="text-muted">Loading materials...</div>
+        <div v-else>
+          <div v-if="!materials.length" class="alert alert-info">
+            No PDF materials uploaded yet.
+          </div>
+          <div v-else class="list-group">
+            <div
+              v-for="mat in materials"
+              :key="mat._id"
+              class="list-group-item d-flex justify-content-between align-items-start flex-wrap gap-2"
+              >
+                <div class="me-2">
+                  <a
+                    :href="materialUrl(mat.filePath)"
+                    target="_blank"
+                  rel="noopener"
+                  :download="mat.originalName || (mat.title || 'material') + '.pdf'"
+                  class="fw-bold d-block"
+                >
+                  {{ mat.title || mat.originalName }}
+                </a>
+                  <div class="small text-muted">
+                    Uploaded: {{ formatDate(mat.createdAt) }} | {{ prettySize(mat.size) }}
+                  </div>
+                  <div v-if="mat.description" class="small text-muted">{{ mat.description }}</div>
+                  <div class="mt-3 p-3 border rounded bg-light-subtle w-100">
+                    <!-- Summary -->
+                    <div class="mb-3">
+                      <div v-if="materialAi[mat._id]?.error" class="alert alert-warning mb-3">
+                        {{ materialAi[mat._id].error }}
+                      </div>
+                      <button
+                        class="btn btn-primary mb-2"
+                        :disabled="materialAi[mat._id]?.loadingSummary"
+                        @click="generateMaterialSummary(mat)"
+                      >
+                        Generate Summary
+                      </button>
+                      <div v-if="materialAi[mat._id]?.loadingSummary" class="text-center my-2">
+                        <div class="spinner-border text-primary" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Generating summary, please wait...</p>
+                      </div>
+                      <div v-if="materialAi[mat._id]?.summary && !materialAi[mat._id]?.loadingSummary">
+                        {{ materialAi[mat._id].summary }}
+                      </div>
+                    </div>
+
+                    <!-- Quiz -->
+                    <div class="mb-3">
+                      <button
+                        class="btn btn-success mb-2"
+                        :disabled="materialAi[mat._id]?.loadingQuiz"
+                        @click="generateMaterialQuiz(mat)"
+                      >
+                        Generate Quiz
+                      </button>
+                      <div v-if="materialAi[mat._id]?.loadingQuiz" class="text-center my-2">
+                        <div class="spinner-border text-success" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Generating quiz, please wait...</p>
+                      </div>
+                      <ul v-if="materialAi[mat._id]?.quiz?.length && !materialAi[mat._id]?.loadingQuiz" class="list-group">
+                        <li v-for="(q, idx) in materialAi[mat._id].quiz" :key="idx" class="list-group-item">
+                          <strong>Q{{ idx + 1 }}: {{ q.question }}</strong>
+                          <ul class="list-group mt-2">
+                            <li v-for="(opt, i) in q.options" :key="i" class="list-group-item">
+                              {{ String.fromCharCode(65 + i) }}. {{ opt }}
+                            </li>
+                          </ul>
+                          <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <!-- Flashcards -->
+                    <div>
+                      <button
+                        class="btn btn-warning mb-2"
+                        :disabled="materialAi[mat._id]?.loadingFlashcards"
+                        @click="generateMaterialFlashcards(mat)"
+                      >
+                        <span v-if="materialAi[mat._id]?.loadingFlashcards">Generating...</span>
+                        <span v-else>Generate Flashcards</span>
+                      </button>
+                      <div v-if="materialAi[mat._id]?.loadingFlashcards" class="text-center my-2">
+                        <div class="spinner-border text-warning" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Generating flashcards, please wait...</p>
+                      </div>
+                      <div v-if="materialAi[mat._id]?.flashcards?.length && !materialAi[mat._id]?.loadingFlashcards" class="flashcards-container">
+                        <div
+                          class="flashcard"
+                          v-for="(fc, idx) in materialAi[mat._id].flashcards"
+                          :key="idx"
+                          :class="{ flipped: fc.flipped }"
+                          @click="fc.flipped = !fc.flipped"
+                        >
+                          <div class="front">
+                            Q: {{ fc.question }}
+                          </div>
+                          <div class="back">
+                            A: {{ fc.answer }}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  v-if="isTeacher"
+                  class="btn btn-sm btn-outline-danger"
+                @click="deleteMaterial(mat)"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div v-if="showDeleteNoteConfirm" class="overlay">
   <div class="overlay-card">
@@ -354,6 +521,7 @@ import CourseService from '@/services/CourseService'
 import Api from '@/Api'
 import QuizService from '@/services/QuizService'
 import QuizParticipationService from '@/services/QuizParticipationService'
+import CourseMaterialService from '@/services/CourseMaterialService'
 
 export default {
   name: 'CourseDashboard',
@@ -395,6 +563,13 @@ export default {
       savingEditNote: false,
       showDeleteNoteConfirm: false,
       noteToDelete: null,
+      // materials
+      materials: [],
+      loadingMaterials: false,
+      materialAi: {},
+      newMaterial: { title: '', description: '', file: null },
+      uploading: false,
+      uploadError: null
     }
   },
   computed: {
@@ -460,7 +635,10 @@ export default {
       if (tab === 'quizzes') {
         this.fetchQuizzes()
       }
-      if (tab === 'notes') this.fetchNotes()
+      if (tab === 'notes') {
+        this.fetchNotes()
+        this.fetchMaterials(this.$route.params.id)
+      }
     },
 
 
@@ -469,6 +647,7 @@ export default {
       this.course = res.data.data || res.data
       this.overviewDraft = this.course.overview || ''
       await this.fetchEnrolled()
+      await this.fetchMaterials(this.course?._id)
       if (this.currentTab === 'quizzes') {
         await this.fetchQuizzes()
       }
@@ -666,24 +845,162 @@ export default {
       this.attemptsQuizTitle = ''
     },
     async fetchNotes() {
-  if (!this.course || !this.course._id) return
+      if (!this.course || !this.course._id) return
 
-  this.loadingNotes = true
-  try {
-    const res = await Api.get('/notes', {
-      params: { course: this.course._id } // fetch notes only for this course
-    })
-    this.notes = res.data.data || res.data
-  } catch (err) {
-    console.error(err)
-    alert('Failed to load lectures')
-  } finally {
-    this.loadingNotes = false
-  }
-}
-,
+      this.loadingNotes = true
+      try {
+        const res = await Api.get('/notes', {
+          params: { course: this.course._id } // fetch notes only for this course
+        })
+        this.notes = res.data.data || res.data
+      } catch (err) {
+        console.error(err)
+        alert('Failed to load lectures')
+      } finally {
+        this.loadingNotes = false
+      }
+    },
+    async fetchMaterials(courseId) {
+      if (!courseId) return
+      this.loadingMaterials = true
+      this.uploadError = null
+      try {
+        const res = await CourseMaterialService.list(courseId)
+        this.materials = res.data.data || res.data || []
+      } catch (err) {
+        console.error(err)
+      } finally {
+        this.loadingMaterials = false
+      }
+    },
+    ensureMaterialState(id) {
+      if (!this.materialAi[id]) {
+        this.$set(this.materialAi, id, {
+          summary: '',
+          quiz: [],
+          flashcards: [],
+          loadingSummary: false,
+          loadingQuiz: false,
+          loadingFlashcards: false,
+          error: ''
+        })
+      }
+      return this.materialAi[id]
+    },
+    async generateMaterialSummary(mat) {
+      const state = this.ensureMaterialState(mat._id)
+      state.loadingSummary = true
+      state.summary = ''
+      state.error = ''
+      try {
+        const res = await CourseMaterialService.summarize(this.course._id, mat._id)
+        state.summary = res.data.summary || res.data.data?.summary || 'No summary returned'
+      } catch (err) {
+        state.error = 'Failed to generate summary. Please try again.'
+      } finally {
+        state.loadingSummary = false
+      }
+    },
+    async generateMaterialQuiz(mat) {
+      const state = this.ensureMaterialState(mat._id)
+      state.loadingQuiz = true
+      state.quiz = []
+      state.error = ''
+      try {
+        const res = await CourseMaterialService.quiz(this.course._id, mat._id)
+        state.quiz = res.data.quiz || res.data.data?.quiz || []
+        if (!state.quiz.length) state.error = 'No quiz questions were returned.'
+      } catch (err) {
+        state.error = 'Failed to generate quiz. Please try again.'
+      } finally {
+        state.loadingQuiz = false
+      }
+    },
+    async generateMaterialFlashcards(mat) {
+      const state = this.ensureMaterialState(mat._id)
+      state.loadingFlashcards = true
+      state.flashcards = []
+      state.error = ''
+      try {
+        const res = await CourseMaterialService.flashcards(this.course._id, mat._id)
+        const payload = res.data.flashcards || res.data.data?.flashcards || []
+        state.flashcards = payload.map(fc => ({
+          ...fc,
+          flipped: false
+        }))
+        if (!state.flashcards.length) state.error = 'No flashcards were returned.'
+      } catch (err) {
+        state.error = 'Failed to generate flashcards. Please try again.'
+      } finally {
+        state.loadingFlashcards = false
+      }
+    },
+    onFileChange(event) {
+      const file = event?.target?.files?.[0]
+      if (!file) return
+      if (file.type !== 'application/pdf') {
+        this.uploadError = 'Only PDF files are allowed'
+        this.newMaterial.file = null
+        event.target.value = ''
+        return
+      }
+      this.uploadError = null
+      this.newMaterial.file = file
+      if (!this.newMaterial.title) {
+        this.newMaterial.title = file.name.replace(/\.pdf$/i, '')
+      }
+    },
+    async handleUpload() {
+      if (!this.newMaterial.file) {
+        this.uploadError = 'Please choose a PDF file'
+        return
+      }
+      this.uploading = true
+      this.uploadError = null
+      try {
+        const res = await CourseMaterialService.upload(this.course._id, {
+          file: this.newMaterial.file,
+          title: this.newMaterial.title,
+          description: this.newMaterial.description
+        })
+        const material = res.data.data || res.data
+        if (material) {
+          this.materials.unshift(material)
+        }
+        this.newMaterial = { title: '', description: '', file: null }
+        if (this.$refs.materialFile) {
+          this.$refs.materialFile.value = ''
+        }
+      } catch (err) {
+        this.uploadError = err?.response?.data?.message || 'Failed to upload material'
+      } finally {
+        this.uploading = false
+      }
+    },
+    async deleteMaterial(material) {
+      if (!material || !material._id) return
+      if (!confirm('Delete this material?')) return
+      try {
+        await CourseMaterialService.remove(this.course._id, material._id)
+        this.materials = this.materials.filter(m => m._id !== material._id)
+      } catch (err) {
+        console.error(err)
+        alert('Failed to delete material')
+      }
+    },
+    prettySize(bytes) {
+      if (bytes === undefined || bytes === null) return ''
+      if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+      return `${(bytes / 1024).toFixed(1)} KB`
+    },
+    materialUrl(pathStr) {
+      if (!pathStr) return ''
+      const base = Api.defaults?.baseURL || ''
+      const uploadBase = base.replace(/\/api\/v1$/, '') || base
+      return `${uploadBase}${pathStr}`
+    },
 
-  async createNote() {
+    async createNote() {
   if (!this.newNoteTopic.trim() || !this.newNoteContent.trim()) {
     alert('Please fill all fields')
     return
@@ -870,5 +1187,51 @@ export default {
   text-align: left;
   white-space: pre-line;
   line-height: 1.5;
+}
+
+.flashcards-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.flashcard {
+  width: 200px;
+  height: 120px;
+  perspective: 1000px;
+  cursor: pointer;
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+.flashcard .front,
+.flashcard .back {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  backface-visibility: hidden;
+  transition: transform 0.6s;
+  position: absolute;
+}
+
+.flashcard .back {
+  background: #f8f9fa;
+  transform: rotateY(180deg);
+}
+
+.flashcard.flipped .front {
+  transform: rotateY(180deg);
+}
+
+.flashcard.flipped .back {
+  transform: rotateY(0deg);
 }
 </style>
