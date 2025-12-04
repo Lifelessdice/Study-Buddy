@@ -14,6 +14,7 @@ import CreateQuiz from './views/quizzes/CreateQuiz.vue'
 import EditQuiz from './views/quizzes/EditQuiz.vue'
 import TakeQuiz from './views/quizzes/TakeQuiz.vue'
 import StudentResults from './views/quizzes/StudentResults.vue'
+import CourseSignupPage from './views/courses/CourseSignupPage.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -45,6 +46,14 @@ const routes = [
     component: AllCoursesPage,
     meta: { requiresAuth: true }
   },
+
+    {
+    path: '/courses/signup',
+    name: 'CourseSignup',
+    component: CourseSignupPage,
+    meta: { requiresAuth: true }
+  },
+
   {
     path: '/courses/delete-all',
     name: 'DeleteAllCourses',
