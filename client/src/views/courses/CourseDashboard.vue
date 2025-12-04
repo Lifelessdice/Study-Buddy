@@ -48,7 +48,7 @@
     <div class="nav-tabs-custom mb-3">
       <div class="d-flex align-items-center gap-3 flex-wrap">
         <span class="tab" :class="{ active: currentTab === 'overview' }" @click="setTab('overview')">Overview</span>
-        <span class="tab" :class="{ active: currentTab === 'notes' }" @click="setTab('notes')">Notes</span>
+        <span class="tab" :class="{ active: currentTab === 'notes' }" @click="setTab('notes')">Lectures</span>
         <span class="tab" :class="{ active: currentTab === 'quizzes' }" @click="setTab('quizzes')">Quizzes</span>
         <span class="tab" :class="{ active: currentTab === 'students' }" @click="setTab('students')">Students</span>
       </div>
