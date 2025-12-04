@@ -722,25 +722,34 @@ export default {
   },
 
   async saveEditedNote(id) {
-    if (!this.editNoteTopic.trim() || !this.editNoteContent.trim()) {
-      alert('Please fill all fields')
-      return
+  if (!this.editNoteTopic.trim() || !this.editNoteContent.trim()) {
+    alert('Please fill all fields')
+    return
+  }
+  this.savingEditNote = true
+  try {
+    const payload = { topic: this.editNoteTopic, content: this.editNoteContent }
+    const res = await Api.patch(`/notes/${id}`, payload)
+    
+    // Keep the course object so filtering still works
+    const updatedNote = {
+      ...res.data.data,
+      course: this.notes.find(n => n._id === id).course
     }
-    this.savingEditNote = true
-    try {
-      const payload = { topic: this.editNoteTopic, content: this.editNoteContent }
-      const res = await Api.patch(`/notes/${id}`, payload)
-      const idx = this.notes.findIndex(n => n._id === id)
-      if (idx !== -1) this.notes[idx] = res.data.data
-      this.cancelEditNote()
-      alert('Note updated')
-    } catch (err) {
-      console.error(err)
-      alert('Failed to update note')
-    } finally {
-      this.savingEditNote = false
-    }
-  },
+
+    const idx = this.notes.findIndex(n => n._id === id)
+    if (idx !== -1) this.notes[idx] = updatedNote
+    
+    this.cancelEditNote()
+    alert('Note updated')
+  } catch (err) {
+    console.error(err)
+    alert('Failed to update note')
+  } finally {
+    this.savingEditNote = false
+  }
+}
+,
 
   async deleteNote(id) {
     if (!confirm('Delete this note?')) return
