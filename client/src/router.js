@@ -15,6 +15,9 @@ import EditQuiz from './views/quizzes/EditQuiz.vue'
 import TakeQuiz from './views/quizzes/TakeQuiz.vue'
 import StudentResults from './views/quizzes/StudentResults.vue'
 import CourseSignupPage from './views/courses/CourseSignupPage.vue'
+import NotesList from './views/NotesList.vue'
+import NoteDetail from './views/NoteDetail.vue'
+
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -99,7 +102,21 @@ const routes = [
     name: 'StudentResults',
     component: StudentResults,
     meta: { requiresAuth: true }
-  }
+  },
+  {
+  path: '/notes',
+  name: 'NotesList',
+  component: NotesList,
+  meta: { requiresAuth: true }
+},
+{
+  path: '/notes/:id',
+  name: 'NoteDetail',
+  component: NoteDetail,
+  props: true,
+  meta: { requiresAuth: true }
+}
+
 ]
 
 const router = createRouter({

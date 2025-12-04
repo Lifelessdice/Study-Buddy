@@ -5,7 +5,7 @@ const Note = require("../models/notes");
 const { generateQuiz } = require("../config/openAIconfig");
 
 // ---------------------------------------------
-// POST /api/v1/notes/:id/quiz
+// POST /api/v1/notes/:id/aiquizzes
 // Generate an AI quiz from a note
 // ---------------------------------------------
 router.post("/:id/aiquizzes", async (req, res, next) => {

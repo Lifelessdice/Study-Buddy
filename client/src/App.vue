@@ -24,6 +24,10 @@
           <li class="nav-item" v-if="user && user.role === 'student'">
             <router-link class="nav-link" to="/results">Results</router-link>
           </li>
+          <li class="nav-item" v-if="user && user.role === 'student'">
+            <router-link class="nav-link" to="/notes">Notes</router-link>
+          </li>
+
         </ul>
         <div class="d-flex align-items-center" v-if="user">
           <span class="me-2 small text-muted">{{ user.email }} ({{ user.role }})</span>
