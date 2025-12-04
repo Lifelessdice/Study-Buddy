@@ -217,8 +217,8 @@
           </table>
           <div class="text-muted small">Total enrolled: {{ filteredEnrolled.length }} students</div>
         </div>
-      </div>
     </div>
+  </div>
 
     <div v-if="currentTab === 'notes'" class="card mb-3">
   <div class="card-body">
@@ -278,6 +278,87 @@
     </div>
   </div>
 </div>
+
+    <div v-if="currentTab === 'notes'" class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">Course Materials (PDF)</h5>
+        </div>
+
+        <div v-if="isTeacher" class="mb-3">
+          <div v-if="uploadError" class="alert alert-danger mb-2">{{ uploadError }}</div>
+          <div class="row g-2">
+            <div class="col-md-6">
+              <input
+                v-model="newMaterial.title"
+                type="text"
+                class="form-control"
+                placeholder="Title"
+              />
+            </div>
+            <div class="col-md-6">
+              <input
+                ref="materialFile"
+                type="file"
+                class="form-control"
+                accept="application/pdf"
+                @change="onFileChange"
+              />
+            </div>
+            <div class="col-12">
+              <textarea
+                v-model="newMaterial.description"
+                class="form-control"
+                rows="2"
+                placeholder="Description (optional)"
+              ></textarea>
+            </div>
+            <div class="col-12">
+              <button class="btn btn-primary btn-sm" :disabled="uploading" @click="handleUpload">
+                {{ uploading ? 'Uploading...' : 'Upload PDF' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="loadingMaterials" class="text-muted">Loading materials...</div>
+        <div v-else>
+          <div v-if="!materials.length" class="alert alert-info">
+            No PDF materials uploaded yet.
+          </div>
+          <div v-else class="list-group">
+            <div
+              v-for="mat in materials"
+              :key="mat._id"
+              class="list-group-item d-flex justify-content-between align-items-start flex-wrap gap-2"
+            >
+              <div class="me-2">
+                <a
+                  :href="materialUrl(mat.filePath)"
+                  target="_blank"
+                  rel="noopener"
+                  :download="mat.originalName || (mat.title || 'material') + '.pdf'"
+                  class="fw-bold d-block"
+                >
+                  {{ mat.title || mat.originalName }}
+                </a>
+                <div class="small text-muted">
+                  Uploaded: {{ formatDate(mat.createdAt) }} | {{ prettySize(mat.size) }}
+                </div>
+                <div v-if="mat.description" class="small text-muted">{{ mat.description }}</div>
+              </div>
+              <button
+                v-if="isTeacher"
+                class="btn btn-sm btn-outline-danger"
+                @click="deleteMaterial(mat)"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div v-if="showDeleteNoteConfirm" class="overlay">
   <div class="overlay-card">
@@ -354,6 +435,7 @@ import CourseService from '@/services/CourseService'
 import Api from '@/Api'
 import QuizService from '@/services/QuizService'
 import QuizParticipationService from '@/services/QuizParticipationService'
+import CourseMaterialService from '@/services/CourseMaterialService'
 
 export default {
   name: 'CourseDashboard',
@@ -395,6 +477,12 @@ export default {
       savingEditNote: false,
       showDeleteNoteConfirm: false,
       noteToDelete: null,
+      // materials
+      materials: [],
+      loadingMaterials: false,
+      newMaterial: { title: '', description: '', file: null },
+      uploading: false,
+      uploadError: null
     }
   },
   computed: {
@@ -460,7 +548,10 @@ export default {
       if (tab === 'quizzes') {
         this.fetchQuizzes()
       }
-      if (tab === 'notes') this.fetchNotes()
+      if (tab === 'notes') {
+        this.fetchNotes()
+        this.fetchMaterials(this.$route.params.id)
+      }
     },
 
 
@@ -469,6 +560,7 @@ export default {
       this.course = res.data.data || res.data
       this.overviewDraft = this.course.overview || ''
       await this.fetchEnrolled()
+      await this.fetchMaterials(this.course?._id)
       if (this.currentTab === 'quizzes') {
         await this.fetchQuizzes()
       }
@@ -666,24 +758,100 @@ export default {
       this.attemptsQuizTitle = ''
     },
     async fetchNotes() {
-  if (!this.course || !this.course._id) return
+      if (!this.course || !this.course._id) return
 
-  this.loadingNotes = true
-  try {
-    const res = await Api.get('/notes', {
-      params: { course: this.course._id } // fetch notes only for this course
-    })
-    this.notes = res.data.data || res.data
-  } catch (err) {
-    console.error(err)
-    alert('Failed to load lectures')
-  } finally {
-    this.loadingNotes = false
-  }
-}
-,
+      this.loadingNotes = true
+      try {
+        const res = await Api.get('/notes', {
+          params: { course: this.course._id } // fetch notes only for this course
+        })
+        this.notes = res.data.data || res.data
+      } catch (err) {
+        console.error(err)
+        alert('Failed to load lectures')
+      } finally {
+        this.loadingNotes = false
+      }
+    },
+    async fetchMaterials(courseId) {
+      if (!courseId) return
+      this.loadingMaterials = true
+      this.uploadError = null
+      try {
+        const res = await CourseMaterialService.list(courseId)
+        this.materials = res.data.data || res.data || []
+      } catch (err) {
+        console.error(err)
+      } finally {
+        this.loadingMaterials = false
+      }
+    },
+    onFileChange(event) {
+      const file = event?.target?.files?.[0]
+      if (!file) return
+      if (file.type !== 'application/pdf') {
+        this.uploadError = 'Only PDF files are allowed'
+        this.newMaterial.file = null
+        event.target.value = ''
+        return
+      }
+      this.uploadError = null
+      this.newMaterial.file = file
+      if (!this.newMaterial.title) {
+        this.newMaterial.title = file.name.replace(/\.pdf$/i, '')
+      }
+    },
+    async handleUpload() {
+      if (!this.newMaterial.file) {
+        this.uploadError = 'Please choose a PDF file'
+        return
+      }
+      this.uploading = true
+      this.uploadError = null
+      try {
+        const res = await CourseMaterialService.upload(this.course._id, {
+          file: this.newMaterial.file,
+          title: this.newMaterial.title,
+          description: this.newMaterial.description
+        })
+        const material = res.data.data || res.data
+        if (material) {
+          this.materials.unshift(material)
+        }
+        this.newMaterial = { title: '', description: '', file: null }
+        if (this.$refs.materialFile) {
+          this.$refs.materialFile.value = ''
+        }
+      } catch (err) {
+        this.uploadError = err?.response?.data?.message || 'Failed to upload material'
+      } finally {
+        this.uploading = false
+      }
+    },
+    async deleteMaterial(material) {
+      if (!material || !material._id) return
+      if (!confirm('Delete this material?')) return
+      try {
+        await CourseMaterialService.remove(this.course._id, material._id)
+        this.materials = this.materials.filter(m => m._id !== material._id)
+      } catch (err) {
+        console.error(err)
+        alert('Failed to delete material')
+      }
+    },
+    prettySize(bytes) {
+      if (bytes === undefined || bytes === null) return ''
+      if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+      return `${(bytes / 1024).toFixed(1)} KB`
+    },
+    materialUrl(pathStr) {
+      if (!pathStr) return ''
+      const base = Api.defaults?.baseURL || ''
+      const uploadBase = base.replace(/\/api\/v1$/, '') || base
+      return `${uploadBase}${pathStr}`
+    },
 
-  async createNote() {
+    async createNote() {
   if (!this.newNoteTopic.trim() || !this.newNoteContent.trim()) {
     alert('Please fill all fields')
     return
