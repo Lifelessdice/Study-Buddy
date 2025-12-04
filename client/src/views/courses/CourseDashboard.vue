@@ -331,25 +331,111 @@
               v-for="mat in materials"
               :key="mat._id"
               class="list-group-item d-flex justify-content-between align-items-start flex-wrap gap-2"
-            >
-              <div class="me-2">
-                <a
-                  :href="materialUrl(mat.filePath)"
-                  target="_blank"
+              >
+                <div class="me-2">
+                  <a
+                    :href="materialUrl(mat.filePath)"
+                    target="_blank"
                   rel="noopener"
                   :download="mat.originalName || (mat.title || 'material') + '.pdf'"
                   class="fw-bold d-block"
                 >
                   {{ mat.title || mat.originalName }}
                 </a>
-                <div class="small text-muted">
-                  Uploaded: {{ formatDate(mat.createdAt) }} | {{ prettySize(mat.size) }}
+                  <div class="small text-muted">
+                    Uploaded: {{ formatDate(mat.createdAt) }} | {{ prettySize(mat.size) }}
+                  </div>
+                  <div v-if="mat.description" class="small text-muted">{{ mat.description }}</div>
+                  <div class="mt-3 p-3 border rounded bg-light-subtle w-100">
+                    <div v-if="materialAi[mat._id]?.error" class="alert alert-warning mb-3">
+                      {{ materialAi[mat._id].error }}
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="mb-3">
+                      <button
+                        class="btn btn-primary mb-2"
+                        :disabled="materialAi[mat._id]?.loadingSummary"
+                        @click="generateMaterialSummary(mat)"
+                      >
+                        Generate Summary
+                      </button>
+                      <div v-if="materialAi[mat._id]?.loadingSummary" class="text-center my-2">
+                        <div class="spinner-border text-primary" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                      </div>
+                      <div v-if="materialAi[mat._id]?.summary && !materialAi[mat._id]?.loadingSummary">
+                        {{ materialAi[mat._id].summary }}
+                      </div>
+                    </div>
+
+                    <!-- Quiz -->
+                    <div class="mb-3">
+                      <button
+                        class="btn btn-success mb-2"
+                        :disabled="materialAi[mat._id]?.loadingQuiz"
+                        @click="generateMaterialQuiz(mat)"
+                      >
+                        Generate Quiz
+                      </button>
+                      <div v-if="materialAi[mat._id]?.loadingQuiz" class="text-center my-2">
+                        <div class="spinner-border text-success" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Generating quiz, please wait...</p>
+                      </div>
+                      <ul v-if="materialAi[mat._id]?.quiz?.length && !materialAi[mat._id]?.loadingQuiz" class="list-group">
+                        <li v-for="(q, idx) in materialAi[mat._id].quiz" :key="idx" class="list-group-item">
+                          <strong>Q{{ idx + 1 }}: {{ q.question }}</strong>
+                          <ul class="list-group mt-2">
+                            <li v-for="(opt, i) in q.options" :key="i" class="list-group-item">
+                              {{ String.fromCharCode(65 + i) }}. {{ opt }}
+                            </li>
+                          </ul>
+                          <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <!-- Flashcards -->
+                    <div>
+                      <button
+                        class="btn btn-warning mb-2"
+                        :disabled="materialAi[mat._id]?.loadingFlashcards"
+                        @click="generateMaterialFlashcards(mat)"
+                      >
+                        <span v-if="materialAi[mat._id]?.loadingFlashcards">Generating...</span>
+                        <span v-else>Generate Flashcards</span>
+                      </button>
+                      <div v-if="materialAi[mat._id]?.loadingFlashcards" class="text-center my-2">
+                        <div class="spinner-border text-warning" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Generating flashcards, please wait...</p>
+                      </div>
+                      <div v-if="materialAi[mat._id]?.flashcards?.length && !materialAi[mat._id]?.loadingFlashcards" class="flashcards-container">
+                        <div
+                          class="flashcard"
+                          v-for="(fc, idx) in materialAi[mat._id].flashcards"
+                          :key="idx"
+                          :class="{ flipped: fc.flipped }"
+                          @click="fc.flipped = !fc.flipped"
+                        >
+                          <div class="front">
+                            Q: {{ fc.question }}
+                          </div>
+                          <div class="back">
+                            A: {{ fc.answer }}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div v-if="mat.description" class="small text-muted">{{ mat.description }}</div>
-              </div>
-              <button
-                v-if="isTeacher"
-                class="btn btn-sm btn-outline-danger"
+                <button
+                  v-if="isTeacher"
+                  class="btn btn-sm btn-outline-danger"
                 @click="deleteMaterial(mat)"
               >
                 Delete
@@ -480,6 +566,7 @@ export default {
       // materials
       materials: [],
       loadingMaterials: false,
+      materialAi: {},
       newMaterial: { title: '', description: '', file: null },
       uploading: false,
       uploadError: null
@@ -786,6 +873,68 @@ export default {
         this.loadingMaterials = false
       }
     },
+    ensureMaterialState(id) {
+      if (!this.materialAi[id]) {
+        this.$set(this.materialAi, id, {
+          summary: '',
+          quiz: [],
+          flashcards: [],
+          loadingSummary: false,
+          loadingQuiz: false,
+          loadingFlashcards: false,
+          error: ''
+        })
+      }
+      return this.materialAi[id]
+    },
+    async generateMaterialSummary(mat) {
+      const state = this.ensureMaterialState(mat._id)
+      state.loadingSummary = true
+      state.summary = ''
+      state.error = ''
+      try {
+        const res = await CourseMaterialService.summarize(this.course._id, mat._id)
+        state.summary = res.data.summary || res.data.data?.summary || 'No summary returned'
+      } catch (err) {
+        state.error = 'Failed to generate summary'
+      } finally {
+        state.loadingSummary = false
+      }
+    },
+    async generateMaterialQuiz(mat) {
+      const state = this.ensureMaterialState(mat._id)
+      state.loadingQuiz = true
+      state.quiz = []
+      state.error = ''
+      try {
+        const res = await CourseMaterialService.quiz(this.course._id, mat._id)
+        state.quiz = res.data.quiz || res.data.data?.quiz || []
+        if (!state.quiz.length) state.error = 'No quiz questions were returned.'
+      } catch (err) {
+        state.error = 'Failed to generate quiz'
+      } finally {
+        state.loadingQuiz = false
+      }
+    },
+    async generateMaterialFlashcards(mat) {
+      const state = this.ensureMaterialState(mat._id)
+      state.loadingFlashcards = true
+      state.flashcards = []
+      state.error = ''
+      try {
+        const res = await CourseMaterialService.flashcards(this.course._id, mat._id)
+        const payload = res.data.flashcards || res.data.data?.flashcards || []
+        state.flashcards = payload.map(fc => ({
+          ...fc,
+          flipped: false
+        }))
+        if (!state.flashcards.length) state.error = 'No flashcards were returned.'
+      } catch (err) {
+        state.error = 'Failed to generate flashcards'
+      } finally {
+        state.loadingFlashcards = false
+      }
+    },
     onFileChange(event) {
       const file = event?.target?.files?.[0]
       if (!file) return
@@ -1038,5 +1187,51 @@ export default {
   text-align: left;
   white-space: pre-line;
   line-height: 1.5;
+}
+
+.flashcards-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.flashcard {
+  width: 200px;
+  height: 120px;
+  perspective: 1000px;
+  cursor: pointer;
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+.flashcard .front,
+.flashcard .back {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  backface-visibility: hidden;
+  transition: transform 0.6s;
+  position: absolute;
+}
+
+.flashcard .back {
+  background: #f8f9fa;
+  transform: rotateY(180deg);
+}
+
+.flashcard.flipped .front {
+  transform: rotateY(180deg);
+}
+
+.flashcard.flipped .back {
+  transform: rotateY(0deg);
 }
 </style>

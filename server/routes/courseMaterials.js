@@ -2,10 +2,12 @@ const express = require("express");
 const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");
+const pdfParse = require("pdf-parse");
 const Course = require("../models/courses");
 const CourseMaterial = require("../models/courseMaterials");
 const upload = require("../utils/upload");
 const protect = require("../middleware/protect");
+const { summarizeText, generateQuiz, generateFlashcards } = require("../config/openAIconfig");
 
 const router = express.Router();
 
@@ -29,6 +31,40 @@ async function findCourseOr404(courseId, res) {
   }
 
   return course;
+}
+
+async function findMaterialOr404(course, materialId, res) {
+  if (!mongoose.Types.ObjectId.isValid(materialId)) {
+    res.status(400).json({
+      status: "fail",
+      error: "CastError",
+      message: "Invalid material id"
+    });
+    return null;
+  }
+
+  const material = await CourseMaterial.findOne({
+    _id: materialId,
+    course: course._id
+  });
+
+  if (!material) {
+    res.status(404).json({
+      status: "fail",
+      message: "Material not found for this course"
+    });
+    return null;
+  }
+
+  return material;
+}
+
+async function extractPdfText(material) {
+  const relPath = material.filePath.replace(/^\//, "");
+  const fileOnDisk = path.join(__dirname, "..", relPath);
+  const buffer = await fs.promises.readFile(fileOnDisk);
+  const parsed = await pdfParse(buffer);
+  return (parsed.text || "").trim();
 }
 
 // POST /api/v1/courses/:courseId/materials
@@ -100,14 +136,6 @@ router.delete("/:courseId/materials/:materialId", protect, async (req, res, next
     const course = await findCourseOr404(courseId, res);
     if (!course) return;
 
-    if (!mongoose.Types.ObjectId.isValid(materialId)) {
-      return res.status(400).json({
-        status: "fail",
-        error: "CastError",
-        message: "Invalid material id"
-      });
-    }
-
     const material = await CourseMaterial.findOneAndDelete({
       _id: materialId,
       course: course._id
@@ -128,6 +156,90 @@ router.delete("/:courseId/materials/:materialId", protect, async (req, res, next
     }
 
     return res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// AI summary for PDF material
+router.post("/:courseId/materials/:materialId/summaries", async (req, res, next) => {
+  try {
+    const { courseId, materialId } = req.params;
+    const course = await findCourseOr404(courseId, res);
+    if (!course) return;
+    const material = await findMaterialOr404(course, materialId, res);
+    if (!material) return;
+
+    const text = await extractPdfText(material);
+    if (!text) {
+      return res.status(400).json({
+        status: "fail",
+        message: "PDF has no extractable text"
+      });
+    }
+
+    const summary = await summarizeText(text);
+    return res.status(200).json({
+      status: "success",
+      data: { materialId: material._id, courseId: course._id, summary },
+      summary
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// AI quiz for PDF material
+router.post("/:courseId/materials/:materialId/aiquizzes", async (req, res, next) => {
+  try {
+    const { courseId, materialId } = req.params;
+    const course = await findCourseOr404(courseId, res);
+    if (!course) return;
+    const material = await findMaterialOr404(course, materialId, res);
+    if (!material) return;
+
+    const text = await extractPdfText(material);
+    if (!text) {
+      return res.status(400).json({
+        status: "fail",
+        message: "PDF has no extractable text"
+      });
+    }
+
+    const quiz = await generateQuiz(text);
+    return res.status(200).json({
+      status: "success",
+      data: { materialId: material._id, courseId: course._id, quiz },
+      quiz
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// AI flashcards for PDF material
+router.post("/:courseId/materials/:materialId/flashcards", async (req, res, next) => {
+  try {
+    const { courseId, materialId } = req.params;
+    const course = await findCourseOr404(courseId, res);
+    if (!course) return;
+    const material = await findMaterialOr404(course, materialId, res);
+    if (!material) return;
+
+    const text = await extractPdfText(material);
+    if (!text) {
+      return res.status(400).json({
+        status: "fail",
+        message: "PDF has no extractable text"
+      });
+    }
+
+    const flashcards = await generateFlashcards(text);
+    return res.status(200).json({
+      status: "success",
+      data: { materialId: material._id, courseId: course._id, flashcards },
+      flashcards
+    });
   } catch (err) {
     next(err);
   }
