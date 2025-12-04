@@ -1,6 +1,6 @@
 <template>
   <div class="container mt-5">
-    <h2 class="mb-4">Your Notes</h2>
+    <h2 class="mb-4">Your Lectures</h2>
 
     <div class="list-group shadow-sm">
       <button
@@ -65,7 +65,7 @@ export default {
       }
     } catch (err) {
       console.error(err)
-      alert('Failed to load notes')
+      alert('Failed to load lectures')
     }
   },
 

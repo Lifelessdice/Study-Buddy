@@ -4,9 +4,6 @@
       <router-link class="navbar-brand" to="/">StudyBuddy</router-link>
       <div class="collapse navbar-collapse">
         <ul class="navbar-nav me-auto">
-          <li class="nav-item">
-            <router-link class="nav-link" to="/">Home</router-link>
-          </li>
           <li class="nav-item" v-if="!user">
             <router-link class="nav-link" to="/login">Login</router-link>
           </li>
@@ -25,7 +22,7 @@
             <router-link class="nav-link" to="/results">Results</router-link>
           </li>
           <li class="nav-item" v-if="user && user.role === 'student'">
-            <router-link class="nav-link" to="/notes">Notes</router-link>
+            <router-link class="nav-link" to="/notes">Lectures</router-link>
           </li>
 
         </ul>
