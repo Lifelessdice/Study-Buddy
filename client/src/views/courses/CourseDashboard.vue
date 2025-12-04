@@ -675,15 +675,24 @@ export default {
     alert('Please fill all fields')
     return
   }
+
   this.savingNote = true
   try {
     const payload = {
       topic: this.newNoteTopic,
       content: this.newNoteContent,
-      course: this.course._id, // assign current course automatically
+      course: this.course._id // use current course ID automatically
     }
     const res = await Api.post('/notes', payload)
-    this.notes.push(res.data.data)
+
+    // Push to notes with course object for filtering
+    const newNote = {
+      ...res.data.data,
+      course: { _id: this.course._id } 
+    }
+    this.notes.push(newNote)
+
+    // Reset input fields
     this.newNoteTopic = ''
     this.newNoteContent = ''
     this.showCreateNote = false
@@ -695,6 +704,9 @@ export default {
     this.savingNote = false
   }
 }
+
+
+
 ,
 
   editNote(note) {
