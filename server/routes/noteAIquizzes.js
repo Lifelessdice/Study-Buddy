@@ -19,13 +19,23 @@ router.post("/:id/aiquizzes", async (req, res, next) => {
             });
         }
 
+        if (!note.content) {
+            return res.status(400).json({
+                status: "fail",
+                message: "Note has no content to generate a quiz"
+            });
+        }
+
         const quiz = await generateQuiz(note.content);
 
         return res.status(200).json({
             status: "success",
-            noteId: note._id,
-            topic: note.topic,
-            quiz: quiz
+            data: {
+                noteId: note._id,
+                topic: note.topic,
+                quiz
+            },
+            quiz
         });
 
     } catch (err) {
