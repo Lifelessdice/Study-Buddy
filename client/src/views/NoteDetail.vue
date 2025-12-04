@@ -24,41 +24,60 @@
     <div class="tab-content p-3 border border-top-0">
       <!-- Summary -->
       <div class="tab-pane fade show active" id="summary">
-        <button class="btn btn-primary mb-3" @click="generateSummary">
+        <button class="btn btn-primary mb-3" @click="generateSummary" :disabled="loadingSummary">
           Generate Summary
         </button>
-        <div v-if="summary">{{ summary }}</div>
+
+        <div v-if="loadingSummary" class="text-center my-3">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p>Generating summary, please wait...</p>
+        </div>
+
+        <div v-if="summary && !loadingSummary">{{ summary }}</div>
       </div>
 
       <!-- Quiz -->
-<div class="tab-pane fade" id="quiz">
-  <button class="btn btn-success mb-3" @click="generateQuiz">
-    Generate Quiz
-  </button>
+      <div class="tab-pane fade" id="quiz">
+        <button class="btn btn-success mb-3" @click="generateQuiz" :disabled="loadingQuiz">
+          Generate Quiz
+        </button>
 
-  <ul v-if="quiz.length" class="list-group">
-    <li v-for="(q, index) in quiz" :key="index" class="list-group-item">
-      <strong>Q{{ index + 1 }}: {{ q.question }}</strong>
+        <div v-if="loadingQuiz" class="text-center my-3">
+          <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p>Generating quiz, please wait...</p>
+        </div>
 
-      <ul class="list-group mt-2">
-        <li v-for="(opt, i) in q.options" :key="i" class="list-group-item">
-          {{ String.fromCharCode(65 + i) }}. {{ opt }}
-        </li>
-      </ul>
-
-      <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
-    </li>
-  </ul>
-</div>
-
+        <ul v-if="quiz.length && !loadingQuiz" class="list-group">
+          <li v-for="(q, index) in quiz" :key="index" class="list-group-item">
+            <strong>Q{{ index + 1 }}: {{ q.question }}</strong>
+            <ul class="list-group mt-2">
+              <li v-for="(opt, i) in q.options" :key="i" class="list-group-item">
+                {{ String.fromCharCode(65 + i) }}. {{ opt }}
+              </li>
+            </ul>
+            <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
+          </li>
+        </ul>
+      </div>
 
       <!-- Flashcards -->
       <div class="tab-pane fade" id="flashcards">
-        <button class="btn btn-warning mb-3" @click="generateFlashcards">
+        <button class="btn btn-warning mb-3" @click="generateFlashcards" :disabled="loadingFlashcards">
           Generate Flashcards
         </button>
 
-        <ul v-if="flashcards.length" class="list-group">
+        <div v-if="loadingFlashcards" class="text-center my-3">
+          <div class="spinner-border text-warning" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p>Generating flashcards, please wait...</p>
+        </div>
+
+        <ul v-if="flashcards.length && !loadingFlashcards" class="list-group">
           <li v-for="(fc, index) in flashcards" :key="index" class="list-group-item">
             <strong>Q: {{ fc.question }}</strong><br>
             <small class="text-muted">A: {{ fc.answer }}</small>
@@ -73,13 +92,16 @@
 import api from '../Api'
 
 export default {
-  props: ['id'], // Make sure your route has props: true
+  props: ['id'],
   data() {
     return {
       note: {},
       summary: '',
       quiz: [],
-      flashcards: []
+      flashcards: [],
+      loadingSummary: false,
+      loadingQuiz: false,
+      loadingFlashcards: false
     }
   },
   async created() {
@@ -91,32 +113,42 @@ export default {
     }
   },
   methods: {
-  async generateSummary() {
-    const res = await api.post(`/notes/${this.id}/summaries`)
-    this.summary = res.data.data.summary
-  },
-
-  async generateQuiz() {
-    try {
-      const res = await api.post(`/notes/${this.id}/aiquizzes`)
-      // Adapt to backend format
-      this.quiz = res.data.quiz || []
-    } catch (err) {
-      console.error(err)
-      alert('Failed to generate quiz')
-    }
-  },
-
-  async generateFlashcards() {
-    try {
-      const res = await api.post(`/notes/${this.id}/flashcards`)
-      // Adapt to backend format
-      this.flashcards = res.data.flashcards || []
-    } catch (err) {
-      console.error(err)
-      alert('Failed to generate flashcards')
+    async generateSummary() {
+      try {
+        this.loadingSummary = true
+        this.summary = ''
+        const res = await api.post(`/notes/${this.id}/summaries`)
+        this.summary = res.data.data.summary
+      } catch (err) {
+        alert('Failed to generate summary')
+      } finally {
+        this.loadingSummary = false
+      }
+    },
+    async generateQuiz() {
+      try {
+        this.loadingQuiz = true
+        this.quiz = []
+        const res = await api.post(`/notes/${this.id}/aiquizzes`)
+        this.quiz = res.data.quiz || res.data.data?.quiz
+      } catch (err) {
+        alert('Failed to generate quiz')
+      } finally {
+        this.loadingQuiz = false
+      }
+    },
+    async generateFlashcards() {
+      try {
+        this.loadingFlashcards = true
+        this.flashcards = []
+        const res = await api.post(`/notes/${this.id}/flashcards`)
+        this.flashcards = res.data.flashcards || res.data.data?.flashcards
+      } catch (err) {
+        alert('Failed to generate flashcards')
+      } finally {
+        this.loadingFlashcards = false
+      }
     }
   }
-}
 }
 </script>
