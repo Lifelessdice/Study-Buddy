@@ -1,6 +1,8 @@
+// quizzesController.js
 const mongoose = require("mongoose");
 const Quiz = require("../models/quizzes");
 const Course = require("../models/courses");
+const QuizParticipation = require("../models/quizparticipations"); 
 
 function ensureRequiredFields(body) {
   const required = {
@@ -273,3 +275,72 @@ exports.deleteAllQuizzes = async (req, res, next) => {
     next(err);
   }
 };
+
+// ---------------------------------------------
+// Get analytics for a single quiz
+// GET /api/v1/quizzes/:id/analytics
+// ---------------------------------------------
+exports.getQuizAnalytics = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Validate quiz id format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: "CastError",
+        message: "Invalid ID format"
+      });
+    }
+
+    // Ensure quiz exists
+    const quiz = await Quiz.findById(id);
+    if (!quiz) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Quiz not found"
+      });
+    }
+
+    // Load all participations for this quiz
+    const parts = await QuizParticipation.find({ quiz: id });
+
+    const attempts = parts.length;
+    const scores = parts.map((p) => (typeof p.score === "number" ? p.score : 0));
+    const sum = scores.reduce((a, b) => a + b, 0);
+
+    const averageScore = attempts > 0 ? sum / attempts : 0;
+    const highestScore = attempts > 0 ? Math.max(...scores) : 0;
+    const lowestScore = attempts > 0 ? Math.min(...scores) : 0;
+
+    // Question-level stats
+    const questionStats = quiz.questions.map((q, idx) => {
+      const correctCount = parts.filter(
+        (p) => Array.isArray(p.answers) && p.answers[idx] === q.correctAnswerIndex
+      ).length;
+      const total = attempts;
+      return {
+        questionIndex: idx,
+        questionText: q.text,
+        attempts: total,
+        correct: correctCount,
+        correctness: total > 0 ? correctCount / total : 0
+      };
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        quizId: id,
+        title: quiz.title,
+        attempts,
+        averageScore,
+        highestScore,
+        lowestScore,
+        questionStats
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+

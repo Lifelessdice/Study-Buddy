@@ -221,3 +221,63 @@ exports.deleteParticipation = async (req, res, next) => {
     next(err);
   }
 };
+
+// ------------------------------------------------------
+// Get aggregated analytics for a student's quiz history
+// GET /api/v1/quizparticipations/student/:studentId/analytics
+// ------------------------------------------------------
+exports.getStudentAnalytics = async (req, res, next) => {
+  try {
+    const { studentId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(studentId)) {
+      return res.status(400).json({
+        error: "CastError",
+        message: "Invalid student id format"
+      });
+    }
+
+    const list = await QuizParticipation.find({ student: studentId })
+      .populate({
+        path: "quiz",
+        select: "title course",
+        populate: { path: "course", select: "name code" }
+      });
+
+    const totalQuizzes = list.length;
+    const scores = list.map((p) => (typeof p.score === "number" ? p.score : 0));
+    const sum = scores.reduce((a, b) => a + b, 0);
+    const averageScore = totalQuizzes > 0 ? sum / totalQuizzes : 0;
+    const highestScore = totalQuizzes > 0 ? Math.max(...scores) : 0;
+    const lowestScore = totalQuizzes > 0 ? Math.min(...scores) : 0;
+
+    // Build a simple history timeline sorted by createdAt
+    const history = list
+      .slice()
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+      .map((p) => ({
+        id: p._id,
+        quizId: p.quiz?._id,
+        quizTitle: p.quiz?.title,
+        courseName: p.quiz?.course?.name,
+        courseCode: p.quiz?.course?.code,
+        score: p.score,
+        takenAt: p.createdAt
+      }));
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        studentId,
+        totalQuizzes,
+        averageScore,
+        highestScore,
+        lowestScore,
+        history
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
