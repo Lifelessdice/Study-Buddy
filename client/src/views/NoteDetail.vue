@@ -64,25 +64,40 @@
         </ul>
       </div>
 
-      <!-- Flashcards -->
+      <!-- Flashcards Tab -->
       <div class="tab-pane fade" id="flashcards">
-        <button class="btn btn-warning mb-3" @click="generateFlashcards" :disabled="loadingFlashcards">
-          Generate Flashcards
-        </button>
+      <button
+          class="btn btn-warning mb-3"
+          @click="generateFlashcards"
+          :disabled="loadingFlashcards"
+  >
+          <span v-if="loadingFlashcards">Generating...</span>
+          <span v-else>Generate Flashcards</span>
+      </button>
 
-        <div v-if="loadingFlashcards" class="text-center my-3">
+      <div v-if="loadingFlashcards" class="text-center my-3">
           <div class="spinner-border text-warning" role="status">
-            <span class="visually-hidden">Loading...</span>
+          <span class="visually-hidden">Loading...</span>
           </div>
           <p>Generating flashcards, please wait...</p>
-        </div>
+      </div>
 
-        <ul v-if="flashcards.length && !loadingFlashcards" class="list-group">
-          <li v-for="(fc, index) in flashcards" :key="index" class="list-group-item">
-            <strong>Q: {{ fc.question }}</strong><br>
-            <small class="text-muted">A: {{ fc.answer }}</small>
-          </li>
-        </ul>
+      <div v-if="flashcards.length && !loadingFlashcards" class="flashcards-container">
+          <div
+          class="flashcard"
+          v-for="(fc, index) in flashcards"
+          :key="index"
+          :class="{ flipped: fc.flipped }"
+          @click="fc.flipped = !fc.flipped"
+    >
+          <div class="front">
+              Q: {{ fc.question }}
+          </div>
+          <div class="back">
+              A: {{ fc.answer }}
+          </div>
+          </div>
+      </div>
       </div>
     </div>
   </div>
@@ -142,7 +157,11 @@ export default {
         this.loadingFlashcards = true
         this.flashcards = []
         const res = await api.post(`/notes/${this.id}/flashcards`)
-        this.flashcards = res.data.flashcards || res.data.data?.flashcards
+        // Add a flipped property for animation
+        this.flashcards = (res.data.flashcards || res.data.data?.flashcards).map(fc => ({
+          ...fc,
+          flipped: false
+        }))
       } catch (err) {
         alert('Failed to generate flashcards')
       } finally {
