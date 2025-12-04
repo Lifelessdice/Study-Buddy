@@ -220,6 +220,66 @@
       </div>
     </div>
 
+    <div v-if="currentTab === 'notes'" class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0">Notes</h5>
+      <button
+        v-if="isTeacher"
+        class="btn btn-outline-primary btn-sm"
+        @click="showCreateNote = !showCreateNote"
+      >
+        {{ showCreateNote ? 'Cancel' : '+ Create Note' }}
+      </button>
+    </div>
+
+    <!-- Create note form (teachers only) -->
+    <div v-if="isTeacher && showCreateNote" class="mb-3">
+      <input v-model="newNoteTopic" type="text" class="form-control mb-2" placeholder="Topic" />
+      <textarea v-model="newNoteContent" class="form-control mb-2" rows="4" placeholder="Content"></textarea>
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary btn-sm" :disabled="savingNote" @click="createNote">
+          {{ savingNote ? 'Saving...' : 'Save Note' }}
+        </button>
+        <button class="btn btn-link btn-sm" @click="showCreateNote = false">Discard</button>
+      </div>
+    </div>
+
+    <!-- Notes list -->
+    <div v-if="loadingNotes" class="text-muted">Loading notes...</div>
+    <div v-else>
+      <div v-if="!filteredNotes.length" class="alert alert-info">
+        No notes available for this course.
+      </div>
+
+      <div v-for="note in filteredNotes" :key="note._id" class="note-card mb-3 p-3 border rounded">
+        <div v-if="editingNoteId === note._id">
+          <input v-model="editNoteTopic" type="text" class="form-control mb-2" placeholder="Topic" />
+          <textarea v-model="editNoteContent" class="form-control mb-2" rows="4" placeholder="Content"></textarea>
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary btn-sm" :disabled="savingEditNote" @click="saveEditedNote(note._id)">
+              {{ savingEditNote ? 'Saving...' : 'Save' }}
+            </button>
+            <button class="btn btn-link btn-sm" @click="cancelEditNote">Cancel</button>
+          </div>
+        </div>
+        <div v-else class="d-flex justify-content-between align-items-start">
+          <div>
+            <h6 class="mb-1">{{ note.topic }}</h6>
+            <div class="small text-muted">Created: {{ formatDate(note.createdAt) }}</div>
+            <p class="mb-0">{{ note.content }}</p>
+          </div>
+          <div class="d-flex gap-2" v-if="isTeacher">
+            <button class="btn btn-sm btn-outline-secondary" @click="editNote(note)">Edit</button>
+            <button class="btn btn-sm btn-outline-danger" @click="deleteNote(note._id)">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
     <div v-if="showDeleteConfirm" class="overlay">
       <div class="overlay-card">
         <h5 class="text-danger">Delete Quiz</h5>
@@ -310,7 +370,18 @@ export default {
       attemptsLoading: false,
       attempts: [],
       attemptsQuizTitle: '',
-      myParticipations: {}
+      myParticipations: {},
+      notes: [],
+      loadingNotes: false,
+      savingNote: false,
+      showCreateNote: false,
+      newNoteTopic: '',
+      newNoteContent: '',
+      newNoteCourse: '',
+      editingNoteId: null,
+      editNoteTopic: '',
+      editNoteContent: '',
+      savingEditNote: false,
     }
   },
   computed: {
@@ -349,7 +420,12 @@ export default {
     },
     myParticipationByQuiz() {
       return this.myParticipations || {}
-    }
+    },
+    filteredNotes() {
+  if (!Array.isArray(this.notes) || !this.course?._id) return []
+  return this.notes.filter(note => note.course?._id === this.course._id)
+}
+
   },
   watch: {
     '$route.query.tab'(val) {
@@ -371,7 +447,10 @@ export default {
       if (tab === 'quizzes') {
         this.fetchQuizzes()
       }
+      if (tab === 'notes') this.fetchNotes()
     },
+
+
     async fetchCourse() {
       const res = await CourseService.getById(this.$route.params.id)
       this.course = res.data.data || res.data
@@ -572,8 +651,98 @@ export default {
       this.showAttemptsModal = false
       this.attempts = []
       this.attemptsQuizTitle = ''
+    },
+    async fetchNotes() {
+  if (!this.course || !this.course._id) return
+
+  this.loadingNotes = true
+  try {
+    const res = await Api.get('/notes', {
+      params: { course: this.course._id } // fetch notes only for this course
+    })
+    this.notes = res.data.data || res.data
+  } catch (err) {
+    console.error(err)
+    alert('Failed to load notes')
+  } finally {
+    this.loadingNotes = false
+  }
+}
+,
+
+  async createNote() {
+  if (!this.newNoteTopic.trim() || !this.newNoteContent.trim()) {
+    alert('Please fill all fields')
+    return
+  }
+  this.savingNote = true
+  try {
+    const payload = {
+      topic: this.newNoteTopic,
+      content: this.newNoteContent,
+      course: this.course._id, // assign current course automatically
+    }
+    const res = await Api.post('/notes', payload)
+    this.notes.push(res.data.data)
+    this.newNoteTopic = ''
+    this.newNoteContent = ''
+    this.showCreateNote = false
+    alert('Note created')
+  } catch (err) {
+    console.error(err)
+    alert('Failed to create note')
+  } finally {
+    this.savingNote = false
+  }
+}
+,
+
+  editNote(note) {
+    this.editingNoteId = note._id
+    this.editNoteTopic = note.topic
+    this.editNoteContent = note.content
+  },
+
+  cancelEditNote() {
+    this.editingNoteId = null
+    this.editNoteTopic = ''
+    this.editNoteContent = ''
+  },
+
+  async saveEditedNote(id) {
+    if (!this.editNoteTopic.trim() || !this.editNoteContent.trim()) {
+      alert('Please fill all fields')
+      return
+    }
+    this.savingEditNote = true
+    try {
+      const payload = { topic: this.editNoteTopic, content: this.editNoteContent }
+      const res = await Api.patch(`/notes/${id}`, payload)
+      const idx = this.notes.findIndex(n => n._id === id)
+      if (idx !== -1) this.notes[idx] = res.data.data
+      this.cancelEditNote()
+      alert('Note updated')
+    } catch (err) {
+      console.error(err)
+      alert('Failed to update note')
+    } finally {
+      this.savingEditNote = false
     }
   },
+
+  async deleteNote(id) {
+    if (!confirm('Delete this note?')) return
+    try {
+      await Api.delete(`/notes/${id}`)
+      this.notes = this.notes.filter(n => n._id !== id)
+      alert('Note deleted')
+    } catch (err) {
+      console.error(err)
+      alert('Failed to delete note')
+    }
+  }
+},
+  
   async mounted() {
     if (this.$route.query.tab) {
       this.currentTab = this.$route.query.tab
