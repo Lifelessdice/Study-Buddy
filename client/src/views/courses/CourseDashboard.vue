@@ -223,33 +223,33 @@
     <div v-if="currentTab === 'notes'" class="card mb-3">
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="mb-0">Notes</h5>
+      <h5 class="mb-0">Lectures</h5>
       <button
         v-if="isTeacher"
         class="btn btn-outline-primary btn-sm"
         @click="showCreateNote = !showCreateNote"
       >
-        {{ showCreateNote ? 'Cancel' : '+ Create Note' }}
+        {{ showCreateNote ? 'Cancel' : '+ Create Lecture' }}
       </button>
     </div>
 
-    <!-- Create note form (teachers only) -->
+    <!-- Create lecture form (teachers only) -->
     <div v-if="isTeacher && showCreateNote" class="mb-3">
       <input v-model="newNoteTopic" type="text" class="form-control mb-2" placeholder="Topic" />
       <textarea v-model="newNoteContent" class="form-control mb-2" rows="4" placeholder="Content"></textarea>
       <div class="d-flex gap-2">
         <button class="btn btn-primary btn-sm" :disabled="savingNote" @click="createNote">
-          {{ savingNote ? 'Saving...' : 'Save Note' }}
+          {{ savingNote ? 'Saving...' : 'Save Lecture' }}
         </button>
         <button class="btn btn-link btn-sm" @click="showCreateNote = false">Discard</button>
       </div>
     </div>
 
-    <!-- Notes list -->
-    <div v-if="loadingNotes" class="text-muted">Loading notes...</div>
+    <!-- Lectures list -->
+    <div v-if="loadingNotes" class="text-muted">Loading lectures...</div>
     <div v-else>
       <div v-if="!filteredNotes.length" class="alert alert-info">
-        No notes available for this course.
+        No lectures available for this course.
       </div>
 
       <div v-for="note in filteredNotes" :key="note._id" class="note-card mb-3 p-3 border rounded">
@@ -264,7 +264,7 @@
           </div>
         </div>
         <div v-else class="d-flex justify-content-between align-items-start">
-          <div>
+          <div class="lecture-text">
             <h6 class="mb-1">{{ note.topic }}</h6>
             <div class="small text-muted">Created: {{ formatDate(note.createdAt) }}</div>
             <p class="mb-0">{{ note.content }}</p>
@@ -281,7 +281,7 @@
 
     <div v-if="showDeleteNoteConfirm" class="overlay">
   <div class="overlay-card">
-    <h5 class="text-danger">Delete Note</h5>
+    <h5 class="text-danger">Delete Lecture</h5>
     <p class="mb-3">Are you sure you want to delete "{{ noteToDelete?.topic }}"?</p>
     <div class="d-flex justify-content-end gap-2">
       <button class="btn btn-outline-secondary" @click="cancelDeleteNote">Cancel</button>
@@ -676,7 +676,7 @@ export default {
     this.notes = res.data.data || res.data
   } catch (err) {
     console.error(err)
-    alert('Failed to load notes')
+    alert('Failed to load lectures')
   } finally {
     this.loadingNotes = false
   }
@@ -709,7 +709,7 @@ export default {
     this.newNoteTopic = ''
     this.newNoteContent = ''
     this.showCreateNote = false
-    alert('Note created')
+    alert('Lecture created')
   } catch (err) {
     console.error(err)
     alert('Failed to create note')
@@ -754,7 +754,7 @@ export default {
     if (idx !== -1) this.notes[idx] = updatedNote
     
     this.cancelEditNote()
-    alert('Note updated')
+    alert('Lecture updated')
   } catch (err) {
     console.error(err)
     alert('Failed to update note')
@@ -769,7 +769,7 @@ export default {
     try {
       await Api.delete(`/notes/${id}`)
       this.notes = this.notes.filter(n => n._id !== id)
-      alert('Note deleted')
+      alert('Lecture deleted')
     } catch (err) {
       console.error(err)
       alert('Failed to delete note')
@@ -795,7 +795,7 @@ export default {
       this.notes = this.notes.filter(n => n._id !== this.noteToDelete._id)
       this.noteToDelete = null
       this.showDeleteNoteConfirm = false
-      alert('Note deleted') // optional, you can remove this if the modal is enough
+      alert('Lecture deleted') // optional, you can remove this if the modal is enough
     } catch (err) {
       console.error(err)
       alert('Failed to delete note')
@@ -864,5 +864,11 @@ export default {
 }
 .overlay-card.wide {
   max-width: 720px;
+}
+
+.lecture-text {
+  text-align: left;
+  white-space: pre-line;
+  line-height: 1.5;
 }
 </style>

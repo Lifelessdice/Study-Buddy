@@ -22,7 +22,7 @@
             <router-link class="nav-link" to="/results">Results</router-link>
           </li>
           <li class="nav-item" v-if="user && user.role === 'student'">
-            <router-link class="nav-link" to="/notes">Notes</router-link>
+            <router-link class="nav-link" to="/notes">Lectures</router-link>
           </li>
 
         </ul>

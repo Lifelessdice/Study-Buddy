@@ -3,8 +3,8 @@
     <h2 class="mb-4">{{ note.topic }}</h2>
 
     <div class="card shadow-sm">
-      <div class="card-body">
-        <p>{{ note.content }}</p>
+      <div class="card-body text-start" style="white-space: pre-line;">
+        <p class="mb-0">{{ note.content }}</p>
       </div>
     </div>
 
