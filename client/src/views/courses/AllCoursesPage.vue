@@ -178,7 +178,9 @@ export default {
       // enrollment state
       enrolledCourseIds: [],
       enrollingId: null,
-      enrollError: null
+      enrollError: null, 
+
+      apilinks: null
     }
   },
   computed: {
@@ -216,7 +218,6 @@ export default {
       try {
         this.loading = true
         this.error = null
-        this.enrollError = null
 
         const params = {
           page: this.currentPage,
@@ -224,6 +225,7 @@ export default {
         }
 
         if (this.search) {
+          // backend will treat these as filters
           params.name = this.search
           params.code = this.search
         }
@@ -231,20 +233,35 @@ export default {
 
         const res = await CourseService.getAll(params)
 
+        // backend shape: { status, page, limit, total, totalPages, data, degrees, links, ... }
         const data = res.data
+
         this.courses = data.data || data
         if (data && Array.isArray(data.degrees)) {
           this.degreeOptions = data.degrees
         }
 
-        this.total = data.total ?? this.courses.length
-        this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
+        // store HATEOAS collection links (self/next/prev/...)
+        this.apiLinks = data.links || null
 
-        if (this.isStudent) {
-          await this.fetchEnrollments()
+        // use backend pagination numbers
+        if (typeof data.total === 'number') {
+          this.total = data.total
+        } else {
+          this.total = this.courses.length
+        }
+
+        if (typeof data.limit === 'number') {
+          this.pageSize = data.limit
+        }
+
+        if (typeof data.totalPages === 'number') {
+          this.totalPages = data.totalPages
+        } else {
+          this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
         }
       } catch (err) {
-        this.error = 'Failed to load courses.'
+        this.error = err
         console.error(err)
       } finally {
         this.loading = false
