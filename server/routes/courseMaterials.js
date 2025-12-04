@@ -5,7 +5,7 @@ const path = require("path");
 const pdfParse = require("pdf-parse");
 const Course = require("../models/courses");
 const CourseMaterial = require("../models/courseMaterials");
-const upload = require("../utils/upload");
+const upload = require("../Utils/upload");
 const protect = require("../middleware/protect");
 const { summarizeText, generateQuiz, generateFlashcards } = require("../config/openAIconfig");
 
