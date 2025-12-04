@@ -44,6 +44,35 @@ function ensureNonEmptyIfPresent(body, field, message) {
   }
 }
 
+// --- HATEOAS helpers ---
+
+// Build HATEOAS links for a single course
+function buildCourseLinks(courseId) {
+  return {
+    self: `/api/v1/courses/${courseId}`,
+    update: `/api/v1/courses/${courseId}`,
+    delete: `/api/v1/courses/${courseId}`,
+    enrollments: `/api/v1/courses/${courseId}/attendances`,
+    quizzes: `/api/v1/courses/${courseId}/quizzes`
+  };
+}
+
+// Build HATEOAS links for the courses collection (pagination)
+function buildCoursesCollectionLinks(page, limit, total) {
+  const totalPages = Math.max(Math.ceil(total / limit), 1);
+  const base = '/api/v1/courses';
+
+  const makePageLink = (p) => `${base}?page=${p}&limit=${limit}`;
+
+  return {
+    self: makePageLink(page),
+    first: makePageLink(1),
+    last: makePageLink(totalPages),
+    prev: page > 1 ? makePageLink(page - 1) : null,
+    next: page < totalPages ? makePageLink(page + 1) : null
+  };
+}
+
 // CREATE
 exports.createCourse = async (req, res, next) => {
   try {
@@ -101,23 +130,35 @@ exports.getCourses = async (req, res, next) => {
 
     // collect unique degrees in this result set
     const degreeSet = new Set();
-    courses.forEach(c => {
-      if (c.degree) degreeSet.add(c.degree);
+
+    const data = courses.map((c) => {
+      const obj = c.toJSON ? c.toJSON() : c;
+      if (obj.degree) degreeSet.add(obj.degree);
+
+      return {
+        ...obj,
+        links: buildCourseLinks(c._id)
+      };
     });
+
+    const totalPages = Math.max(Math.ceil(total / limit), 1);
 
     res.status(200).json({
       status: "success",
       page,
       limit,
       total,
-      results: courses.length,
+      totalPages,
+      results: data.length,
       degrees: Array.from(degreeSet),
-      data: courses
+      links: buildCoursesCollectionLinks(page, limit, total),
+      data
     });
   } catch (err) {
     next(err);
   }
 };
+
 
 // LIST courses for the logged-in teacher
 exports.getMyCourses = async (req, res, next) => {
@@ -145,7 +186,7 @@ exports.getMyCourses = async (req, res, next) => {
   }
 };
 
-// GET BY ID
+// GET BY ID (single course with HATEOAS links)
 exports.getCourseById = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -167,7 +208,10 @@ exports.getCourseById = async (req, res, next) => {
       });
     }
 
-    res.status(200).json({ status: "success", data: course });
+    const obj = course.toJSON ? course.toJSON() : course;
+    obj.links = buildCourseLinks(id);
+
+    res.status(200).json({ status: "success", data: obj });
   } catch (err) {
     next(err);
   }
