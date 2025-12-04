@@ -11,12 +11,6 @@
           Manage Courses
         </router-link>
       </div>
-
-      <div v-if="user.role === 'student'" class="mt-3">
-        <router-link to="/courses/signup" class="btn btn-success">
-          Sign Up for Courses
-        </router-link>
-      </div>
     </div>
 
     <button class="btn btn-danger mt-3" @click="logout">Log Out</button>
