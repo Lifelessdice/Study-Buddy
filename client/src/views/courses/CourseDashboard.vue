@@ -271,10 +271,21 @@
           </div>
           <div class="d-flex gap-2" v-if="isTeacher">
             <button class="btn btn-sm btn-outline-secondary" @click="editNote(note)">Edit</button>
-            <button class="btn btn-sm btn-outline-danger" @click="deleteNote(note._id)">Delete</button>
+            <button class="btn btn-sm btn-outline-danger" @click="promptDeleteNote(note)">Delete</button>
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+    <div v-if="showDeleteNoteConfirm" class="overlay">
+  <div class="overlay-card">
+    <h5 class="text-danger">Delete Note</h5>
+    <p class="mb-3">Are you sure you want to delete "{{ noteToDelete?.topic }}"?</p>
+    <div class="d-flex justify-content-end gap-2">
+      <button class="btn btn-outline-secondary" @click="cancelDeleteNote">Cancel</button>
+      <button class="btn btn-danger" @click="deleteNoteConfirmed">Delete</button>
     </div>
   </div>
 </div>
@@ -382,6 +393,8 @@ export default {
       editNoteTopic: '',
       editNoteContent: '',
       savingEditNote: false,
+      showDeleteNoteConfirm: false,
+      noteToDelete: null,
     }
   },
   computed: {
@@ -757,6 +770,32 @@ export default {
       await Api.delete(`/notes/${id}`)
       this.notes = this.notes.filter(n => n._id !== id)
       alert('Note deleted')
+    } catch (err) {
+      console.error(err)
+      alert('Failed to delete note')
+    }
+  },
+   // When user clicks Delete
+  promptDeleteNote(note) {
+    this.noteToDelete = note
+    this.showDeleteNoteConfirm = true
+  },
+
+  // Cancel deletion
+  cancelDeleteNote() {
+    this.noteToDelete = null
+    this.showDeleteNoteConfirm = false
+  },
+
+  // Confirm deletion
+  async deleteNoteConfirmed() {
+    if (!this.noteToDelete) return
+    try {
+      await Api.delete(`/notes/${this.noteToDelete._id}`)
+      this.notes = this.notes.filter(n => n._id !== this.noteToDelete._id)
+      this.noteToDelete = null
+      this.showDeleteNoteConfirm = false
+      alert('Note deleted') // optional, you can remove this if the modal is enough
     } catch (err) {
       console.error(err)
       alert('Failed to delete note')
