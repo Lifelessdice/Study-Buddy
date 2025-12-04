@@ -17,12 +17,11 @@
           </div>
 
           <div class="mt-3 p-3 border rounded bg-light-subtle">
-            <div v-if="aiState[item._id]?.error" class="alert alert-warning mb-3">
-              {{ aiState[item._id].error }}
-            </div>
-
             <!-- Summary -->
             <div class="mb-3">
+              <div v-if="aiState[item._id]?.error" class="alert alert-warning mb-3">
+                {{ aiState[item._id].error }}
+              </div>
               <button class="btn btn-primary mb-2" @click="generateMaterialSummary(item)" :disabled="aiState[item._id]?.loadingSummary">
                 Generate Summary
               </button>
@@ -30,6 +29,7 @@
                 <div class="spinner-border text-primary" role="status">
                   <span class="visually-hidden">Loading...</span>
                 </div>
+                <p>Generating summary, please wait...</p>
               </div>
               <div v-if="aiState[item._id]?.summary && !aiState[item._id]?.loadingSummary">{{ aiState[item._id].summary }}</div>
             </div>
@@ -244,7 +244,7 @@ export default {
         const res = await CourseMaterialService.summarize(item.courseId, item._id)
         state.summary = res.data.summary || res.data.data?.summary || 'No summary returned'
       } catch (err) {
-        state.error = 'Failed to generate summary'
+        state.error = 'Failed to generate summary. Please try again.'
       } finally {
         state.loadingSummary = false
       }
@@ -263,7 +263,7 @@ export default {
         state.quiz = res.data.quiz || res.data.data?.quiz || []
         if (!state.quiz.length) state.error = 'No quiz questions were returned.'
       } catch (err) {
-        state.error = 'Failed to generate quiz'
+        state.error = 'Failed to generate quiz. Please try again.'
       } finally {
         state.loadingQuiz = false
       }
@@ -286,7 +286,7 @@ export default {
         }))
         if (!state.flashcards.length) state.error = 'No flashcards were returned.'
       } catch (err) {
-        state.error = 'Failed to generate flashcards'
+        state.error = 'Failed to generate flashcards. Please try again.'
       } finally {
         state.loadingFlashcards = false
       }
