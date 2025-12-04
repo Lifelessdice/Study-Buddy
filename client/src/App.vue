@@ -4,9 +4,6 @@
       <router-link class="navbar-brand" to="/">StudyBuddy</router-link>
       <div class="collapse navbar-collapse">
         <ul class="navbar-nav me-auto">
-          <li class="nav-item">
-            <router-link class="nav-link" to="/">Home</router-link>
-          </li>
           <li class="nav-item" v-if="!user">
             <router-link class="nav-link" to="/login">Login</router-link>
           </li>
