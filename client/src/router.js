@@ -15,6 +15,9 @@ import EditQuiz from './views/quizzes/EditQuiz.vue'
 import TakeQuiz from './views/quizzes/TakeQuiz.vue'
 import StudentResults from './views/quizzes/StudentResults.vue'
 import CourseSignupPage from './views/courses/CourseSignupPage.vue'
+import NotesList from './views/NotesList.vue'
+import NoteDetail from './views/NoteDetail.vue'
+
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
