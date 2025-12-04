@@ -57,14 +57,14 @@
       </div>
     </div>
 
-    <div v-if="loading">Loading courses...</div>
+        <div v-if="loading">Loading courses...</div>
 
     <div v-if="!loading && courses.length === 0" class="alert alert-info">
       No courses yet.
     </div>
 
     <div class="row">
-      <div v-for="course in courses" :key="course._id" class="col-md-6 mb-3">
+      <div v-for="course in paginatedCourses" :key="course._id" class="col-md-6 mb-3">
         <div class="card h-100">
           <div class="card-body">
             <h5 class="card-title">
@@ -77,6 +77,46 @@
         </div>
       </div>
     </div>
+
+    <div v-if="!loading && courses.length" class="d-flex justify-content-between align-items-center mt-3">
+      <div>
+        <button
+          class="btn btn-outline-secondary me-2"
+          @click="prevPage"
+          :disabled="currentPage === 1"
+        >
+          Previous
+        </button>
+
+        <button
+          class="btn btn-outline-secondary"
+          @click="nextPage"
+          :disabled="currentPage === totalPages"
+        >
+          Next
+        </button>
+      </div>
+
+      <div class="d-flex align-items-center">
+        <span class="me-3">
+          Page {{ currentPage }} of {{ totalPages }}
+          <span v-if="total"> ({{ total }} total)</span>
+        </span>
+
+        <select
+          class="form-select"
+          style="width: auto;"
+          :value="pageSize"
+          @change="changePageSize($event.target.value)"
+        >
+          <option :value="5">5</option>
+          <option :value="10">10</option>
+          <option :value="20">20</option>
+        </select>
+      </div>
+    </div>
+    <!-- 🔼 END PAGINATION BLOCK -->
+
   </div>
 </template>
 
@@ -93,43 +133,70 @@ export default {
       search: '',
       degree: '',
       showFilters: false,
-      degreeOptions: []
+      degreeOptions: [],
+
+      // 🔽 pagination state
+      currentPage: 1,
+      pageSize: 5,      // low default as requested
+      totalPages: 1,
+      total: 0
     }
   },
   computed: {
-    isTeacher() {
-      const u = localStorage.getItem('user')
-      if (!u) return false
-      const user = JSON.parse(u)
-      return user.role === 'teacher'
-    },
-    searchSuggestions() {
-      const term = this.search.trim().toLowerCase()
-      if (!term) return []
-      return this.courses
-        .filter(c =>
-          (c.name || '').toLowerCase().includes(term) ||
-          (c.code || '').toLowerCase().includes(term)
-        )
-        .slice(0, 5)
-    }
+  isTeacher() {
+    const u = localStorage.getItem('user')
+    if (!u) return false
+    const user = JSON.parse(u)
+    return user.role === 'teacher'
   },
+  searchSuggestions() {
+    const term = this.search.trim().toLowerCase()
+    if (!term) return []
+    return this.courses
+      .filter(c =>
+        (c.name || '').toLowerCase().includes(term) ||
+        (c.code || '').toLowerCase().includes(term)
+      )
+      .slice(0, 5)
+  },
+  paginatedCourses() {
+    const start = (this.currentPage - 1) * this.pageSize
+    const end = start + this.pageSize
+    return this.courses.slice(start, end)
+  }
+},
+
   methods: {
     async fetchCourses() {
       try {
         this.loading = true
-        const params = {}
+        this.error = null
+
+        const params = {
+          page: this.currentPage,
+          limit: this.pageSize
+        }
+
         if (this.search) {
+          // backend will treat these as filters
           params.name = this.search
           params.code = this.search
         }
         if (this.degree) params.degree = this.degree
 
         const res = await CourseService.getAll(params)
-        this.courses = res.data.data || res.data
-        if (res.data && Array.isArray(res.data.degrees)) {
-          this.degreeOptions = res.data.degrees
+
+        // backend shape: { status, page, limit, total, data, degrees, ... }
+        const data = res.data
+
+        this.courses = data.data || data
+        if (data && Array.isArray(data.degrees)) {
+          this.degreeOptions = data.degrees
         }
+
+        // pagination numbers from backend
+        this.total = this.courses.length
+        this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
       } catch (err) {
         this.error = err
         console.error(err)
@@ -137,19 +204,48 @@ export default {
         this.loading = false
       }
     },
+
+    // called when user types; we only update suggestions here
     onSearchInput() {
       // suggestions derived from current list; fetch on Search click
     },
+
+    // e.g. called when clicking a suggestion
     selectSuggestion(course) {
       this.search = course.code || course.name || ''
+      this.currentPage = 1 // reset to first page when changing search
       this.fetchCourses()
     },
+
     toggleFilters() {
       this.showFilters = !this.showFilters
     },
+
     formatDate(d) {
       if (!d) return ''
       return new Date(d).toLocaleString()
+    },
+
+    // 🔽 pagination actions
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++
+        this.fetchCourses()
+      }
+    },
+
+    prevPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--
+        this.fetchCourses()
+      }
+    },
+
+    changePageSize(newSize) {
+      // if you bind v-model to pageSize directly, you can ignore newSize param
+      this.pageSize = Number(newSize) || this.pageSize
+      this.currentPage = 1
+      this.fetchCourses()
     }
   },
   mounted() {

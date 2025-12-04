@@ -89,7 +89,7 @@ exports.getCourses = async (req, res, next) => {
 
     // Basic pagination
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.max(parseInt(req.query.limit, 10) || 50, 1);
+    const limit = Math.max(parseInt(req.query.limit, 10) || 5, 1);
     const skip = (page - 1) * limit;
 
     const sort = req.query.sort || '-createdAt';
