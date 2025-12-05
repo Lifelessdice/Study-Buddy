@@ -30,8 +30,11 @@ router.post("/:id/flashcards", async (req, res, next) => {
 
         return res.status(200).json({
             status: "success",
-            noteId: note._id,
-            topic: note.topic,
+            data: {
+                noteId: note._id,
+                topic: note.topic,
+                flashcards
+            },
             flashcards
         });
 

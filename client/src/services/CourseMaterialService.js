@@ -1,6 +1,5 @@
 import Api from '@/Api'
 
-
 export default {
   list(courseId) {
     return Api.get(`/courses/${courseId}/materials`)
