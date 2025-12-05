@@ -4,7 +4,8 @@ var router = express.Router();
 const Note = require("../models/notes");
 const { summarizeText } = require("../config/openAIconfig");
 
-async function handleSummarize(req, res) {
+// POST /notes/:id/summarize
+router.post("/:id/summaries", async (req, res) => {
     try {
         // 1. Validate ID
         const noteId = req.params.id;
@@ -46,8 +47,11 @@ async function handleSummarize(req, res) {
         // 5. Success response
         return res.status(200).json({
             success: true,
-            data: { noteId: note._id, topic: note.topic, summary },
-            summary,
+            data: {
+                noteId: note._id,
+                topic: note.topic,
+                summary: summary
+            },
             message: "Summary generated successfully"
         });
 
@@ -59,10 +63,6 @@ async function handleSummarize(req, res) {
             error: error.message
         });
     }
-}
-
-// Support both the plural and singular endpoints
-router.post("/:id/summaries", handleSummarize);
-router.post("/:id/summarize", handleSummarize);
+});
 
 module.exports = router;

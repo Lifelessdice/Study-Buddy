@@ -23,7 +23,6 @@ var noteSummariesRoutes = require('./routes/noteSummaries');
 var noteAIquizRoutes = require('./routes/noteAIquizzes');
 var noteFlashcardsRoutes = require('./routes/noteFlashcards');
 var authRoutes = require('./routes/auth');
-var courseMaterialRoutes = require('./routes/courseMaterials');
 
 
 
@@ -45,7 +44,6 @@ app.use(express.json());
 app.use(morgan('dev'));
 app.options('*', cors());
 app.use(cors());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ---------------------------------------------
 //  HEALTH CHECK (Required for CI)
@@ -75,7 +73,6 @@ app.use(API_PREFIX + "/auth", authRoutes);
 // Relationship routes under /courses
 app.use(API_PREFIX + "/courses", courseAttendancesRoutes);
 app.use(API_PREFIX + "/courses", teachingAssignmentRoutes);
-app.use(API_PREFIX + "/courses", courseMaterialRoutes);
 app.use(API_PREFIX + "/notes", noteSummariesRoutes);
 app.use(API_PREFIX + "/notes", noteAIquizRoutes);
 app.use(API_PREFIX + "/notes", noteFlashcardsRoutes);

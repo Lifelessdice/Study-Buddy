@@ -22,8 +22,6 @@
     </ul>
 
     <div class="tab-content p-3 border border-top-0">
-      <div v-if="aiError" class="alert alert-warning mb-3">{{ aiError }}</div>
-
       <!-- Summary -->
       <div class="tab-pane fade show active" id="summary">
         <button class="btn btn-primary mb-3" @click="generateSummary" :disabled="loadingSummary">
@@ -116,7 +114,6 @@ export default {
       summary: '',
       quiz: [],
       flashcards: [],
-      aiError: '',
       loadingSummary: false,
       loadingQuiz: false,
       loadingFlashcards: false
@@ -133,50 +130,40 @@ export default {
   methods: {
     async generateSummary() {
       try {
-        this.aiError = ''
         this.loadingSummary = true
         this.summary = ''
         const res = await api.post(`/notes/${this.id}/summaries`)
-        this.summary = res.data.summary || res.data.data?.summary || 'No summary returned'
+        this.summary = res.data.data.summary
       } catch (err) {
-        this.aiError = 'Failed to generate summary. Please try again.'
+        alert('Failed to generate summary')
       } finally {
         this.loadingSummary = false
       }
     },
     async generateQuiz() {
       try {
-        this.aiError = ''
         this.loadingQuiz = true
         this.quiz = []
         const res = await api.post(`/notes/${this.id}/aiquizzes`)
-        this.quiz = res.data.quiz || res.data.data?.quiz || []
-        if (!this.quiz.length) {
-          this.aiError = 'No quiz questions were returned.'
-        }
+        this.quiz = res.data.quiz || res.data.data?.quiz
       } catch (err) {
-        this.aiError = 'Failed to generate quiz. Please try again.'
+        alert('Failed to generate quiz')
       } finally {
         this.loadingQuiz = false
       }
     },
     async generateFlashcards() {
       try {
-        this.aiError = ''
         this.loadingFlashcards = true
         this.flashcards = []
         const res = await api.post(`/notes/${this.id}/flashcards`)
         // Add a flipped property for animation
-        const payload = res.data.flashcards || res.data.data?.flashcards || []
-        this.flashcards = payload.map(fc => ({
+        this.flashcards = (res.data.flashcards || res.data.data?.flashcards).map(fc => ({
           ...fc,
           flipped: false
         }))
-        if (!this.flashcards.length) {
-          this.aiError = 'No flashcards were returned.'
-        }
       } catch (err) {
-        this.aiError = 'Failed to generate flashcards. Please try again.'
+        alert('Failed to generate flashcards')
       } finally {
         this.loadingFlashcards = false
       }
