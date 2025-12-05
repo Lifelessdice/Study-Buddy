@@ -12,9 +12,6 @@ router.get('/', quizzesController.getAllQuizzes);
 // GET /api/v1/quizzes/:id
 router.get('/:id', quizzesController.getQuizById);
 
-// GET /api/v1/quizzes/:id/analytics
-router.get('/:id/analytics', quizzesController.getQuizAnalytics);
-
 // PATCH /api/v1/quizzes/:id
 router.patch('/:id', protect, quizzesController.updateQuiz);
 

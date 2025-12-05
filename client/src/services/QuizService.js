@@ -26,8 +26,5 @@ export default {
   },
   remove(id) {
     return Api.delete(`/quizzes/${id}`)
-  },
-  getAnalytics(quizId) {
-    return Api.get(`/api/v1/quizzes/${quizId}/analytics`)
   }
 }

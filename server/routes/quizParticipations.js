@@ -9,13 +9,6 @@ router.post('/', protect, quizParticipationsController.createParticipation);
 // GET /api/v1/quizparticipations
 router.get('/', quizParticipationsController.getAllParticipations);
 
-// GET /api/v1/quizparticipations/student/:studentId/analytics
-router.get(
-  '/student/:studentId/analytics',
-  protect,
-  quizParticipationsController.getStudentAnalytics
-);
-
 // GET /api/v1/quizparticipations/:id
 router.get('/:id', quizParticipationsController.getParticipationById);
 
