@@ -12,27 +12,62 @@
     <div v-if="loading" class="text-muted">Loading results...</div>
     <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
     <div v-else-if="!results.length" class="alert alert-info">You have not taken any quizzes yet.</div>
-    <div v-else class="table-responsive">
-      <table class="table table-striped align-middle">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Quiz</th>
-            <th>Course</th>
-            <th>Score</th>
-            <th>Submitted</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(r, idx) in results" :key="r._id">
-            <td>{{ idx + 1 }}</td>
-            <td>{{ r.quizTitle }}</td>
-            <td>{{ r.courseLabel }}</td>
-            <td>{{ r.score ?? '—' }}%</td>
-            <td>{{ formatDate(r.createdAt) }}</td>
-          </tr>
-        </tbody>
-      </table>
+
+    <!-- ONE single v-else block that handles both the stats card and the table -->
+    <div v-else>
+      <!-- Stats card -->
+      <div v-if="hasScoredResults" class="card mb-3">
+        <div class="card-body d-flex flex-wrap gap-4">
+          <div>
+            <div class="text-uppercase small text-muted">Your average score</div>
+            <div class="h4 mb-0">
+              {{ averageScore }}%
+            </div>
+          </div>
+          <div>
+            <div class="text-uppercase small text-muted">Best score</div>
+            <div class="h5 mb-0">
+              {{ maxScore }}%
+            </div>
+          </div>
+          <div>
+            <div class="text-uppercase small text-muted">Lowest score</div>
+            <div class="h5 mb-0">
+              {{ minScore }}%
+            </div>
+          </div>
+          <div>
+            <div class="text-uppercase small text-muted">Quizzes completed</div>
+            <div class="h5 mb-0">
+              {{ totalQuizzesTaken }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results table -->
+      <div class="table-responsive">
+        <table class="table table-striped align-middle">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Quiz</th>
+              <th>Course</th>
+              <th>Score</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(r, idx) in results" :key="r._id">
+              <td>{{ idx + 1 }}</td>
+              <td>{{ r.quizTitle }}</td>
+              <td>{{ r.courseLabel }}</td>
+              <td>{{ r.score ?? '—' }}%</td>
+              <td>{{ formatDate(r.createdAt) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>
@@ -55,6 +90,34 @@ export default {
     user() {
       const u = localStorage.getItem('user')
       return u ? JSON.parse(u) : null
+    },
+    // accept numeric scores and numeric strings
+    scoredResults() {
+      return this.results
+        .map(r => ({
+          ...r,
+          scoreNum: r.score !== undefined && r.score !== null ? Number(r.score) : null
+        }))
+        .filter(r => typeof r.scoreNum === 'number' && !isNaN(r.scoreNum))
+    },
+    hasScoredResults() {
+      return this.scoredResults.length > 0
+    },
+    averageScore() {
+      if (!this.hasScoredResults) return null
+      const sum = this.scoredResults.reduce((acc, r) => acc + r.scoreNum, 0)
+      return Math.round((sum / this.scoredResults.length) * 10) / 10 // 1 decimal
+    },
+    minScore() {
+      if (!this.hasScoredResults) return null
+      return Math.min(...this.scoredResults.map(r => r.scoreNum))
+    },
+    maxScore() {
+      if (!this.hasScoredResults) return null
+      return Math.max(...this.scoredResults.map(r => r.scoreNum))
+    },
+    totalQuizzesTaken() {
+      return this.results.length
     }
   },
   methods: {
@@ -64,11 +127,9 @@ export default {
     },
     courseLabel(courseRef) {
       if (!courseRef) return '—'
-      // If populated object
       if (typeof courseRef === 'object') {
         return courseRef.name || courseRef.code || courseRef._id || '—'
       }
-      // If string id, try map
       return this.courseNameById[courseRef] || courseRef || '—'
     },
     async hydrateCourseMap(courseIds) {
