@@ -477,28 +477,69 @@
         </div>
         <div v-if="attemptsLoading" class="text-muted">Loading attempts...</div>
         <div v-else-if="!attempts.length" class="alert alert-info mb-0">No attempts yet.</div>
-        <div v-else class="table-responsive">
-          <table class="table table-sm align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>#</th>
-                <th>Student</th>
-                <th>Email</th>
-                <th>Score</th>
-                <th>Submitted</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(att, idx) in attempts" :key="att._id">
-                <td>{{ idx + 1 }}</td>
-                <td>{{ att.student?.name || 'Unknown' }}</td>
-                <td>{{ att.student?.email || '—' }}</td>
-                <td>{{ att.score ?? '—' }}%</td>
-                <td>{{ formatDate(att.createdAt) }}</td>
-              </tr>
-            </tbody>
-          </table>
+        <div v-if="showAttemptsModal" class="overlay">
+  <div class="overlay-card wide">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0">Quiz Attempts — {{ attemptsQuizTitle }}</h5>
+      <button class="btn btn-sm btn-outline-secondary" @click="closeAttempts">Close</button>
+    </div>
+
+    <div v-if="attemptsLoading" class="text-muted">Loading attempts...</div>
+    <div v-else-if="!attempts.length" class="alert alert-info mb-0">No attempts yet.</div>
+
+    <!-- NEW: stats + table wrapper -->
+    <div v-else>
+      <!-- Stats row -->
+      <div class="d-flex flex-wrap gap-4 mb-3 small">
+        <div>
+          <div class="text-uppercase text-muted">Attempts</div>
+          <strong>{{ attempts.length }}</strong>
         </div>
+        <div v-if="hasAttemptScores">
+          <div class="text-uppercase text-muted">Average</div>
+          <strong>{{ attemptsAverageScore }}%</strong>
+        </div>
+        <div v-if="hasAttemptScores">
+          <div class="text-uppercase text-muted">Best</div>
+          <span>{{ attemptsMaxScore }}%</span>
+        </div>
+        <div v-if="hasAttemptScores">
+          <div class="text-uppercase text-muted">Lowest</div>
+          <span>{{ attemptsMinScore }}%</span>
+        </div>
+        <div v-else>
+          <div class="text-muted">No scores recorded yet.</div>
+        </div>
+      </div>
+
+      <!-- Existing table -->
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Student</th>
+              <th>Email</th>
+              <th>Score</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(att, idx) in attempts" :key="att._id">
+              <td>{{ idx + 1 }}</td>
+              <td>{{ att.student?.name || 'Unknown' }}</td>
+              <td>{{ att.student?.email || '—' }}</td>
+              <td>{{ att.score ?? '—' }}%</td>
+              <td>{{ formatDate(att.createdAt) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- end v-else -->
+  </div>
+</div>
+
       </div>
     </div>
 
@@ -612,7 +653,62 @@ export default {
     filteredNotes() {
   if (!Array.isArray(this.notes) || !this.course?._id) return []
   return this.notes.filter(note => note.course?._id === this.course._id)
-}
+  },
+      attemptsWithScore() {
+      // normalize scores (numbers + numeric strings)
+      return this.attempts
+        .map(a => {
+          const v = a.score
+          if (v === undefined || v === null) return null
+          const num = Number(v)
+          return Number.isNaN(num) ? null : num
+        })
+        .filter(v => v !== null)
+    },
+    hasAttemptScores() {
+      return this.attemptsWithScore.length > 0
+    },
+    attemptsAverageScore() {
+      if (!this.hasAttemptScores) return null
+      const sum = this.attemptsWithScore.reduce((acc, s) => acc + s, 0)
+      return Math.round((sum / this.attemptsWithScore.length) * 10) / 10 // 1 decimal
+    },
+    attemptsMinScore() {
+      if (!this.hasAttemptScores) return null
+      return Math.min(...this.attemptsWithScore)
+    },
+    attemptsMaxScore() {
+      if (!this.hasAttemptScores) return null
+      return Math.max(...this.attemptsWithScore)
+    },
+
+        attemptsWithScore() {
+      // normalize scores (numbers + numeric strings)
+      return this.attempts
+        .map(a => {
+          const v = a.score
+          if (v === undefined || v === null) return null
+          const num = Number(v)
+          return Number.isNaN(num) ? null : num
+        })
+        .filter(v => v !== null)
+    },
+    hasAttemptScores() {
+      return this.attemptsWithScore.length > 0
+    },
+    attemptsAverageScore() {
+      if (!this.hasAttemptScores) return null
+      const sum = this.attemptsWithScore.reduce((acc, s) => acc + s, 0)
+      return Math.round((sum / this.attemptsWithScore.length) * 10) / 10 // 1 decimal
+    },
+    attemptsMinScore() {
+      if (!this.hasAttemptScores) return null
+      return Math.min(...this.attemptsWithScore)
+    },
+    attemptsMaxScore() {
+      if (!this.hasAttemptScores) return null
+      return Math.max(...this.attemptsWithScore)
+    }
 
   },
   watch: {
