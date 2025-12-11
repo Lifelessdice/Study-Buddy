@@ -14,7 +14,13 @@
           <input v-model="password" class="form-control" type="password" required>
         </div>
 
-        <button class="btn btn-success w-100">Log In</button>
+        <BaseButton
+          type="submit"
+          variant="success"
+          block
+        >
+          Log In
+        </BaseButton>
 
         <p class="mt-3 text-center">
           Don't have an account?

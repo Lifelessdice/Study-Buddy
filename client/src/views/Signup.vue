@@ -28,7 +28,13 @@
           <input v-model="password" class="form-control" type="password" required minlength="6">
         </div>
 
-        <button class="btn btn-primary w-100">Create Account</button>
+        <BaseButton
+          type="submit"
+          variant="primary"
+          block
+        >
+          Create Account
+        </BaseButton>
 
         <p class="mt-3 text-center">
           Already have an account?

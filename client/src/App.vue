@@ -28,7 +28,14 @@
         </ul>
         <div class="d-flex align-items-center" v-if="user">
           <span class="me-2 small text-muted">{{ user.email }} ({{ user.role }})</span>
-          <button class="btn btn-outline-danger btn-sm" @click="logout">Logout</button>
+          <BaseButton
+            size="sm"
+            variant="danger"
+            outline
+            @click="logout"
+          >
+            Logout
+          </BaseButton>
         </div>
       </div>
     </nav>

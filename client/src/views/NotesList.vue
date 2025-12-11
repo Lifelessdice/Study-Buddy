@@ -13,7 +13,17 @@
           <div v-if="item.description" class="small text-muted mt-1">{{ item.description }}</div>
 
           <div class="d-flex flex-wrap gap-2 mt-3">
-            <a class="btn btn-sm btn-outline-primary" :href="item.filePath" target="_blank" rel="noopener" :download="item.downloadName">Open PDF</a>
+            <BaseButton
+              size="sm"
+              variant="primary"
+              outline
+              :href="item.filePath"
+              target="_blank"
+              rel="noopener"
+              :download="item.downloadName"
+            >
+              Open PDF
+            </BaseButton>
           </div>
 
           <div class="mt-3 p-3 border rounded bg-light-subtle">
@@ -22,9 +32,14 @@
               <div v-if="aiState[item._id]?.error" class="alert alert-warning mb-3">
                 {{ aiState[item._id].error }}
               </div>
-              <button class="btn btn-primary mb-2" @click="generateMaterialSummary(item)" :disabled="aiState[item._id]?.loadingSummary">
+              <BaseButton
+                class="mb-2"
+                variant="primary"
+                :loading="aiState[item._id]?.loadingSummary"
+                @click="generateMaterialSummary(item)"
+              >
                 Generate Summary
-              </button>
+              </BaseButton>
               <div v-if="aiState[item._id]?.loadingSummary" class="text-center my-2">
                 <div class="spinner-border text-primary" role="status">
                   <span class="visually-hidden">Loading...</span>
@@ -36,9 +51,14 @@
 
             <!-- Quiz -->
             <div class="mb-3">
-              <button class="btn btn-success mb-2" @click="generateMaterialQuiz(item)" :disabled="aiState[item._id]?.loadingQuiz">
+              <BaseButton
+                class="mb-2"
+                variant="success"
+                :loading="aiState[item._id]?.loadingQuiz"
+                @click="generateMaterialQuiz(item)"
+              >
                 Generate Quiz
-              </button>
+              </BaseButton>
               <div v-if="aiState[item._id]?.loadingQuiz" class="text-center my-2">
                 <div class="spinner-border text-success" role="status">
                   <span class="visually-hidden">Loading...</span>
@@ -60,14 +80,14 @@
 
             <!-- Flashcards -->
             <div>
-              <button
-                class="btn btn-warning mb-2"
+              <BaseButton
+                class="mb-2"
+                variant="warning"
+                :loading="aiState[item._id]?.loadingFlashcards"
                 @click="generateMaterialFlashcards(item)"
-                :disabled="aiState[item._id]?.loadingFlashcards"
               >
-                <span v-if="aiState[item._id]?.loadingFlashcards">Generating...</span>
-                <span v-else>Generate Flashcards</span>
-              </button>
+                Generate Flashcards
+              </BaseButton>
               <div v-if="aiState[item._id]?.loadingFlashcards" class="text-center my-2">
                 <div class="spinner-border text-warning" role="status">
                   <span class="visually-hidden">Loading...</span>

@@ -3,16 +3,21 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h2>All Courses</h2>
       <div class="d-flex align-items-center gap-2">
-        <router-link to="/courses" class="btn btn-outline-secondary">
+        <BaseButton
+          to="/courses"
+          variant="secondary"
+          outline
+        >
           Back to My Courses
-        </router-link>
-        <router-link
+        </BaseButton>
+        <BaseButton
           v-if="isTeacher"
           to="/courses/delete-all"
-          class="btn btn-outline-danger"
+          variant="danger"
+          outline
         >
           Delete All Courses
-        </router-link>
+        </BaseButton>
       </div>
     </div>
 
@@ -43,12 +48,23 @@
             </ul>
           </div>
           <div class="col-md-3 d-flex align-items-end">
-            <button class="btn btn-outline-secondary w-100" @click="toggleFilters">
+            <BaseButton
+              block
+              variant="secondary"
+              outline
+              @click="toggleFilters"
+            >
               {{ showFilters ? 'Hide Filters' : 'Filter by Degree' }}
-            </button>
+            </BaseButton>
           </div>
           <div class="col-md-3 d-flex align-items-end">
-            <button class="btn btn-primary w-100" @click="fetchCourses">Search</button>
+            <BaseButton
+              block
+              variant="primary"
+              @click="fetchCourses"
+            >
+              Search
+            </BaseButton>
           </div>
         </div>
 
@@ -98,16 +114,18 @@
               <span v-if="isEnrolled(course)" class="badge bg-success">Enrolled</span>
               <span v-else class="text-muted">Not enrolled</span>
 
-              <button
-                class="btn btn-sm"
-                :class="isEnrolled(course) ? 'btn-outline-secondary' : 'btn-primary'"
+              <BaseButton
+                size="sm"
+                :variant="isEnrolled(course) ? 'secondary' : 'primary'"
+                :outline="isEnrolled(course)"
                 :disabled="enrollingId === course._id || isEnrolled(course)"
+                :loading="enrollingId === course._id"
                 @click="handleSignup(course)"
               >
                 <span v-if="enrollingId === course._id">Enrolling...</span>
                 <span v-else-if="isEnrolled(course)">Enrolled</span>
                 <span v-else>Enroll</span>
-              </button>
+              </BaseButton>
             </div>
           </div>
         </div>
@@ -116,21 +134,24 @@
 
     <div v-if="!loading && courses.length" class="d-flex justify-content-between align-items-center mt-3">
       <div>
-        <button
-          class="btn btn-outline-secondary me-2"
+        <BaseButton
+          variant="secondary"
+          outline
+          class="me-2"
           @click="prevPage"
           :disabled="currentPage === 1"
         >
           Previous
-        </button>
+        </BaseButton>
 
-        <button
-          class="btn btn-outline-secondary"
+        <BaseButton
+          variant="secondary"
+          outline
           @click="nextPage"
           :disabled="currentPage === totalPages"
         >
           Next
-        </button>
+        </BaseButton>
       </div>
 
       <div class="d-flex align-items-center">
