@@ -4,7 +4,12 @@
 
     <div class="list-group shadow-sm">
       <template v-for="item in lectures" :key="item._id">
-        <div v-if="item.type === 'pdf'" class="list-group-item text-start">
+        <button
+          v-if="item.type === 'pdf'"
+          class="list-group-item list-group-item-action text-start w-100"
+          type="button"
+          @click="toggleMaterial(item)"
+        >
           <div class="d-flex justify-content-between align-items-center">
             <strong>{{ item.title }}</strong>
             <small class="text-muted">{{ formatDate(item.createdAt) }}</small>
@@ -12,31 +17,62 @@
           <div class="small text-muted">PDF</div>
           <div v-if="item.description" class="small text-muted mt-1">{{ item.description }}</div>
 
-          <div class="d-flex flex-wrap gap-2 mt-3">
-            <BaseButton
-              size="sm"
-              variant="primary"
-              outline
-              :href="item.filePath"
-              target="_blank"
-              rel="noopener"
-              :download="item.downloadName"
-            >
-              Open PDF
-            </BaseButton>
-          </div>
+          <div v-if="expandedMaterialId === item._id" class="mt-3 p-3 border rounded bg-light-subtle">
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <BaseButton
+                size="sm"
+                variant="primary"
+                outline
+                :href="item.filePath"
+                target="_blank"
+                rel="noopener"
+                :download="item.downloadName"
+                @click.stop
+              >
+                Open PDF
+              </BaseButton>
+            </div>
 
-          <div class="mt-3 p-3 border rounded bg-light-subtle">
-            <!-- Summary -->
-            <div class="mb-3">
-              <div v-if="aiState[item._id]?.error" class="alert alert-warning mb-3">
-                {{ aiState[item._id].error }}
-              </div>
+            <ul class="nav nav-tabs mb-3">
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  :class="{ active: aiState[item._id]?.activeTab === 'summary' }"
+                  @click.stop.prevent="setAiTab(item._id, 'summary')"
+                >
+                  Summary
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  :class="{ active: aiState[item._id]?.activeTab === 'quiz' }"
+                  @click.stop.prevent="setAiTab(item._id, 'quiz')"
+                >
+                  Quiz
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  :class="{ active: aiState[item._id]?.activeTab === 'flashcards' }"
+                  @click.stop.prevent="setAiTab(item._id, 'flashcards')"
+                >
+                  Flashcards
+                </a>
+              </li>
+            </ul>
+
+            <div v-if="aiState[item._id]?.error" class="alert alert-warning mb-3">
+              {{ aiState[item._id].error }}
+            </div>
+
+            <div v-show="aiState[item._id]?.activeTab === 'summary'">
               <BaseButton
                 class="mb-2"
                 variant="primary"
                 :loading="aiState[item._id]?.loadingSummary"
-                @click="generateMaterialSummary(item)"
+                @click.stop="generateMaterialSummary(item)"
               >
                 Generate Summary
               </BaseButton>
@@ -49,13 +85,12 @@
               <div v-if="aiState[item._id]?.summary && !aiState[item._id]?.loadingSummary">{{ aiState[item._id].summary }}</div>
             </div>
 
-            <!-- Quiz -->
-            <div class="mb-3">
+            <div v-show="aiState[item._id]?.activeTab === 'quiz'">
               <BaseButton
                 class="mb-2"
                 variant="success"
                 :loading="aiState[item._id]?.loadingQuiz"
-                @click="generateMaterialQuiz(item)"
+                @click.stop="generateMaterialQuiz(item)"
               >
                 Generate Quiz
               </BaseButton>
@@ -78,13 +113,12 @@
               </ul>
             </div>
 
-            <!-- Flashcards -->
-            <div>
+            <div v-show="aiState[item._id]?.activeTab === 'flashcards'">
               <BaseButton
                 class="mb-2"
                 variant="warning"
                 :loading="aiState[item._id]?.loadingFlashcards"
-                @click="generateMaterialFlashcards(item)"
+                @click.stop="generateMaterialFlashcards(item)"
               >
                 Generate Flashcards
               </BaseButton>
@@ -100,7 +134,7 @@
                   v-for="(fc, idx) in aiState[item._id].flashcards"
                   :key="idx"
                   :class="{ flipped: fc.flipped }"
-                  @click="fc.flipped = !fc.flipped"
+                  @click.stop="fc.flipped = !fc.flipped"
                 >
                   <div class="front">
                     Q: {{ fc.question }}
@@ -112,7 +146,7 @@
               </div>
             </div>
           </div>
-        </div>
+        </button>
 
         <button
           v-else
@@ -142,7 +176,8 @@ export default {
       materials: [],
       user: null,
       studentAttendance: [], // stores the student's enrolled courses
-      aiState: {}
+      aiState: {},
+      expandedMaterialId: null
     }
   },
 
@@ -235,10 +270,22 @@ export default {
         loadingSummary: false,
         loadingQuiz: false,
         loadingFlashcards: false,
-        error: ''
+        error: '',
+        activeTab: 'summary'
       }
       this.aiState = { ...this.aiState, [id]: fresh }
       return fresh
+    },
+    setAiTab(id, tab) {
+      const state = this.ensureState(id)
+      state.activeTab = tab
+    },
+    toggleMaterial(item) {
+      const isSame = this.expandedMaterialId === item._id
+      this.expandedMaterialId = isSame ? null : item._id
+      if (!isSame) {
+        this.ensureState(item._id)
+      }
     },
     goToLecture(item) {
       if (item.type === 'pdf' && item.filePath) {

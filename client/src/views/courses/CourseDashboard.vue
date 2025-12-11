@@ -9,21 +9,58 @@
             <div class="text-muted fw-bold">{{ course.code }}</div>
           </div>
           <div class="d-flex gap-2 flex-wrap justify-content-end">
-            <router-link to="/courses" class="btn btn-outline-secondary btn-sm">Back</router-link>
-            <router-link to="/courses/all" class="btn btn-outline-secondary btn-sm">All Courses</router-link>
+            <BaseButton
+              to="/courses"
+              variant="secondary"
+              outline
+              size="sm"
+            >
+              Back
+            </BaseButton>
+            <BaseButton
+              to="/courses/all"
+              variant="secondary"
+              outline
+              size="sm"
+            >
+              All Courses
+            </BaseButton>
             <template v-if="isTeacher">
-              <router-link :to="`/courses/${course._id}/edit`" class="btn btn-outline-primary btn-sm">Edit</router-link>
-              <router-link :to="{ path: `/courses/${course._id}/edit`, query: { mode: 'overwrite' } }" class="btn btn-outline-primary btn-sm">Overwrite</router-link>
-              <button class="btn btn-outline-danger btn-sm" @click="removeCourse">Delete</button>
+              <BaseButton
+                :to="`/courses/${course._id}/edit`"
+                variant="primary"
+                outline
+                size="sm"
+              >
+                Edit
+              </BaseButton>
+              <BaseButton
+                :to="{ path: `/courses/${course._id}/edit`, query: { mode: 'overwrite' } }"
+                variant="primary"
+                outline
+                size="sm"
+              >
+                Overwrite
+              </BaseButton>
+              <BaseButton
+                variant="danger"
+                outline
+                size="sm"
+                @click="removeCourse"
+              >
+                Delete
+              </BaseButton>
             </template>
             <template v-else>
-              <button
+              <BaseButton
                 v-if="myAttendance"
-                class="btn btn-outline-danger btn-sm"
+                variant="danger"
+                outline
+                size="sm"
                 @click="showLeaveConfirm = true"
               >
                 Leave Course
-              </button>
+              </BaseButton>
             </template>
           </div>
         </div>
@@ -62,21 +99,36 @@
               <p class="text-uppercase small text-muted mb-1">Overview</p>
               <h5 class="mb-0">Course Overview</h5>
             </div>
-            <button
+            <BaseButton
               v-if="isTeacher"
-              class="btn btn-outline-primary btn-sm"
+              variant="primary"
+              outline
+              size="sm"
               @click="toggleOverviewEdit"
             >
               {{ overviewEditing ? 'Cancel' : 'Edit Overview' }}
-            </button>
+            </BaseButton>
           </div>
           <div v-if="overviewEditing && isTeacher">
             <textarea v-model="overviewDraft" class="form-control mb-2" rows="4"></textarea>
             <div class="d-flex gap-2">
-              <button class="btn btn-primary btn-sm" :disabled="savingOverview" @click="saveOverview">
+              <BaseButton
+                variant="primary"
+                size="sm"
+                :loading="savingOverview"
+                @click="saveOverview"
+              >
                 {{ savingOverview ? 'Saving...' : 'Save Overview' }}
-              </button>
-              <button class="btn btn-link btn-sm" type="button" @click="cancelOverviewEdit">Discard</button>
+              </BaseButton>
+              <BaseButton
+                variant="secondary"
+                outline
+                size="sm"
+                type="button"
+                @click="cancelOverviewEdit"
+              >
+                Discard
+              </BaseButton>
             </div>
           </div>
           <div v-else>
@@ -92,13 +144,15 @@
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h5 class="mb-0">Quizzes</h5>
-          <router-link
+          <BaseButton
             v-if="isTeacher"
-            class="btn btn-outline-primary btn-sm"
+            size="sm"
+            variant="primary"
+            outline
             :to="{ name: 'CreateQuiz', params: { id: course._id } }"
           >
             + Create Quiz
-          </router-link>
+          </BaseButton>
         </div>
 
         <div v-if="loadingQuizzes" class="text-muted">Loading quizzes...</div>
@@ -121,28 +175,42 @@
                 </div>
               </div>
               <div class="d-flex gap-2">
-                <router-link
+                <BaseButton
                   v-if="isTeacher"
-                  class="btn btn-sm btn-outline-secondary"
+                  size="sm"
+                  variant="secondary"
+                  outline
                   :to="{ name: 'EditQuiz', params: { quizId: quiz._id } }"
                 >
                   Edit
-                </router-link>
-                <router-link
+                </BaseButton>
+                <BaseButton
                   v-else-if="!myParticipationByQuiz[quiz._id]"
-                  class="btn btn-sm btn-outline-primary"
+                  size="sm"
+                  variant="primary"
+                  outline
                   :to="{ name: 'TakeQuiz', params: { quizId: quiz._id } }"
                 >
                   Take Quiz
-                </router-link>
-                <button
+                </BaseButton>
+                <BaseButton
                   v-if="isTeacher"
-                  class="btn btn-sm btn-outline-secondary"
+                  size="sm"
+                  variant="secondary"
+                  outline
                   @click="viewAttempts(quiz)"
                 >
                   View Attempts
-                </button>
-                <button v-if="isTeacher" class="btn btn-sm btn-outline-danger" @click="promptDeleteQuiz(quiz)">Delete</button>
+                </BaseButton>
+                <BaseButton
+                  v-if="isTeacher"
+                  size="sm"
+                  variant="danger"
+                  outline
+                  @click="promptDeleteQuiz(quiz)"
+                >
+                  Delete
+                </BaseButton>
               </div>
             </div>
           </div>
@@ -155,9 +223,16 @@
         <h5 class="card-title">Enrolled Students</h5>
         <div class="d-flex gap-2 align-items-center mb-3">
           <input v-model="studentSearch" type="text" class="form-control" placeholder="Search students...">
-          <button v-if="isTeacher" class="btn btn-outline-primary btn-hover" @click="showAdd = !showAdd">
+          <BaseButton
+            v-if="isTeacher"
+            variant="primary"
+            outline
+            size="sm"
+            class="btn-hover"
+            @click="showAdd = !showAdd"
+          >
             {{ showAdd ? 'Cancel' : '+ Add Student' }}
-          </button>
+          </BaseButton>
         </div>
 
         <div v-if="isTeacher && showAdd" class="d-flex gap-2 mb-3">
@@ -170,9 +245,16 @@
             @input="loadSuggestionsIfNeeded"
             @focus="loadSuggestionsIfNeeded"
           />
-          <button class="btn btn-success btn-hover" :disabled="adding" @click="addStudent">
+          <BaseButton
+            variant="success"
+            size="sm"
+            class="btn-hover"
+            :loading="adding"
+            :disabled="adding"
+            @click="addStudent"
+          >
             {{ adding ? 'Adding...' : 'Add' }}
-          </button>
+          </BaseButton>
         </div>
 
         <ul v-if="isTeacher && filteredStudentSuggestions.length" class="list-group mb-3 suggestion-list">
@@ -204,13 +286,15 @@
                 <td>{{ att.student?.name || 'Unknown' }}</td>
                 <td>{{ att.student?.email }}</td>
                 <td class="text-end">
-                  <button
+                  <BaseButton
                     v-if="isTeacher"
-                    class="btn btn-sm btn-outline-danger"
+                    size="sm"
+                    variant="danger"
+                    outline
                     @click="removeStudent(att._id)"
                   >
                     Remove
-                  </button>
+                  </BaseButton>
                 </td>
               </tr>
             </tbody>
@@ -224,13 +308,15 @@
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h5 class="mb-0">Lectures</h5>
-      <button
+      <BaseButton
         v-if="isTeacher"
-        class="btn btn-outline-primary btn-sm"
+        variant="primary"
+        outline
+        size="sm"
         @click="showCreateNote = !showCreateNote"
       >
         {{ showCreateNote ? 'Cancel' : '+ Create Lecture' }}
-      </button>
+      </BaseButton>
     </div>
 
     <!-- Create lecture form (teachers only) -->
@@ -238,10 +324,23 @@
       <input v-model="newNoteTopic" type="text" class="form-control mb-2" placeholder="Topic" />
       <textarea v-model="newNoteContent" class="form-control mb-2" rows="4" placeholder="Content"></textarea>
       <div class="d-flex gap-2">
-        <button class="btn btn-primary btn-sm" :disabled="savingNote" @click="createNote">
+        <BaseButton
+          variant="primary"
+          size="sm"
+          :loading="savingNote"
+          :disabled="savingNote"
+          @click="createNote"
+        >
           {{ savingNote ? 'Saving...' : 'Save Lecture' }}
-        </button>
-        <button class="btn btn-link btn-sm" @click="showCreateNote = false">Discard</button>
+        </BaseButton>
+        <BaseButton
+          variant="secondary"
+          outline
+          size="sm"
+          @click="showCreateNote = false"
+        >
+          Discard
+        </BaseButton>
       </div>
     </div>
 
@@ -252,28 +351,62 @@
         No lectures available for this course.
       </div>
 
-      <div v-for="note in filteredNotes" :key="note._id" class="note-card mb-3 p-3 border rounded">
-        <div v-if="editingNoteId === note._id">
-          <input v-model="editNoteTopic" type="text" class="form-control mb-2" placeholder="Topic" />
-          <textarea v-model="editNoteContent" class="form-control mb-2" rows="4" placeholder="Content"></textarea>
-          <div class="d-flex gap-2">
-            <button class="btn btn-primary btn-sm" :disabled="savingEditNote" @click="saveEditedNote(note._id)">
-              {{ savingEditNote ? 'Saving...' : 'Save' }}
-            </button>
-            <button class="btn btn-link btn-sm" @click="cancelEditNote">Cancel</button>
+      <div class="list-group">
+        <template v-for="note in filteredNotes" :key="note._id">
+          <div v-if="editingNoteId === note._id" class="list-group-item">
+            <input v-model="editNoteTopic" type="text" class="form-control mb-2" placeholder="Topic" />
+            <textarea v-model="editNoteContent" class="form-control mb-2" rows="4" placeholder="Content"></textarea>
+            <div class="d-flex gap-2">
+              <BaseButton
+                variant="primary"
+                size="sm"
+                :loading="savingEditNote"
+                :disabled="savingEditNote"
+                @click="saveEditedNote(note._id)"
+              >
+                {{ savingEditNote ? 'Saving...' : 'Save' }}
+              </BaseButton>
+              <BaseButton
+                variant="secondary"
+                outline
+                size="sm"
+                @click="cancelEditNote"
+              >
+                Cancel
+              </BaseButton>
+            </div>
           </div>
-        </div>
-        <div v-else class="d-flex justify-content-between align-items-start">
-          <div class="lecture-text">
-            <h6 class="mb-1">{{ note.topic }}</h6>
-            <div class="small text-muted">Created: {{ formatDate(note.createdAt) }}</div>
-            <p class="mb-0">{{ note.content }}</p>
-          </div>
-          <div class="d-flex gap-2" v-if="isTeacher">
-            <button class="btn btn-sm btn-outline-secondary" @click="editNote(note)">Edit</button>
-            <button class="btn btn-sm btn-outline-danger" @click="promptDeleteNote(note)">Delete</button>
-          </div>
-        </div>
+          <button
+            v-else
+            class="list-group-item list-group-item-action text-start"
+            type="button"
+            @click="goToNote(note)"
+          >
+            <div class="d-flex justify-content-between align-items-center">
+              <strong>{{ note.topic }}</strong>
+              <small class="text-muted">{{ formatDate(note.createdAt) }}</small>
+            </div>
+            <div class="small text-muted">Text</div>
+            <div v-if="isTeacher" class="mt-2 d-flex gap-2">
+              <BaseButton
+                size="sm"
+                variant="secondary"
+                outline
+                @click.stop="editNote(note)"
+              >
+                Edit
+              </BaseButton>
+              <BaseButton
+                size="sm"
+                variant="danger"
+                outline
+                @click.stop="promptDeleteNote(note)"
+              >
+                Delete
+              </BaseButton>
+            </div>
+          </button>
+        </template>
       </div>
     </div>
   </div>
@@ -314,9 +447,15 @@
               ></textarea>
             </div>
             <div class="col-12">
-              <button class="btn btn-primary btn-sm" :disabled="uploading" @click="handleUpload">
+              <BaseButton
+                variant="primary"
+                size="sm"
+                :loading="uploading"
+                :disabled="uploading"
+                @click="handleUpload"
+              >
                 {{ uploading ? 'Uploading...' : 'Upload PDF' }}
-              </button>
+              </BaseButton>
             </div>
           </div>
         </div>
@@ -327,120 +466,165 @@
             No PDF materials uploaded yet.
           </div>
           <div v-else class="list-group">
-            <div
+            <button
               v-for="mat in materials"
               :key="mat._id"
-              class="list-group-item d-flex justify-content-between align-items-start flex-wrap gap-2"
-              >
-                <div class="me-2">
-                  <a
+              class="list-group-item list-group-item-action text-start w-100"
+              type="button"
+              @click="toggleMaterial(mat)"
+            >
+              <div class="d-flex justify-content-between align-items-center">
+                <strong>{{ mat.title || mat.originalName }}</strong>
+                <small class="text-muted">{{ formatDate(mat.createdAt) }}</small>
+              </div>
+              <div class="small text-muted">PDF • {{ prettySize(mat.size) }}</div>
+              <div v-if="mat.description" class="small text-muted mt-1">{{ mat.description }}</div>
+
+              <div v-if="expandedMaterialId === mat._id" class="mt-3 p-3 border rounded bg-light-subtle">
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                  <BaseButton
+                    size="sm"
+                    variant="primary"
+                    outline
                     :href="materialUrl(mat.filePath)"
                     target="_blank"
-                  rel="noopener"
-                  :download="mat.originalName || (mat.title || 'material') + '.pdf'"
-                  class="fw-bold d-block"
-                >
-                  {{ mat.title || mat.originalName }}
-                </a>
-                  <div class="small text-muted">
-                    Uploaded: {{ formatDate(mat.createdAt) }} | {{ prettySize(mat.size) }}
-                  </div>
-                  <div v-if="mat.description" class="small text-muted">{{ mat.description }}</div>
-                  <div class="mt-3 p-3 border rounded bg-light-subtle w-100">
-                    <!-- Summary -->
-                    <div class="mb-3">
-                      <div v-if="materialAi[mat._id]?.error" class="alert alert-warning mb-3">
-                        {{ materialAi[mat._id].error }}
-                      </div>
-                      <button
-                        class="btn btn-primary mb-2"
-                        :disabled="materialAi[mat._id]?.loadingSummary"
-                        @click="generateMaterialSummary(mat)"
-                      >
-                        Generate Summary
-                      </button>
-                      <div v-if="materialAi[mat._id]?.loadingSummary" class="text-center my-2">
-                        <div class="spinner-border text-primary" role="status">
-                          <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p>Generating summary, please wait...</p>
-                      </div>
-                      <div v-if="materialAi[mat._id]?.summary && !materialAi[mat._id]?.loadingSummary">
-                        {{ materialAi[mat._id].summary }}
-                      </div>
-                    </div>
+                    rel="noopener"
+                    :download="mat.originalName || (mat.title || 'material') + '.pdf'"
+                    @click.stop
+                  >
+                    Open PDF
+                  </BaseButton>
+                  <BaseButton
+                    v-if="isTeacher"
+                    size="sm"
+                    variant="danger"
+                    outline
+                    @click.stop="deleteMaterial(mat)"
+                  >
+                    Delete
+                  </BaseButton>
+                </div>
 
-                    <!-- Quiz -->
-                    <div class="mb-3">
-                      <button
-                        class="btn btn-success mb-2"
-                        :disabled="materialAi[mat._id]?.loadingQuiz"
-                        @click="generateMaterialQuiz(mat)"
-                      >
-                        Generate Quiz
-                      </button>
-                      <div v-if="materialAi[mat._id]?.loadingQuiz" class="text-center my-2">
-                        <div class="spinner-border text-success" role="status">
-                          <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p>Generating quiz, please wait...</p>
-                      </div>
-                      <ul v-if="materialAi[mat._id]?.quiz?.length && !materialAi[mat._id]?.loadingQuiz" class="list-group">
-                        <li v-for="(q, idx) in materialAi[mat._id].quiz" :key="idx" class="list-group-item">
-                          <strong>Q{{ idx + 1 }}: {{ q.question }}</strong>
-                          <ul class="list-group mt-2">
-                            <li v-for="(opt, i) in q.options" :key="i" class="list-group-item">
-                              {{ String.fromCharCode(65 + i) }}. {{ opt }}
-                            </li>
-                          </ul>
-                          <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
+                <ul class="nav nav-tabs mb-3">
+                  <li class="nav-item">
+                    <a
+                      class="nav-link"
+                      :class="{ active: materialAi[mat._id]?.activeTab === 'summary' }"
+                      @click.stop.prevent="setMaterialTab(mat._id, 'summary')"
+                    >
+                      Summary
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a
+                      class="nav-link"
+                      :class="{ active: materialAi[mat._id]?.activeTab === 'quiz' }"
+                      @click.stop.prevent="setMaterialTab(mat._id, 'quiz')"
+                    >
+                      Quiz
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a
+                      class="nav-link"
+                      :class="{ active: materialAi[mat._id]?.activeTab === 'flashcards' }"
+                      @click.stop.prevent="setMaterialTab(mat._id, 'flashcards')"
+                    >
+                      Flashcards
+                    </a>
+                  </li>
+                </ul>
+
+                <div v-if="materialAi[mat._id]?.error" class="alert alert-warning mb-3">
+                  {{ materialAi[mat._id].error }}
+                </div>
+
+                <div v-show="materialAi[mat._id]?.activeTab === 'summary'">
+                  <BaseButton
+                    class="mb-2"
+                    variant="primary"
+                    :loading="materialAi[mat._id]?.loadingSummary"
+                    :disabled="materialAi[mat._id]?.loadingSummary"
+                    @click.stop="generateMaterialSummary(mat)"
+                  >
+                    Generate Summary
+                  </BaseButton>
+                  <div v-if="materialAi[mat._id]?.loadingSummary" class="text-center my-2">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Generating summary, please wait...</p>
+                  </div>
+                  <div v-if="materialAi[mat._id]?.summary && !materialAi[mat._id]?.loadingSummary">
+                    {{ materialAi[mat._id].summary }}
+                  </div>
+                </div>
+
+                <div v-show="materialAi[mat._id]?.activeTab === 'quiz'">
+                  <BaseButton
+                    class="mb-2"
+                    variant="success"
+                    :loading="materialAi[mat._id]?.loadingQuiz"
+                    :disabled="materialAi[mat._id]?.loadingQuiz"
+                    @click.stop="generateMaterialQuiz(mat)"
+                  >
+                    Generate Quiz
+                  </BaseButton>
+                  <div v-if="materialAi[mat._id]?.loadingQuiz" class="text-center my-2">
+                    <div class="spinner-border text-success" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Generating quiz, please wait...</p>
+                  </div>
+                  <ul v-if="materialAi[mat._id]?.quiz?.length && !materialAi[mat._id]?.loadingQuiz" class="list-group">
+                    <li v-for="(q, idx) in materialAi[mat._id].quiz" :key="idx" class="list-group-item">
+                      <strong>Q{{ idx + 1 }}: {{ q.question }}</strong>
+                      <ul class="list-group mt-2">
+                        <li v-for="(opt, i) in q.options" :key="i" class="list-group-item">
+                          {{ String.fromCharCode(65 + i) }}. {{ opt }}
                         </li>
                       </ul>
-                    </div>
+                      <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
+                    </li>
+                  </ul>
+                </div>
 
-                    <!-- Flashcards -->
-                    <div>
-                      <button
-                        class="btn btn-warning mb-2"
-                        :disabled="materialAi[mat._id]?.loadingFlashcards"
-                        @click="generateMaterialFlashcards(mat)"
-                      >
-                        <span v-if="materialAi[mat._id]?.loadingFlashcards">Generating...</span>
-                        <span v-else>Generate Flashcards</span>
-                      </button>
-                      <div v-if="materialAi[mat._id]?.loadingFlashcards" class="text-center my-2">
-                        <div class="spinner-border text-warning" role="status">
-                          <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p>Generating flashcards, please wait...</p>
+                <div v-show="materialAi[mat._id]?.activeTab === 'flashcards'">
+                  <BaseButton
+                    class="mb-2"
+                    variant="warning"
+                    :loading="materialAi[mat._id]?.loadingFlashcards"
+                    :disabled="materialAi[mat._id]?.loadingFlashcards"
+                    @click.stop="generateMaterialFlashcards(mat)"
+                  >
+                    <span v-if="materialAi[mat._id]?.loadingFlashcards">Generating...</span>
+                    <span v-else>Generate Flashcards</span>
+                  </BaseButton>
+                  <div v-if="materialAi[mat._id]?.loadingFlashcards" class="text-center my-2">
+                    <div class="spinner-border text-warning" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Generating flashcards, please wait...</p>
+                  </div>
+                  <div v-if="materialAi[mat._id]?.flashcards?.length && !materialAi[mat._id]?.loadingFlashcards" class="flashcards-container">
+                    <div
+                      class="flashcard"
+                      v-for="(fc, idx) in materialAi[mat._id].flashcards"
+                      :key="idx"
+                      :class="{ flipped: fc.flipped }"
+                      @click.stop="fc.flipped = !fc.flipped"
+                    >
+                      <div class="front">
+                        Q: {{ fc.question }}
                       </div>
-                      <div v-if="materialAi[mat._id]?.flashcards?.length && !materialAi[mat._id]?.loadingFlashcards" class="flashcards-container">
-                        <div
-                          class="flashcard"
-                          v-for="(fc, idx) in materialAi[mat._id].flashcards"
-                          :key="idx"
-                          :class="{ flipped: fc.flipped }"
-                          @click="fc.flipped = !fc.flipped"
-                        >
-                          <div class="front">
-                            Q: {{ fc.question }}
-                          </div>
-                          <div class="back">
-                            A: {{ fc.answer }}
-                          </div>
-                        </div>
+                      <div class="back">
+                        A: {{ fc.answer }}
                       </div>
                     </div>
                   </div>
                 </div>
-                <button
-                  v-if="isTeacher"
-                  class="btn btn-sm btn-outline-danger"
-                @click="deleteMaterial(mat)"
-              >
-                Delete
-              </button>
-            </div>
+              </div>
+            </button>
           </div>
         </div>
       </div>
@@ -451,8 +635,19 @@
     <h5 class="text-danger">Delete Lecture</h5>
     <p class="mb-3">Are you sure you want to delete "{{ noteToDelete?.topic }}"?</p>
     <div class="d-flex justify-content-end gap-2">
-      <button class="btn btn-outline-secondary" @click="cancelDeleteNote">Cancel</button>
-      <button class="btn btn-danger" @click="deleteNoteConfirmed">Delete</button>
+      <BaseButton
+        variant="secondary"
+        outline
+        @click="cancelDeleteNote"
+      >
+        Cancel
+      </BaseButton>
+      <BaseButton
+        variant="danger"
+        @click="deleteNoteConfirmed"
+      >
+        Delete
+      </BaseButton>
     </div>
   </div>
 </div>
@@ -463,8 +658,19 @@
         <h5 class="text-danger">Delete Quiz</h5>
         <p class="mb-3">Are you sure you want to delete "{{ quizToDelete?.title }}"?</p>
         <div class="d-flex justify-content-end gap-2">
-          <button class="btn btn-outline-secondary" @click="cancelDeleteQuiz">Cancel</button>
-          <button class="btn btn-danger" @click="deleteQuizConfirmed">Delete</button>
+          <BaseButton
+            variant="secondary"
+            outline
+            @click="cancelDeleteQuiz"
+          >
+            Cancel
+          </BaseButton>
+          <BaseButton
+            variant="danger"
+            @click="deleteQuizConfirmed"
+          >
+            Delete
+          </BaseButton>
         </div>
       </div>
     </div>
@@ -473,7 +679,14 @@
       <div class="overlay-card wide">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <h5 class="mb-0">Quiz Attempts — {{ attemptsQuizTitle }}</h5>
-          <button class="btn btn-sm btn-outline-secondary" @click="closeAttempts">Close</button>
+          <BaseButton
+            size="sm"
+            variant="secondary"
+            outline
+            @click="closeAttempts"
+          >
+            Close
+          </BaseButton>
         </div>
         <div v-if="attemptsLoading" class="text-muted">Loading attempts...</div>
         <div v-else-if="!attempts.length" class="alert alert-info mb-0">No attempts yet.</div>
@@ -481,7 +694,14 @@
   <div class="overlay-card wide">
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h5 class="mb-0">Quiz Attempts — {{ attemptsQuizTitle }}</h5>
-      <button class="btn btn-sm btn-outline-secondary" @click="closeAttempts">Close</button>
+      <BaseButton
+        size="sm"
+        variant="secondary"
+        outline
+        @click="closeAttempts"
+      >
+        Close
+      </BaseButton>
     </div>
 
     <div v-if="attemptsLoading" class="text-muted">Loading attempts...</div>
@@ -548,8 +768,19 @@
         <h5 class="text-danger">Leave Course</h5>
         <p class="mb-3">Are you sure you want to leave "{{ course.name }}"?</p>
         <div class="d-flex justify-content-end gap-2">
-          <button class="btn btn-outline-secondary" @click="showLeaveConfirm = false">Cancel</button>
-          <button class="btn btn-danger" @click="leaveCourse">Leave</button>
+          <BaseButton
+            variant="secondary"
+            outline
+            @click="showLeaveConfirm = false"
+          >
+            Cancel
+          </BaseButton>
+          <BaseButton
+            variant="danger"
+            @click="leaveCourse"
+          >
+            Leave
+          </BaseButton>
         </div>
       </div>
     </div>
@@ -610,7 +841,8 @@ export default {
       materialAi: {},
       newMaterial: { title: '', description: '', file: null },
       uploading: false,
-      uploadError: null
+      uploadError: null,
+      expandedMaterialId: null
     }
   },
   computed: {
@@ -978,10 +1210,26 @@ export default {
           loadingSummary: false,
           loadingQuiz: false,
           loadingFlashcards: false,
-          error: ''
+          error: '',
+          activeTab: 'summary'
         })
       }
       return this.materialAi[id]
+    },
+    setMaterialTab(id, tab) {
+      const state = this.ensureMaterialState(id)
+      state.activeTab = tab
+    },
+    toggleMaterial(mat) {
+      const isSame = this.expandedMaterialId === mat._id
+      this.expandedMaterialId = isSame ? null : mat._id
+      if (!isSame) {
+        this.ensureMaterialState(mat._id)
+      }
+    },
+    goToNote(note) {
+      if (!note?._id) return
+      this.$router.push(`/notes/${note._id}`)
     },
     async generateMaterialSummary(mat) {
       const state = this.ensureMaterialState(mat._id)

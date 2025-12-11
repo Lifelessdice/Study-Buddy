@@ -16,7 +16,13 @@
           <p class="text-uppercase small text-muted mb-1">Teacher</p>
           <h5 class="mb-0">Manage your courses</h5>
         </div>
-        <router-link to="/courses" class="btn btn-primary btn-sm">Go to Courses</router-link>
+        <BaseButton
+          to="/courses"
+          variant="primary"
+          size="sm"
+        >
+          Go to Courses
+        </BaseButton>
       </div>
     </div>
 
@@ -46,12 +52,13 @@
                 <div class="fw-bold">Quiz: {{ item.title }} <span class="text-muted">({{ item.courseCode || item.courseName }})</span></div>
                 <div class="small text-muted mb-1">Due: {{ item.dueLabel }}</div>
               </div>
-              <router-link
-                class="btn btn-sm btn-primary"
+              <BaseButton
+                size="sm"
+                variant="primary"
                 :to="{ name: 'TakeQuiz', params: { quizId: item._id } }"
               >
                 Start
-              </router-link>
+              </BaseButton>
             </div>
           </div>
         </div>
