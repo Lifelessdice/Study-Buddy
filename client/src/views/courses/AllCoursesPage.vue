@@ -199,7 +199,7 @@ export default {
       // enrollment state
       enrolledCourseIds: [],
       enrollingId: null,
-      enrollError: null, 
+      enrollError: null,
 
       apilinks: null
     }

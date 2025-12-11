@@ -220,53 +220,67 @@
 
     <div v-if="currentTab === 'students'" class="card mb-3" ref="studentsCard">
       <div class="card-body">
-        <h5 class="card-title">Enrolled Students</h5>
-        <div class="d-flex gap-2 align-items-center mb-3">
-          <input v-model="studentSearch" type="text" class="form-control" placeholder="Search students...">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="card-title mb-0">Enrolled Students</h5>
           <BaseButton
             v-if="isTeacher"
             variant="primary"
             outline
             size="sm"
             class="btn-hover"
-            @click="showAdd = !showAdd"
+            @click="toggleAddStudent"
           >
             {{ showAdd ? 'Cancel' : '+ Add Student' }}
           </BaseButton>
         </div>
-
-        <div v-if="isTeacher && showAdd" class="d-flex gap-2 mb-3">
-          <input
-            v-model="addStudentEmail"
-            type="email"
-            class="form-control"
-            placeholder="Student email"
-            aria-label="Student email"
-            @input="loadSuggestionsIfNeeded"
-            @focus="loadSuggestionsIfNeeded"
-          />
-          <BaseButton
-            variant="success"
-            size="sm"
-            class="btn-hover"
-            :loading="adding"
-            :disabled="adding"
-            @click="addStudent"
-          >
-            {{ adding ? 'Adding...' : 'Add' }}
-          </BaseButton>
+        <div class="mb-3">
+          <input v-model="studentSearch" type="text" class="form-control" placeholder="Search enrolled students...">
         </div>
 
-        <ul v-if="isTeacher && filteredStudentSuggestions.length" class="list-group mb-3 suggestion-list">
-          <li
-            v-for="stu in filteredStudentSuggestions"
-            :key="stu._id"
-            class="list-group-item list-group-item-action"
-            @click="selectSuggestion(stu.email)"
-          >
-            {{ stu.name || stu.email }} ({{ stu.email }})
-          </li>
-        </ul>
+        <div v-if="isTeacher && showAdd" class="mb-3 p-3 border rounded bg-light-subtle">
+          <div class="d-flex gap-2 align-items-start">
+            <input
+              ref="addStudentInput"
+              v-model="addStudentEmail"
+              type="email"
+              class="form-control"
+              placeholder="Student email"
+              aria-label="Student email"
+              @input="loadSuggestionsIfNeeded"
+              @focus="loadSuggestionsIfNeeded"
+            />
+            <BaseButton
+              variant="success"
+              size="sm"
+              class="btn-hover"
+              :loading="adding"
+              :disabled="adding"
+              @click="addStudent"
+            >
+              {{ adding ? 'Adding...' : 'Add' }}
+            </BaseButton>
+          </div>
+          <small class="text-muted">Enter the student email to add them to this course.</small>
+          <div v-if="addStudentError" class="alert alert-warning py-2 px-3 mt-2 mb-0">
+            {{ addStudentError }}
+          </div>
+        </div>
+
+        <template v-if="isTeacher && showAdd">
+          <ul v-if="filteredStudentSuggestions.length" class="list-group mb-3 suggestion-list">
+            <li
+              v-for="stu in filteredStudentSuggestions"
+              :key="stu._id"
+              class="list-group-item list-group-item-action"
+              @click="selectSuggestion(stu.email)"
+            >
+              {{ stu.name || stu.email }} ({{ stu.email }})
+            </li>
+          </ul>
+          <div v-else-if="addStudentEmail" class="alert alert-info py-2 mb-3">
+            No matching students found for "{{ addStudentEmail }}".
+          </div>
+        </template>
 
         <div v-if="filteredEnrolled.length === 0" class="alert alert-info">No students are enrolled yet.</div>
 
@@ -376,11 +390,14 @@
               </BaseButton>
             </div>
           </div>
-          <button
+          <div
             v-else
             class="list-group-item list-group-item-action text-start"
-            type="button"
+            role="button"
+            tabindex="0"
             @click="goToNote(note)"
+            @keydown.enter.prevent="goToNote(note)"
+            @keydown.space.prevent="goToNote(note)"
           >
             <div class="d-flex justify-content-between align-items-center">
               <strong>{{ note.topic }}</strong>
@@ -405,7 +422,7 @@
                 Delete
               </BaseButton>
             </div>
-          </button>
+          </div>
         </template>
       </div>
     </div>
@@ -466,12 +483,15 @@
             No PDF materials uploaded yet.
           </div>
           <div v-else class="list-group">
-            <button
+            <div
               v-for="mat in materials"
               :key="mat._id"
               class="list-group-item list-group-item-action text-start w-100"
-              type="button"
+              role="button"
+              tabindex="0"
               @click="toggleMaterial(mat)"
+              @keydown.enter.prevent="toggleMaterial(mat)"
+              @keydown.space.prevent="toggleMaterial(mat)"
             >
               <div class="d-flex justify-content-between align-items-center">
                 <strong>{{ mat.title || mat.originalName }}</strong>
@@ -624,7 +644,7 @@
                   </div>
                 </div>
               </div>
-            </button>
+            </div>
           </div>
         </div>
       </div>
@@ -651,7 +671,6 @@
     </div>
   </div>
 </div>
-
 
     <div v-if="showDeleteConfirm" class="overlay">
       <div class="overlay-card">
@@ -806,6 +825,7 @@ export default {
       enrolled: [],
       showAdd: false,
       allStudents: [],
+      addStudentError: '',
       overviewDraft: '',
       overviewEditing: false,
       savingOverview: false,
@@ -848,8 +868,15 @@ export default {
   computed: {
     filteredStudentSuggestions() {
       const term = this.addStudentEmail.trim().toLowerCase()
-      if (!term || !Array.isArray(this.allStudents)) return []
-      return this.allStudents
+      const enrolledIds = new Set(
+        (this.enrolled || [])
+          .map(att => att.student?._id)
+          .filter(Boolean)
+      )
+      if (!Array.isArray(this.allStudents)) return []
+      const pool = this.allStudents.filter(stu => !enrolledIds.has(stu._id))
+      if (!term) return pool.slice(0, 5)
+      return pool
         .filter(stu => (stu.email || '').toLowerCase().includes(term) || (stu.name || '').toLowerCase().includes(term))
         .slice(0, 5)
     },
@@ -883,10 +910,10 @@ export default {
       return this.myParticipations || {}
     },
     filteredNotes() {
-  if (!Array.isArray(this.notes) || !this.course?._id) return []
-  return this.notes.filter(note => note.course?._id === this.course._id)
-  },
-      attemptsWithScore() {
+      if (!Array.isArray(this.notes) || !this.course?._id) return []
+      return this.notes.filter(note => note.course?._id === this.course._id)
+    },
+    attemptsWithScore() {
       // normalize scores (numbers + numeric strings)
       return this.attempts
         .map(a => {
@@ -914,7 +941,7 @@ export default {
       return Math.max(...this.attemptsWithScore)
     },
 
-        attemptsWithScore() {
+    attemptsWithScore() {
       // normalize scores (numbers + numeric strings)
       return this.attempts
         .map(a => {
@@ -968,7 +995,6 @@ export default {
         this.fetchMaterials(this.$route.params.id)
       }
     },
-
 
     async fetchCourse() {
       const res = await CourseService.getById(this.$route.params.id)
@@ -1050,25 +1076,36 @@ export default {
       }
     },
     async addStudent() {
-      if (!this.addStudentEmail) return
+      const email = this.addStudentEmail.trim()
+      if (!email) {
+        this.addStudentError = 'Please enter a student email.'
+        return
+      }
       this.adding = true
+      this.addStudentError = ''
       try {
         const res = await Api.get('/users', {
-          params: { role: 'student', email: this.addStudentEmail }
+          params: { role: 'student', email }
         })
         const students = res.data.data || res.data
         const student = Array.isArray(students) ? students[0] : null
         if (!student) {
-          alert('Student not found')
+          this.addStudentError = 'Student not found.'
+          return
+        }
+        const alreadyEnrolled = this.enrolled.some(att => att.student?._id === student._id)
+        if (alreadyEnrolled) {
+          this.addStudentError = 'Student is already enrolled.'
           return
         }
         await CourseService.addStudent(this.course._id, student._id)
         this.addStudentEmail = ''
+        this.showAdd = false
         await this.fetchEnrolled()
         alert('Student added to course')
       } catch (err) {
         console.error(err)
-        alert('Failed to add student')
+        this.addStudentError = err?.response?.data?.message || 'Failed to add student.'
       } finally {
         this.adding = false
       }
@@ -1080,10 +1117,12 @@ export default {
         this.allStudents = res.data.data || res.data
       } catch (err) {
         console.error(err)
+        this.addStudentError = 'Could not load students list.'
       }
     },
     selectSuggestion(email) {
       this.addStudentEmail = email
+      this.addStudentError = ''
     },
     async saveOverview() {
       if (!this.isTeacher) return
@@ -1203,22 +1242,39 @@ export default {
     },
     ensureMaterialState(id) {
       if (!this.materialAi[id]) {
-        this.$set(this.materialAi, id, {
-          summary: '',
-          quiz: [],
-          flashcards: [],
-          loadingSummary: false,
-          loadingQuiz: false,
-          loadingFlashcards: false,
-          error: '',
-          activeTab: 'summary'
-        })
+        this.materialAi = {
+          ...this.materialAi,
+          [id]: {
+            summary: '',
+            quiz: [],
+            flashcards: [],
+            loadingSummary: false,
+            loadingQuiz: false,
+            loadingFlashcards: false,
+            error: '',
+            activeTab: 'summary'
+          }
+        }
       }
       return this.materialAi[id]
     },
     setMaterialTab(id, tab) {
       const state = this.ensureMaterialState(id)
       state.activeTab = tab
+    },
+    async toggleAddStudent() {
+      this.showAdd = !this.showAdd
+      if (!this.showAdd) {
+        this.addStudentEmail = ''
+        this.addStudentError = ''
+      } else {
+        await this.loadSuggestionsIfNeeded()
+        this.$nextTick(() => {
+          if (this.$refs.addStudentInput) {
+            this.$refs.addStudentInput.focus()
+          }
+        })
+      }
     },
     toggleMaterial(mat) {
       const isSame = this.expandedMaterialId === mat._id
@@ -1345,125 +1401,120 @@ export default {
     },
 
     async createNote() {
-  if (!this.newNoteTopic.trim() || !this.newNoteContent.trim()) {
-    alert('Please fill all fields')
-    return
-  }
+      if (!this.newNoteTopic.trim() || !this.newNoteContent.trim()) {
+        alert('Please fill all fields')
+        return
+      }
 
-  this.savingNote = true
-  try {
-    const payload = {
-      topic: this.newNoteTopic,
-      content: this.newNoteContent,
-      course: this.course._id // use current course ID automatically
-    }
-    const res = await Api.post('/notes', payload)
+      this.savingNote = true
+      try {
+        const payload = {
+          topic: this.newNoteTopic,
+          content: this.newNoteContent,
+          course: this.course._id // use current course ID automatically
+        }
+        const res = await Api.post('/notes', payload)
 
-    // Push to notes with course object for filtering
-    const newNote = {
-      ...res.data.data,
-      course: { _id: this.course._id } 
-    }
-    this.notes.push(newNote)
+        // Push to notes with course object for filtering
+        const newNote = {
+          ...res.data.data,
+          course: { _id: this.course._id }
+        }
+        this.notes.push(newNote)
 
-    // Reset input fields
-    this.newNoteTopic = ''
-    this.newNoteContent = ''
-    this.showCreateNote = false
-    alert('Lecture created')
-  } catch (err) {
-    console.error(err)
-    alert('Failed to create note')
-  } finally {
-    this.savingNote = false
-  }
-}
+        // Reset input fields
+        this.newNoteTopic = ''
+        this.newNoteContent = ''
+        this.showCreateNote = false
+        alert('Lecture created')
+      } catch (err) {
+        console.error(err)
+        alert('Failed to create note')
+      } finally {
+        this.savingNote = false
+      }
+    },
 
+    editNote(note) {
+      this.editingNoteId = note._id
+      this.editNoteTopic = note.topic
+      this.editNoteContent = note.content
+    },
 
+    cancelEditNote() {
+      this.editingNoteId = null
+      this.editNoteTopic = ''
+      this.editNoteContent = ''
+    },
 
-,
+    async saveEditedNote(id) {
+      if (!this.editNoteTopic.trim() || !this.editNoteContent.trim()) {
+        alert('Please fill all fields')
+        return
+      }
+      this.savingEditNote = true
+      try {
+        const payload = { topic: this.editNoteTopic, content: this.editNoteContent }
+        const res = await Api.patch(`/notes/${id}`, payload)
 
-  editNote(note) {
-    this.editingNoteId = note._id
-    this.editNoteTopic = note.topic
-    this.editNoteContent = note.content
-  },
+        // Keep the course object so filtering still works
+        const updatedNote = {
+          ...res.data.data,
+          course: this.notes.find(n => n._id === id).course
+        }
 
-  cancelEditNote() {
-    this.editingNoteId = null
-    this.editNoteTopic = ''
-    this.editNoteContent = ''
-  },
+        const idx = this.notes.findIndex(n => n._id === id)
+        if (idx !== -1) this.notes[idx] = updatedNote
 
-  async saveEditedNote(id) {
-  if (!this.editNoteTopic.trim() || !this.editNoteContent.trim()) {
-    alert('Please fill all fields')
-    return
-  }
-  this.savingEditNote = true
-  try {
-    const payload = { topic: this.editNoteTopic, content: this.editNoteContent }
-    const res = await Api.patch(`/notes/${id}`, payload)
-    
-    // Keep the course object so filtering still works
-    const updatedNote = {
-      ...res.data.data,
-      course: this.notes.find(n => n._id === id).course
-    }
+        this.cancelEditNote()
+        alert('Lecture updated')
+      } catch (err) {
+        console.error(err)
+        alert('Failed to update note')
+      } finally {
+        this.savingEditNote = false
+      }
+    },
 
-    const idx = this.notes.findIndex(n => n._id === id)
-    if (idx !== -1) this.notes[idx] = updatedNote
-    
-    this.cancelEditNote()
-    alert('Lecture updated')
-  } catch (err) {
-    console.error(err)
-    alert('Failed to update note')
-  } finally {
-    this.savingEditNote = false
-  }
-}
-,
+    async deleteNote(id) {
+      if (!confirm('Delete this note?')) return
+      try {
+        await Api.delete(`/notes/${id}`)
+        this.notes = this.notes.filter(n => n._id !== id)
+        alert('Lecture deleted')
+      } catch (err) {
+        console.error(err)
+        alert('Failed to delete note')
+      }
+    },
+    // When user clicks Delete
+    promptDeleteNote(note) {
+      this.noteToDelete = note
+      this.showDeleteNoteConfirm = true
+    },
 
-  async deleteNote(id) {
-    if (!confirm('Delete this note?')) return
-    try {
-      await Api.delete(`/notes/${id}`)
-      this.notes = this.notes.filter(n => n._id !== id)
-      alert('Lecture deleted')
-    } catch (err) {
-      console.error(err)
-      alert('Failed to delete note')
-    }
-  },
-   // When user clicks Delete
-  promptDeleteNote(note) {
-    this.noteToDelete = note
-    this.showDeleteNoteConfirm = true
-  },
-
-  // Cancel deletion
-  cancelDeleteNote() {
-    this.noteToDelete = null
-    this.showDeleteNoteConfirm = false
-  },
-
-  // Confirm deletion
-  async deleteNoteConfirmed() {
-    if (!this.noteToDelete) return
-    try {
-      await Api.delete(`/notes/${this.noteToDelete._id}`)
-      this.notes = this.notes.filter(n => n._id !== this.noteToDelete._id)
+    // Cancel deletion
+    cancelDeleteNote() {
       this.noteToDelete = null
       this.showDeleteNoteConfirm = false
-      alert('Lecture deleted') // optional, you can remove this if the modal is enough
-    } catch (err) {
-      console.error(err)
-      alert('Failed to delete note')
+    },
+
+    // Confirm deletion
+    async deleteNoteConfirmed() {
+      if (!this.noteToDelete) return
+      try {
+        await Api.delete(`/notes/${this.noteToDelete._id}`)
+        this.notes = this.notes.filter(n => n._id !== this.noteToDelete._id)
+        this.noteToDelete = null
+        this.showDeleteNoteConfirm = false
+        alert('Lecture deleted') // optional, you can remove this if the modal is enough
+      } catch (err) {
+        console.error(err)
+        alert('Failed to delete note')
+      }
     }
-  }
-},
-  
+  },
+
   async mounted() {
     if (this.$route.query.tab) {
       this.currentTab = this.$route.query.tab

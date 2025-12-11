@@ -1,7 +1,7 @@
 <template>
   <component
     :is="componentTag"
-    v-bind="$attrs"
+    v-bind="passThroughAttrs"
     :type="componentTag === 'button' ? type : undefined"
     :to="to"
     :href="href"
@@ -23,6 +23,7 @@
 export default {
   name: 'BaseButton',
   inheritAttrs: false,
+  emits: ['click'],
   props: {
     variant: {
       type: String,
@@ -62,6 +63,10 @@ export default {
       if (this.to) return 'router-link'
       if (this.href) return 'a'
       return 'button'
+    },
+    passThroughAttrs() {
+      const entries = Object.entries(this.$attrs || {})
+      return Object.fromEntries(entries.filter(([key]) => key !== 'onClick'))
     },
     isDisabled() {
       return this.disabled || this.loading
