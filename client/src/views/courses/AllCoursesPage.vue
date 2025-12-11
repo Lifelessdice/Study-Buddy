@@ -345,9 +345,7 @@ export default {
 
       try {
         await CourseService.addStudent(course._id, user._id)
-        if (!this.enrolledCourseIds.includes(course._id)) {
-          this.enrolledCourseIds.push(course._id)
-        }
+        await this.fetchEnrollments()
       } catch (err) {
         console.error(err)
         this.enrollError = 'Enrollment failed. Please try again.'
@@ -377,7 +375,11 @@ export default {
     }
   },
   mounted() {
+    // Load courses and my enrollments so badges/buttons render correctly
     this.fetchCourses()
+    if (this.isStudent) {
+      this.fetchEnrollments()
+    }
   }
 }
 </script>
