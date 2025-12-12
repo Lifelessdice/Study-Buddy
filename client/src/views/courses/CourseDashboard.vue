@@ -46,7 +46,7 @@
                 variant="danger"
                 outline
                 size="sm"
-                @click="removeCourse"
+                @click="promptDeleteCourse"
               >
                 Delete
               </BaseButton>
@@ -142,6 +142,48 @@
 
     <div v-if="currentTab === 'quizzes'" class="card mb-3">
       <div class="card-body">
+        <div class="row g-3 align-items-center mb-3">
+          <div class="col-md-9">
+            <div class="d-flex flex-wrap gap-4 small fw-semibold text-muted">
+              <div class="analytics-pill">
+                <span class="label">Quizzes</span>
+                <span class="value">{{ quizzes.length }}</span>
+              </div>
+              <div class="analytics-pill">
+                <span class="label">Total Questions</span>
+                <span class="value">{{ totalQuizQuestions }}</span>
+              </div>
+              <div class="analytics-pill" v-if="!isTeacher">
+                <span class="label">Completed</span>
+                <span class="value">{{ myCompletedQuizzes }} / {{ quizzes.length || 0 }}</span>
+              </div>
+              <div class="analytics-pill" v-if="hasQuizQuestions">
+                <span class="label">Avg Questions</span>
+                <span class="value">{{ avgQuestionsPerQuiz }}</span>
+              </div>
+              <div class="analytics-pill" v-if="hasMyScores">
+                <span class="label">Avg Score</span>
+                <span class="value">{{ avgMyScore }}%</span>
+              </div>
+              <div class="analytics-pill" v-if="hasMyScores">
+                <span class="label">Best Score</span>
+                <span class="value">{{ bestMyScore }}%</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3" v-if="!isTeacher">
+            <div class="completion-meter">
+              <div class="d-flex justify-content-between small text-muted mb-1">
+                <span>Completion</span>
+                <span>{{ completionRate }}%</span>
+              </div>
+              <div class="meter-track">
+                <div class="meter-fill" :style="{ width: completionRate + '%' }"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h5 class="mb-0">Quizzes</h5>
           <BaseButton
@@ -519,7 +561,7 @@
                     size="sm"
                     variant="danger"
                     outline
-                    @click.stop="deleteMaterial(mat)"
+                    @click.stop="promptDeleteMaterial(mat)"
                   >
                     Delete
                   </BaseButton>
@@ -651,10 +693,10 @@
     </div>
 
     <div v-if="showDeleteNoteConfirm" class="overlay">
-  <div class="overlay-card">
-    <h5 class="text-danger">Delete Lecture</h5>
-    <p class="mb-3">Are you sure you want to delete "{{ noteToDelete?.topic }}"?</p>
-    <div class="d-flex justify-content-end gap-2">
+      <div class="overlay-card">
+        <h5 class="text-danger">Delete Lecture</h5>
+        <p class="mb-3">Are you sure you want to delete "{{ noteToDelete?.topic }}"?</p>
+        <div class="d-flex justify-content-end gap-2">
       <BaseButton
         variant="secondary"
         outline
@@ -669,8 +711,52 @@
         Delete
       </BaseButton>
     </div>
-  </div>
-</div>
+      </div>
+    </div>
+
+    <div v-if="showDeleteMaterialConfirm" class="overlay">
+      <div class="overlay-card">
+        <h5 class="text-danger">Delete Material</h5>
+        <p class="mb-3">Delete "{{ materialToDelete?.title || materialToDelete?.originalName || 'this material' }}"?</p>
+        <div class="d-flex justify-content-end gap-2">
+          <BaseButton
+            variant="secondary"
+            outline
+            @click="cancelDeleteMaterial"
+          >
+            Cancel
+          </BaseButton>
+          <BaseButton
+            variant="danger"
+            @click="confirmDeleteMaterial"
+          >
+            Delete
+          </BaseButton>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showDeleteCourseConfirm" class="overlay">
+      <div class="overlay-card">
+        <h5 class="text-danger">Delete Course</h5>
+        <p class="mb-3">Are you sure you want to delete "{{ course?.name }}"?</p>
+        <div class="d-flex justify-content-end gap-2">
+          <BaseButton
+            variant="secondary"
+            outline
+            @click="cancelDeleteCourse"
+          >
+            Cancel
+          </BaseButton>
+          <BaseButton
+            variant="danger"
+            @click="confirmDeleteCourse"
+          >
+            Delete
+          </BaseButton>
+        </div>
+      </div>
+    </div>
 
     <div v-if="showDeleteConfirm" class="overlay">
       <div class="overlay-card">
@@ -694,10 +780,10 @@
       </div>
     </div>
 
-    <div v-if="showAttemptsModal" class="overlay">
+        <div v-if="showAttemptsModal" class="overlay">
       <div class="overlay-card wide">
         <div class="d-flex justify-content-between align-items-center mb-2">
-          <h5 class="mb-0">Quiz Attempts — {{ attemptsQuizTitle }}</h5>
+          <h5 class="mb-0">Quiz Attempts ? {{ attemptsQuizTitle }}</h5>
           <BaseButton
             size="sm"
             variant="secondary"
@@ -709,76 +795,74 @@
         </div>
         <div v-if="attemptsLoading" class="text-muted">Loading attempts...</div>
         <div v-else-if="!attempts.length" class="alert alert-info mb-0">No attempts yet.</div>
-        <div v-if="showAttemptsModal" class="overlay">
-  <div class="overlay-card wide">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h5 class="mb-0">Quiz Attempts — {{ attemptsQuizTitle }}</h5>
-      <BaseButton
-        size="sm"
-        variant="secondary"
-        outline
-        @click="closeAttempts"
-      >
-        Close
-      </BaseButton>
-    </div>
-
-    <div v-if="attemptsLoading" class="text-muted">Loading attempts...</div>
-    <div v-else-if="!attempts.length" class="alert alert-info mb-0">No attempts yet.</div>
-
-    <!-- NEW: stats + table wrapper -->
-    <div v-else>
-      <!-- Stats row -->
-      <div class="d-flex flex-wrap gap-4 mb-3 small">
-        <div>
-          <div class="text-uppercase text-muted">Attempts</div>
-          <strong>{{ attempts.length }}</strong>
-        </div>
-        <div v-if="hasAttemptScores">
-          <div class="text-uppercase text-muted">Average</div>
-          <strong>{{ attemptsAverageScore }}%</strong>
-        </div>
-        <div v-if="hasAttemptScores">
-          <div class="text-uppercase text-muted">Best</div>
-          <span>{{ attemptsMaxScore }}%</span>
-        </div>
-        <div v-if="hasAttemptScores">
-          <div class="text-uppercase text-muted">Lowest</div>
-          <span>{{ attemptsMinScore }}%</span>
-        </div>
         <div v-else>
-          <div class="text-muted">No scores recorded yet.</div>
+          <div class="d-flex flex-wrap gap-4 mb-3 small">
+            <div>
+              <div class="text-uppercase text-muted">Attempts</div>
+              <strong>{{ attempts.length }}</strong>
+            </div>
+            <div v-if="hasAttemptScores">
+              <div class="text-uppercase text-muted">Average</div>
+              <strong>{{ attemptsAverageScore }}%</strong>
+            </div>
+            <div v-if="hasAttemptScores">
+              <div class="text-uppercase text-muted">Best</div>
+              <span>{{ attemptsMaxScore }}%</span>
+            </div>
+            <div v-if="hasAttemptScores">
+              <div class="text-uppercase text-muted">Lowest</div>
+              <span>{{ attemptsMinScore }}%</span>
+            </div>
+            <div v-else>
+              <div class="text-muted">No scores recorded yet.</div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Student</th>
+                  <th>Email</th>
+                  <th>Score</th>
+                  <th>Submitted</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(att, idx) in attempts" :key="att._id">
+                  <td>{{ idx + 1 }}</td>
+                  <td>{{ att.student?.name || 'Unknown' }}</td>
+                  <td>{{ att.student?.email || '?' }}</td>
+                  <td>{{ att.score ?? '?' }}%</td>
+                  <td>{{ formatDate(att.createdAt) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-
-      <!-- Existing table -->
-      <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>#</th>
-              <th>Student</th>
-              <th>Email</th>
-              <th>Score</th>
-              <th>Submitted</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(att, idx) in attempts" :key="att._id">
-              <td>{{ idx + 1 }}</td>
-              <td>{{ att.student?.name || 'Unknown' }}</td>
-              <td>{{ att.student?.email || '—' }}</td>
-              <td>{{ att.score ?? '—' }}%</td>
-              <td>{{ formatDate(att.createdAt) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
     </div>
-    <!-- end v-else -->
-  </div>
-</div>
 
+    <div v-if="showRemoveStudentConfirm" class="overlay">
+      <div class="overlay-card">
+        <h5 class="text-danger">Remove Student</h5>
+        <p class="mb-3">Remove this student from the course?</p>
+        <div class="d-flex justify-content-end gap-2">
+          <BaseButton
+            variant="secondary"
+            outline
+            @click="cancelRemoveStudent"
+          >
+            Cancel
+          </BaseButton>
+          <BaseButton
+            variant="danger"
+            @click="confirmRemoveStudent"
+          >
+            Remove
+          </BaseButton>
+        </div>
       </div>
     </div>
 
@@ -836,7 +920,12 @@ export default {
       quizError: null,
       showDeleteConfirm: false,
       quizToDelete: null,
+      showDeleteCourseConfirm: false,
       showLeaveConfirm: false,
+      showDeleteMaterialConfirm: false,
+      materialToDelete: null,
+      showRemoveStudentConfirm: false,
+      studentToRemove: null,
       showAttemptsModal: false,
       attemptsLoading: false,
       attempts: [],
@@ -909,38 +998,51 @@ export default {
     myParticipationByQuiz() {
       return this.myParticipations || {}
     },
+    totalQuizQuestions() {
+      if (!Array.isArray(this.quizzes)) return 0
+      return this.quizzes.reduce((sum, q) => sum + ((q.questions && q.questions.length) || 0), 0)
+    },
+    hasQuizQuestions() {
+      return this.totalQuizQuestions > 0
+    },
+    avgQuestionsPerQuiz() {
+      if (!this.quizzes.length) return 0
+      return Math.round((this.totalQuizQuestions / this.quizzes.length) * 10) / 10
+    },
+    myCompletedQuizzes() {
+      if (!this.myParticipations || typeof this.myParticipations !== 'object') return 0
+      return Object.keys(this.myParticipations).length
+    },
+    myScores() {
+      const list = Object.values(this.myParticipations || {})
+      return list
+        .map(p => {
+          const n = Number(p.score)
+          return Number.isNaN(n) ? null : n
+        })
+        .filter(n => n !== null)
+    },
+    hasMyScores() {
+      return this.myScores.length > 0
+    },
+    avgMyScore() {
+      if (!this.hasMyScores) return 0
+      const sum = this.myScores.reduce((a, b) => a + b, 0)
+      return Math.round((sum / this.myScores.length) * 10) / 10
+    },
+    bestMyScore() {
+      if (!this.hasMyScores) return 0
+      return Math.max(...this.myScores)
+    },
+    completionRate() {
+      if (!this.quizzes.length) return 0
+      const pct = (this.myCompletedQuizzes / this.quizzes.length) * 100
+      return Math.round(pct * 10) / 10
+    },
     filteredNotes() {
       if (!Array.isArray(this.notes) || !this.course?._id) return []
       return this.notes.filter(note => note.course?._id === this.course._id)
     },
-    attemptsWithScore() {
-      // normalize scores (numbers + numeric strings)
-      return this.attempts
-        .map(a => {
-          const v = a.score
-          if (v === undefined || v === null) return null
-          const num = Number(v)
-          return Number.isNaN(num) ? null : num
-        })
-        .filter(v => v !== null)
-    },
-    hasAttemptScores() {
-      return this.attemptsWithScore.length > 0
-    },
-    attemptsAverageScore() {
-      if (!this.hasAttemptScores) return null
-      const sum = this.attemptsWithScore.reduce((acc, s) => acc + s, 0)
-      return Math.round((sum / this.attemptsWithScore.length) * 10) / 10 // 1 decimal
-    },
-    attemptsMinScore() {
-      if (!this.hasAttemptScores) return null
-      return Math.min(...this.attemptsWithScore)
-    },
-    attemptsMaxScore() {
-      if (!this.hasAttemptScores) return null
-      return Math.max(...this.attemptsWithScore)
-    },
-
     attemptsWithScore() {
       // normalize scores (numbers + numeric strings)
       return this.attempts
@@ -1066,14 +1168,21 @@ export default {
       if (!d) return '-'
       return new Date(d).toLocaleString()
     },
-    async removeCourse() {
-      if (!confirm('Delete this course?')) return
+    promptDeleteCourse() {
+      this.showDeleteCourseConfirm = true
+    },
+    async confirmDeleteCourse() {
       try {
         await CourseService.remove(this.course._id)
         this.$router.push({ name: 'Courses' })
       } catch (err) {
         alert('Failed to delete course')
+      } finally {
+        this.showDeleteCourseConfirm = false
       }
+    },
+    cancelDeleteCourse() {
+      this.showDeleteCourseConfirm = false
     },
     async addStudent() {
       const email = this.addStudentEmail.trim()
@@ -1150,14 +1259,25 @@ export default {
       this.overviewDraft = this.course.overview || ''
     },
     async removeStudent(attendanceId) {
-      if (!confirm('Remove this student from the course?')) return
+      this.studentToRemove = attendanceId
+      this.showRemoveStudentConfirm = true
+    },
+    async confirmRemoveStudent() {
+      if (!this.studentToRemove) return
       try {
-        await CourseService.removeStudent(this.course._id, attendanceId)
+        await CourseService.removeStudent(this.course._id, this.studentToRemove)
         await this.fetchEnrolled()
       } catch (err) {
         console.error(err)
         alert('Failed to remove student')
+      } finally {
+        this.studentToRemove = null
+        this.showRemoveStudentConfirm = false
       }
+    },
+    cancelRemoveStudent() {
+      this.showRemoveStudentConfirm = false
+      this.studentToRemove = null
     },
     async leaveCourse() {
       if (!this.myAttendance) return
@@ -1377,16 +1497,27 @@ export default {
         this.uploading = false
       }
     },
-    async deleteMaterial(material) {
+    promptDeleteMaterial(material) {
       if (!material || !material._id) return
-      if (!confirm('Delete this material?')) return
+      this.materialToDelete = material
+      this.showDeleteMaterialConfirm = true
+    },
+    async confirmDeleteMaterial() {
+      if (!this.materialToDelete) return
       try {
-        await CourseMaterialService.remove(this.course._id, material._id)
-        this.materials = this.materials.filter(m => m._id !== material._id)
+        await CourseMaterialService.remove(this.course._id, this.materialToDelete._id)
+        this.materials = this.materials.filter(m => m._id !== this.materialToDelete._id)
       } catch (err) {
         console.error(err)
         alert('Failed to delete material')
+      } finally {
+        this.showDeleteMaterialConfirm = false
+        this.materialToDelete = null
       }
+    },
+    cancelDeleteMaterial() {
+      this.showDeleteMaterialConfirm = false
+      this.materialToDelete = null
     },
     prettySize(bytes) {
       if (bytes === undefined || bytes === null) return ''
@@ -1474,15 +1605,14 @@ export default {
       } finally {
         this.savingEditNote = false
       }
-    },
+  },
 
-    async deleteNote(id) {
-      if (!confirm('Delete this note?')) return
-      try {
-        await Api.delete(`/notes/${id}`)
-        this.notes = this.notes.filter(n => n._id !== id)
-        alert('Lecture deleted')
-      } catch (err) {
+  async deleteNote(id) {
+    try {
+      await Api.delete(`/notes/${id}`)
+      this.notes = this.notes.filter(n => n._id !== id)
+      alert('Lecture deleted')
+    } catch (err) {
         console.error(err)
         alert('Failed to delete note')
       }
@@ -1528,6 +1658,41 @@ export default {
 .hero {
   background: linear-gradient(135deg, #f8fafc, #eef2f7);
   border: 1px solid #e5e7eb;
+}
+.card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+}
+.analytics-pill {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+.analytics-pill .label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+}
+.analytics-pill .value {
+  font-size: 18px;
+  color: #111827;
+}
+.completion-meter .meter-track {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.completion-meter .meter-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #38bdf8);
+  border-radius: 999px;
+  transition: width 0.2s ease;
 }
 .nav-tabs-custom .tab {
   padding: 8px 12px;

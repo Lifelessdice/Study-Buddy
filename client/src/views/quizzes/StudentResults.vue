@@ -14,32 +14,48 @@
     <div v-else-if="!results.length" class="alert alert-info">You have not taken any quizzes yet.</div>
 
     <!-- ONE single v-else block that handles both the stats card and the table -->
-    <div v-else>
-      <!-- Stats card -->
+  <div v-else>
+      <!-- Stats card with visual -->
       <div v-if="hasScoredResults" class="card mb-3">
-        <div class="card-body d-flex flex-wrap gap-4">
-          <div>
-            <div class="text-uppercase small text-muted">Your average score</div>
-            <div class="h4 mb-0">
-              {{ averageScore }}%
-            </div>
+        <div class="card-body d-flex flex-wrap align-items-center gap-4">
+          <div class="progress-wheel">
+            <svg viewBox="0 0 36 36">
+              <path
+                class="bg"
+                d="M18 2.0845
+                   a 15.9155 15.9155 0 0 1 0 31.831
+                   a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+              <path
+                class="progress"
+                :stroke-dasharray="averageScore + ', 100'"
+                d="M18 2.0845
+                   a 15.9155 15.9155 0 0 1 0 31.831
+                   a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+              <text x="18" y="20.35" class="value">{{ averageScore }}%</text>
+              <text x="18" y="27" class="label">Avg</text>
+            </svg>
           </div>
-          <div>
-            <div class="text-uppercase small text-muted">Best score</div>
-            <div class="h5 mb-0">
-              {{ maxScore }}%
+
+          <div class="d-flex flex-wrap gap-4">
+            <div>
+              <div class="text-uppercase small text-muted">Best score</div>
+              <div class="h5 mb-0">
+                {{ maxScore }}%
+              </div>
             </div>
-          </div>
-          <div>
-            <div class="text-uppercase small text-muted">Lowest score</div>
-            <div class="h5 mb-0">
-              {{ minScore }}%
+            <div>
+              <div class="text-uppercase small text-muted">Lowest score</div>
+              <div class="h5 mb-0">
+                {{ minScore }}%
+              </div>
             </div>
-          </div>
-          <div>
-            <div class="text-uppercase small text-muted">Quizzes completed</div>
-            <div class="h5 mb-0">
-              {{ totalQuizzesTaken }}
+            <div>
+              <div class="text-uppercase small text-muted">Quizzes completed</div>
+              <div class="h5 mb-0">
+                {{ totalQuizzesTaken }}
+              </div>
             </div>
           </div>
         </div>
@@ -191,5 +207,41 @@ export default {
 <style scoped>
 table {
   min-width: 520px;
+}
+
+.progress-wheel {
+  width: 120px;
+  height: 120px;
+}
+.progress-wheel svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.progress-wheel .bg {
+  fill: none;
+  stroke: #e5e7eb;
+  stroke-width: 3;
+}
+.progress-wheel .progress {
+  fill: none;
+  stroke: #2563eb;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.3s ease;
+}
+.progress-wheel text {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  text-anchor: middle;
+  fill: #111827;
+  transform: rotate(90deg);
+}
+.progress-wheel .value {
+  font-size: 10px;
+  font-weight: 700;
+}
+.progress-wheel .label {
+  font-size: 7px;
+  fill: #6b7280;
 }
 </style>
