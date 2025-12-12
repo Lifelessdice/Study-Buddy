@@ -26,9 +26,14 @@
 
       <!-- Summary -->
       <div class="tab-pane fade show active" id="summary">
-        <button class="btn btn-primary mb-3" @click="generateSummary" :disabled="loadingSummary">
+        <BaseButton
+          class="mb-3"
+          variant="primary"
+          :loading="loadingSummary"
+          @click="generateSummary"
+        >
           Generate Summary
-        </button>
+        </BaseButton>
 
         <div v-if="loadingSummary" class="text-center my-3">
           <div class="spinner-border text-primary" role="status">
@@ -42,9 +47,14 @@
 
       <!-- Quiz -->
       <div class="tab-pane fade" id="quiz">
-        <button class="btn btn-success mb-3" @click="generateQuiz" :disabled="loadingQuiz">
+        <BaseButton
+          class="mb-3"
+          variant="success"
+          :loading="loadingQuiz"
+          @click="generateQuiz"
+        >
           Generate Quiz
-        </button>
+        </BaseButton>
 
         <div v-if="loadingQuiz" class="text-center my-3">
           <div class="spinner-border text-success" role="status">
@@ -68,14 +78,14 @@
 
       <!-- Flashcards Tab -->
       <div class="tab-pane fade" id="flashcards">
-      <button
-          class="btn btn-warning mb-3"
-          @click="generateFlashcards"
-          :disabled="loadingFlashcards"
-  >
-          <span v-if="loadingFlashcards">Generating...</span>
-          <span v-else>Generate Flashcards</span>
-      </button>
+      <BaseButton
+        class="mb-3"
+        variant="warning"
+        :loading="loadingFlashcards"
+        @click="generateFlashcards"
+      >
+        Generate Flashcards
+      </BaseButton>
 
       <div v-if="loadingFlashcards" class="text-center my-3">
           <div class="spinner-border text-warning" role="status">

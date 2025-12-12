@@ -34,14 +34,12 @@
       </div>
     </nav>
 
-
     <!-- MAIN SCROLLABLE AREA -->
     <main class="app-main">
       <router-view />
     </main>
   </div>
 </template>
-
 
 <script>
 export default {

@@ -3,16 +3,21 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h2>All Courses</h2>
       <div class="d-flex align-items-center gap-2">
-        <router-link to="/courses" class="btn btn-outline-secondary">
+        <BaseButton
+          to="/courses"
+          variant="secondary"
+          outline
+        >
           Back to My Courses
-        </router-link>
-        <router-link
+        </BaseButton>
+        <BaseButton
           v-if="isTeacher"
           to="/courses/delete-all"
-          class="btn btn-outline-danger"
+          variant="danger"
+          outline
         >
           Delete All Courses
-        </router-link>
+        </BaseButton>
       </div>
     </div>
 
@@ -43,12 +48,23 @@
             </ul>
           </div>
           <div class="col-md-3 d-flex align-items-end">
-            <button class="btn btn-outline-secondary w-100" @click="toggleFilters">
+            <BaseButton
+              block
+              variant="secondary"
+              outline
+              @click="toggleFilters"
+            >
               {{ showFilters ? 'Hide Filters' : 'Filter by Degree' }}
-            </button>
+            </BaseButton>
           </div>
           <div class="col-md-3 d-flex align-items-end">
-            <button class="btn btn-primary w-100" @click="fetchCourses">Search</button>
+            <BaseButton
+              block
+              variant="primary"
+              @click="fetchCourses"
+            >
+              Search
+            </BaseButton>
           </div>
         </div>
 
@@ -80,7 +96,7 @@
 
     <div class="row">
       <div v-for="course in paginatedCourses" :key="course._id" class="col-md-6 mb-3">
-        <div class="card h-100">
+        <div class="card h-100 all-course-card">
           <div class="card-body">
             <h5 class="card-title">
               {{ course.name }} <small class="text-muted">({{ course.code }})</small>
@@ -98,16 +114,18 @@
               <span v-if="isEnrolled(course)" class="badge bg-success">Enrolled</span>
               <span v-else class="text-muted">Not enrolled</span>
 
-              <button
-                class="btn btn-sm"
-                :class="isEnrolled(course) ? 'btn-outline-secondary' : 'btn-primary'"
+              <BaseButton
+                size="sm"
+                :variant="isEnrolled(course) ? 'secondary' : 'primary'"
+                :outline="isEnrolled(course)"
                 :disabled="enrollingId === course._id || isEnrolled(course)"
+                :loading="enrollingId === course._id"
                 @click="handleSignup(course)"
               >
                 <span v-if="enrollingId === course._id">Enrolling...</span>
                 <span v-else-if="isEnrolled(course)">Enrolled</span>
                 <span v-else>Enroll</span>
-              </button>
+              </BaseButton>
             </div>
           </div>
         </div>
@@ -116,21 +134,24 @@
 
     <div v-if="!loading && courses.length" class="d-flex justify-content-between align-items-center mt-3">
       <div>
-        <button
-          class="btn btn-outline-secondary me-2"
+        <BaseButton
+          variant="secondary"
+          outline
+          class="me-2"
           @click="prevPage"
           :disabled="currentPage === 1"
         >
           Previous
-        </button>
+        </BaseButton>
 
-        <button
-          class="btn btn-outline-secondary"
+        <BaseButton
+          variant="secondary"
+          outline
           @click="nextPage"
           :disabled="currentPage === totalPages"
         >
           Next
-        </button>
+        </BaseButton>
       </div>
 
       <div class="d-flex align-items-center">
@@ -178,7 +199,7 @@ export default {
       // enrollment state
       enrolledCourseIds: [],
       enrollingId: null,
-      enrollError: null, 
+      enrollError: null,
 
       apilinks: null
     }
@@ -324,9 +345,7 @@ export default {
 
       try {
         await CourseService.addStudent(course._id, user._id)
-        if (!this.enrolledCourseIds.includes(course._id)) {
-          this.enrolledCourseIds.push(course._id)
-        }
+        await this.fetchEnrollments()
       } catch (err) {
         console.error(err)
         this.enrollError = 'Enrollment failed. Please try again.'
@@ -356,7 +375,11 @@ export default {
     }
   },
   mounted() {
+    // Load courses and my enrollments so badges/buttons render correctly
     this.fetchCourses()
+    if (this.isStudent) {
+      this.fetchEnrollments()
+    }
   }
 }
 </script>
@@ -369,5 +392,17 @@ export default {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   background: #fff;
   border: 1px solid #dee2e6;
+}
+
+.all-course-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.all-course-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.1);
 }
 </style>

@@ -61,6 +61,20 @@
     </div>
   </div>
   <div v-else class="container mt-4">Loading...</div>
+
+  <div v-if="showSubmitOverlay" class="overlay">
+    <div class="overlay-card">
+      <h5 class="mb-2">Quiz submitted</h5>
+      <p class="mb-3">
+        Score: {{ submitScore !== null && submitScore !== undefined ? submitScore + '%' : 'N/A' }}
+      </p>
+      <div class="d-flex justify-content-end gap-2">
+        <BaseButton variant="primary" @click="closeSubmitOverlay">
+          OK
+        </BaseButton>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -75,7 +89,9 @@ export default {
       quiz: {},
       answers: [],
       submitting: false,
-      loaded: false
+      loaded: false,
+      showSubmitOverlay: false,
+      submitScore: null
     }
   },
   computed: {
@@ -113,11 +129,12 @@ export default {
       this.submitting = true
       try {
         // Simple score calculation client-side
+        const totalQuestions = (this.quiz.questions && this.quiz.questions.length) || 0
         let correct = 0
         this.quiz.questions.forEach((q, idx) => {
           if (this.answers[idx] === q.correctAnswerIndex) correct++
         })
-        const score = Math.round((correct / this.quiz.questions.length) * 100)
+        const score = totalQuestions ? Math.round((correct / totalQuestions) * 100) : 0
 
         await Api.post('/quizparticipations', {
           student: this.user._id,
@@ -126,14 +143,18 @@ export default {
           score
         })
 
-        alert(`Quiz submitted! Score: ${score}%`)
-        this.$router.push({ name: 'CourseDashboard', params: { id: this.quiz.course }, query: { tab: 'quizzes' } })
+        this.submitScore = score
+        this.showSubmitOverlay = true
       } catch (err) {
         console.error(err)
         alert('Failed to submit quiz')
       } finally {
         this.submitting = false
       }
+    },
+    closeSubmitOverlay() {
+      this.showSubmitOverlay = false
+      this.$router.push({ name: 'CourseDashboard', params: { id: this.quiz.course }, query: { tab: 'quizzes' } })
     }
   }
 }
@@ -142,5 +163,23 @@ export default {
 <style scoped>
 .list-group-item {
   cursor: pointer;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.overlay-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12);
+  max-width: 360px;
+  width: 100%;
 }
 </style>
