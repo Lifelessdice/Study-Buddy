@@ -213,7 +213,7 @@
                 </div>
                 <div class="small text-muted">Created: {{ formatDate(quiz.createdAt) }}</div>
                 <div v-if="!isTeacher && myParticipationByQuiz[quiz._id]" class="small text-success">
-                  Score: {{ myParticipationByQuiz[quiz._id].score ?? '—' }}%
+                  Score: {{ myParticipationByQuiz[quiz._id].score ?? '?' }}%
                 </div>
               </div>
               <div class="d-flex gap-2">
@@ -408,8 +408,18 @@
       </div>
 
       <div class="list-group">
-        <template v-for="note in filteredNotes" :key="note._id">
-          <div v-if="editingNoteId === note._id" class="list-group-item">
+        <div
+          v-for="note in filteredNotes"
+          :key="note._id"
+          class="list-group-item"
+          :class="editingNoteId === note._id ? '' : 'list-group-item-action text-start'"
+          :role="editingNoteId === note._id ? undefined : 'button'"
+          :tabindex="editingNoteId === note._id ? undefined : 0"
+          @click="editingNoteId === note._id ? null : goToNote(note)"
+          @keydown.enter.prevent="editingNoteId === note._id ? null : goToNote(note)"
+          @keydown.space.prevent="editingNoteId === note._id ? null : goToNote(note)"
+        >
+          <template v-if="editingNoteId === note._id">
             <input v-model="editNoteTopic" type="text" class="form-control mb-2" placeholder="Topic" />
             <textarea v-model="editNoteContent" class="form-control mb-2" rows="4" placeholder="Content"></textarea>
             <div class="d-flex gap-2">
@@ -431,16 +441,8 @@
                 Cancel
               </BaseButton>
             </div>
-          </div>
-          <div
-            v-else
-            class="list-group-item list-group-item-action text-start"
-            role="button"
-            tabindex="0"
-            @click="goToNote(note)"
-            @keydown.enter.prevent="goToNote(note)"
-            @keydown.space.prevent="goToNote(note)"
-          >
+          </template>
+          <template v-else>
             <div class="d-flex justify-content-between align-items-center">
               <strong>{{ note.topic }}</strong>
               <small class="text-muted">{{ formatDate(note.createdAt) }}</small>
@@ -464,8 +466,8 @@
                 Delete
               </BaseButton>
             </div>
-          </div>
-        </template>
+          </template>
+        </div>
       </div>
     </div>
   </div>
@@ -539,7 +541,7 @@
                 <strong>{{ mat.title || mat.originalName }}</strong>
                 <small class="text-muted">{{ formatDate(mat.createdAt) }}</small>
               </div>
-              <div class="small text-muted">PDF • {{ prettySize(mat.size) }}</div>
+              <div class="small text-muted">PDF - {{ prettySize(mat.size) }}</div>
               <div v-if="mat.description" class="small text-muted mt-1">{{ mat.description }}</div>
 
               <div v-if="expandedMaterialId === mat._id" class="mt-3 p-3 border rounded bg-light-subtle">
@@ -697,20 +699,20 @@
         <h5 class="text-danger">Delete Lecture</h5>
         <p class="mb-3">Are you sure you want to delete "{{ noteToDelete?.topic }}"?</p>
         <div class="d-flex justify-content-end gap-2">
-      <BaseButton
-        variant="secondary"
-        outline
-        @click="cancelDeleteNote"
-      >
-        Cancel
-      </BaseButton>
-      <BaseButton
-        variant="danger"
-        @click="deleteNoteConfirmed"
-      >
-        Delete
-      </BaseButton>
-    </div>
+          <BaseButton
+            variant="secondary"
+            outline
+            @click="cancelDeleteNote"
+          >
+            Cancel
+          </BaseButton>
+          <BaseButton
+            variant="danger"
+            @click="deleteNoteConfirmed"
+          >
+            Delete
+          </BaseButton>
+        </div>
       </div>
     </div>
 
@@ -780,10 +782,10 @@
       </div>
     </div>
 
-        <div v-if="showAttemptsModal" class="overlay">
+    <div v-if="showAttemptsModal" class="overlay">
       <div class="overlay-card wide">
         <div class="d-flex justify-content-between align-items-center mb-2">
-          <h5 class="mb-0">Quiz Attempts ? {{ attemptsQuizTitle }}</h5>
+          <h5 class="mb-0">Quiz Attempts - {{ attemptsQuizTitle }}</h5>
           <BaseButton
             size="sm"
             variant="secondary"
@@ -974,9 +976,10 @@ export default {
       return u ? JSON.parse(u) : null
     },
     courseTeacher() {
-      const user = this.currentUser
-      if (!user) return null
-      return user.name || user.email || null
+      const teacher = this.course?.teacher || this.course?.createdBy
+      if (!teacher) return null
+      if (typeof teacher === 'string') return teacher
+      return teacher.name || teacher.email || null
     },
     filteredEnrolled() {
       const term = this.studentSearch.trim().toLowerCase()
@@ -1378,6 +1381,7 @@ export default {
       }
       return this.materialAi[id]
     },
+
     setMaterialTab(id, tab) {
       const state = this.ensureMaterialState(id)
       state.activeTab = tab
@@ -1605,31 +1609,25 @@ export default {
       } finally {
         this.savingEditNote = false
       }
-  },
-
-  async deleteNote(id) {
-    try {
-      await Api.delete(`/notes/${id}`)
-      this.notes = this.notes.filter(n => n._id !== id)
-      alert('Lecture deleted')
-    } catch (err) {
+    },
+    async deleteNote(id) {
+      try {
+        await Api.delete(`/notes/${id}`)
+        this.notes = this.notes.filter(n => n._id !== id)
+        alert('Lecture deleted')
+      } catch (err) {
         console.error(err)
         alert('Failed to delete note')
       }
     },
-    // When user clicks Delete
     promptDeleteNote(note) {
       this.noteToDelete = note
       this.showDeleteNoteConfirm = true
     },
-
-    // Cancel deletion
     cancelDeleteNote() {
       this.noteToDelete = null
       this.showDeleteNoteConfirm = false
     },
-
-    // Confirm deletion
     async deleteNoteConfirmed() {
       if (!this.noteToDelete) return
       try {
@@ -1637,7 +1635,7 @@ export default {
         this.notes = this.notes.filter(n => n._id !== this.noteToDelete._id)
         this.noteToDelete = null
         this.showDeleteNoteConfirm = false
-        alert('Lecture deleted') // optional, you can remove this if the modal is enough
+        alert('Lecture deleted')
       } catch (err) {
         console.error(err)
         alert('Failed to delete note')
@@ -1650,6 +1648,9 @@ export default {
       this.currentTab = this.$route.query.tab
     }
     await this.fetchCourse()
+    if (this.currentTab !== 'overview') {
+      this.setTab(this.currentTab)
+    }
   }
 }
 </script>
@@ -1727,10 +1728,13 @@ export default {
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
   display: flex;
-  align-items: center;
+  align-items: flex-start;    /* start near top for short screens */
   justify-content: center;
+  padding: 1rem;
   z-index: 3000;
+  overflow-y: auto;           /* scroll if content is too tall */
 }
+
 .overlay-card {
   background: #fff;
   padding: 20px;
@@ -1738,11 +1742,20 @@ export default {
   max-width: 640px;
   width: 100%;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  max-height: 100%;
+  overflow-y: auto;           /* card can scroll internally */
 }
+
 .overlay-card.wide {
   max-width: 720px;
 }
 
+@media (min-height: 700px) {
+  .overlay {
+    align-items: center;      /* center when we have enough height */
+    padding: 2rem;
+  }
+}
 .lecture-text {
   text-align: left;
   white-space: pre-line;
