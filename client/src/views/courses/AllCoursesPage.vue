@@ -96,7 +96,7 @@
 
     <div class="row">
       <div v-for="course in paginatedCourses" :key="course._id" class="col-md-6 mb-3">
-        <div class="card h-100">
+        <div class="card h-100 all-course-card">
           <div class="card-body">
             <h5 class="card-title">
               {{ course.name }} <small class="text-muted">({{ course.code }})</small>
@@ -392,5 +392,17 @@ export default {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   background: #fff;
   border: 1px solid #dee2e6;
+}
+
+.all-course-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.all-course-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.1);
 }
 </style>

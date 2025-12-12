@@ -231,10 +231,12 @@ export default {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   border-radius: 16px;
   overflow: hidden;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
 }
 
 .course-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.1);
 }
 </style>
