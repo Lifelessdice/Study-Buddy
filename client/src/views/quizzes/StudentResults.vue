@@ -14,7 +14,7 @@
     <div v-else-if="!results.length" class="alert alert-info">You have not taken any quizzes yet.</div>
 
     <!-- ONE single v-else block that handles both the stats card and the table -->
-  <div v-else>
+    <div v-else>
       <!-- Stats card -->
       <div v-if="hasScoredResults" class="card mb-3">
         <div class="card-body d-flex flex-wrap gap-4">
