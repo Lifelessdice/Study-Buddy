@@ -6,7 +6,7 @@
         <h3 class="mb-0">Results</h3>
         <div class="text-muted small">All quiz attempts linked to your account.</div>
       </div>
-      <router-link class="btn btn-outline-secondary btn-sm" to="/courses">Back to courses</router-link>
+      <BaseButton to="/courses" variant="secondary" outline size="sm">Back to courses</BaseButton>
     </div>
 
     <div v-if="loading" class="text-muted">Loading results...</div>

@@ -28,7 +28,7 @@
           <input v-model="password" class="form-control" type="password" required minlength="6">
         </div>
 
-        <button class="btn btn-primary w-100">Create Account</button>
+        <BaseButton class="w-100" variant="primary" type="submit">Create Account</BaseButton>
 
         <p class="mt-3 text-center">
           Already have an account?
@@ -54,7 +54,7 @@ export default {
   methods: {
     async signup() {
       try {
-        const res = await api.post('/auth/register', {
+        await api.post('/auth/register', {
           name: this.name,
           email: this.email,
           role: this.role,

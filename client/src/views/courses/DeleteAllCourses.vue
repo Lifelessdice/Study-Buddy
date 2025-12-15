@@ -4,8 +4,8 @@
     <div class="card p-3">
       <p class="text-danger fw-bold">This will delete all courses. This action cannot be undone.</p>
       <div class="d-flex gap-2">
-        <button class="btn btn-danger" @click="showConfirm = true">Delete All Courses</button>
-        <router-link to="/courses" class="btn btn-outline-secondary">Cancel</router-link>
+        <BaseButton variant="danger" @click="showConfirm = true">Delete All Courses</BaseButton>
+        <BaseButton to="/courses" variant="secondary" outline>Cancel</BaseButton>
       </div>
     </div>
 
@@ -14,10 +14,10 @@
         <h5 class="text-danger">Are you sure?</h5>
         <p class="mb-3">This will remove all courses. This cannot be undone.</p>
         <div class="d-flex gap-2 justify-content-end">
-          <button class="btn btn-secondary" @click="showConfirm = false">No</button>
-          <button class="btn btn-danger" :disabled="deleting" @click="deleteAll">
-            {{ deleting ? 'Deleting…' : 'Yes, delete all' }}
-          </button>
+          <BaseButton variant="secondary" outline @click="showConfirm = false">No</BaseButton>
+          <BaseButton variant="danger" :loading="deleting" :disabled="deleting" @click="deleteAll">
+            {{ deleting ? 'Deleting...' : 'Yes, delete all' }}
+          </BaseButton>
         </div>
       </div>
     </div>

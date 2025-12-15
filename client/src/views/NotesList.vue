@@ -4,7 +4,15 @@
 
     <div class="list-group shadow-sm">
       <template v-for="item in lectures" :key="item._id">
-        <div v-if="item.type === 'pdf'" class="list-group-item text-start">
+        <div
+          v-if="item.type === 'pdf'"
+          class="list-group-item list-group-item-action text-start w-100"
+          role="button"
+          tabindex="0"
+          @click="toggleMaterial(item)"
+          @keydown.enter.prevent="toggleMaterial(item)"
+          @keydown.space.prevent="toggleMaterial(item)"
+        >
           <div class="d-flex justify-content-between align-items-center">
             <strong>{{ item.title }}</strong>
             <small class="text-muted">{{ formatDate(item.createdAt) }}</small>
@@ -12,19 +20,65 @@
           <div class="small text-muted">PDF</div>
           <div v-if="item.description" class="small text-muted mt-1">{{ item.description }}</div>
 
-          <div class="d-flex flex-wrap gap-2 mt-3">
-            <a class="btn btn-sm btn-outline-primary" :href="item.filePath" target="_blank" rel="noopener" :download="item.downloadName">Open PDF</a>
-          </div>
+          <div v-if="expandedMaterialId === item._id" class="mt-3 p-3 border rounded bg-light-subtle">
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <BaseButton
+                size="sm"
+                variant="primary"
+                outline
+                :href="item.filePath"
+                target="_blank"
+                rel="noopener"
+                :download="item.downloadName"
+                @click.stop
+              >
+                Open PDF
+              </BaseButton>
+            </div>
 
-          <div class="mt-3 p-3 border rounded bg-light-subtle">
-            <!-- Summary -->
-            <div class="mb-3">
-              <div v-if="aiState[item._id]?.error" class="alert alert-warning mb-3">
-                {{ aiState[item._id].error }}
-              </div>
-              <button class="btn btn-primary mb-2" @click="generateMaterialSummary(item)" :disabled="aiState[item._id]?.loadingSummary">
+            <ul class="nav nav-tabs mb-3">
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  :class="{ active: aiState[item._id]?.activeTab === 'summary' }"
+                  @click.stop.prevent="setAiTab(item._id, 'summary')"
+                >
+                  Summary
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  :class="{ active: aiState[item._id]?.activeTab === 'quiz' }"
+                  @click.stop.prevent="setAiTab(item._id, 'quiz')"
+                >
+                  Quiz
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  :class="{ active: aiState[item._id]?.activeTab === 'flashcards' }"
+                  @click.stop.prevent="setAiTab(item._id, 'flashcards')"
+                >
+                  Flashcards
+                </a>
+              </li>
+            </ul>
+
+            <div v-if="aiState[item._id]?.error" class="alert alert-warning mb-3">
+              {{ aiState[item._id].error }}
+            </div>
+
+            <div v-show="aiState[item._id]?.activeTab === 'summary'">
+              <BaseButton
+                class="mb-2"
+                variant="primary"
+                :loading="aiState[item._id]?.loadingSummary"
+                @click.stop="generateMaterialSummary(item)"
+              >
                 Generate Summary
-              </button>
+              </BaseButton>
               <div v-if="aiState[item._id]?.loadingSummary" class="text-center my-2">
                 <div class="spinner-border text-primary" role="status">
                   <span class="visually-hidden">Loading...</span>
@@ -34,11 +88,15 @@
               <div v-if="aiState[item._id]?.summary && !aiState[item._id]?.loadingSummary">{{ aiState[item._id].summary }}</div>
             </div>
 
-            <!-- Quiz -->
-            <div class="mb-3">
-              <button class="btn btn-success mb-2" @click="generateMaterialQuiz(item)" :disabled="aiState[item._id]?.loadingQuiz">
+            <div v-show="aiState[item._id]?.activeTab === 'quiz'">
+              <BaseButton
+                class="mb-2"
+                variant="success"
+                :loading="aiState[item._id]?.loadingQuiz"
+                @click.stop="generateMaterialQuiz(item)"
+              >
                 Generate Quiz
-              </button>
+              </BaseButton>
               <div v-if="aiState[item._id]?.loadingQuiz" class="text-center my-2">
                 <div class="spinner-border text-success" role="status">
                   <span class="visually-hidden">Loading...</span>
@@ -58,16 +116,15 @@
               </ul>
             </div>
 
-            <!-- Flashcards -->
-            <div>
-              <button
-                class="btn btn-warning mb-2"
-                @click="generateMaterialFlashcards(item)"
-                :disabled="aiState[item._id]?.loadingFlashcards"
+            <div v-show="aiState[item._id]?.activeTab === 'flashcards'">
+              <BaseButton
+                class="mb-2"
+                variant="warning"
+                :loading="aiState[item._id]?.loadingFlashcards"
+                @click.stop="generateMaterialFlashcards(item)"
               >
-                <span v-if="aiState[item._id]?.loadingFlashcards">Generating...</span>
-                <span v-else>Generate Flashcards</span>
-              </button>
+                Generate Flashcards
+              </BaseButton>
               <div v-if="aiState[item._id]?.loadingFlashcards" class="text-center my-2">
                 <div class="spinner-border text-warning" role="status">
                   <span class="visually-hidden">Loading...</span>
@@ -80,7 +137,7 @@
                   v-for="(fc, idx) in aiState[item._id].flashcards"
                   :key="idx"
                   :class="{ flipped: fc.flipped }"
-                  @click="fc.flipped = !fc.flipped"
+                  @click.stop="fc.flipped = !fc.flipped"
                 >
                   <div class="front">
                     Q: {{ fc.question }}
@@ -94,17 +151,21 @@
           </div>
         </div>
 
-        <button
+        <div
           v-else
           class="list-group-item list-group-item-action text-start"
+          role="button"
+          tabindex="0"
           @click="goToLecture(item)"
+          @keydown.enter.prevent="goToLecture(item)"
+          @keydown.space.prevent="goToLecture(item)"
         >
           <div class="d-flex justify-content-between align-items-center">
             <strong>{{ item.title }}</strong>
             <small class="text-muted">{{ formatDate(item.createdAt) }}</small>
           </div>
           <div class="small text-muted">Text</div>
-        </button>
+        </div>
       </template>
     </div>
   </div>
@@ -122,7 +183,8 @@ export default {
       materials: [],
       user: null,
       studentAttendance: [], // stores the student's enrolled courses
-      aiState: {}
+      aiState: {},
+      expandedMaterialId: null
     }
   },
 
@@ -215,17 +277,25 @@ export default {
         loadingSummary: false,
         loadingQuiz: false,
         loadingFlashcards: false,
-        error: ''
+        error: '',
+        activeTab: 'summary'
       }
       this.aiState = { ...this.aiState, [id]: fresh }
       return fresh
     },
-    goToLecture(item) {
-      if (item.type === 'pdf' && item.filePath) {
-        window.open(item.filePath, '_blank', 'noopener')
-      } else {
-        this.$router.push(`/notes/${item._id}`)
+    setAiTab(id, tab) {
+      const state = this.ensureState(id)
+      state.activeTab = tab
+    },
+    toggleMaterial(item) {
+      const isSame = this.expandedMaterialId === item._id
+      this.expandedMaterialId = isSame ? null : item._id
+      if (!isSame) {
+        this.ensureState(item._id)
       }
+    },
+    goToLecture(item) {
+      this.$router.push(`/notes/${item._id}`)
     },
     formatDate(iso) {
       if (!iso) return ''

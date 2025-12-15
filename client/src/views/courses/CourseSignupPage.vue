@@ -3,9 +3,9 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h2>Sign Up for Courses</h2>
       <div>
-        <router-link to="/courses" class="btn btn-outline-secondary">
+        <BaseButton to="/courses" variant="secondary" outline>
           Back to My Courses
-        </router-link>
+        </BaseButton>
       </div>
     </div>
 
@@ -56,9 +56,10 @@
                   Not enrolled
                 </span>
 
-                <button
-                  class="btn btn-sm"
-                  :class="isEnrolled(course) ? 'btn-outline-secondary' : 'btn-primary'"
+                <BaseButton
+                  size="sm"
+                  :variant="isEnrolled(course) ? 'secondary' : 'primary'"
+                  :outline="isEnrolled(course)"
                   :disabled="enrollingId === course._id || isEnrolled(course)"
                   @click="handleSignup(course)"
                 >
@@ -71,7 +72,7 @@
                   <span v-else>
                     Sign Up
                   </span>
-                </button>
+                </BaseButton>
               </div>
             </div>
           </div>

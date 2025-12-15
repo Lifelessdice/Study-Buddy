@@ -3,12 +3,12 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h2>Courses</h2>
       <div>
-        <router-link v-if="isTeacher" to="/courses/create" class="btn btn-primary">
+        <BaseButton v-if="isTeacher" to="/courses/create" variant="primary">
           + Create Course
-        </router-link>
-        <router-link to="/courses/all" class="btn btn-outline-secondary ms-2">
+        </BaseButton>
+        <BaseButton to="/courses/all" variant="secondary" outline class="ms-2">
           See All Courses
-        </router-link>
+        </BaseButton>
       </div>
     </div>
 
@@ -36,21 +36,24 @@
     <!-- 🔽 PASTE THIS BLOCK HERE -->
     <div v-if="!loading" class="d-flex justify-content-between align-items-center mt-3">
       <div>
-        <button
-          class="btn btn-outline-secondary me-2"
+        <BaseButton
+          variant="secondary"
+          outline
+          class="me-2"
           @click="prevPage"
           :disabled="currentPage === 1"
         >
           Previous
-        </button>
+        </BaseButton>
 
-        <button
-          class="btn btn-outline-secondary"
+        <BaseButton
+          variant="secondary"
+          outline
           @click="nextPage"
           :disabled="currentPage === totalPages"
         >
           Next
-        </button>
+        </BaseButton>
       </div>
 
       <div class="d-flex align-items-center">
@@ -76,7 +79,6 @@
   </div>
 </template>
 
-
 <script>
 import CourseService from '@/services/CourseService'
 
@@ -96,87 +98,87 @@ export default {
     }
   },
   computed: {
-  isTeacher() {
-    const u = localStorage.getItem('user')
-    if (!u) return false
-    const user = JSON.parse(u)
-    return user.role === 'teacher'
+    isTeacher() {
+      const u = localStorage.getItem('user')
+      if (!u) return false
+      const user = JSON.parse(u)
+      return user.role === 'teacher'
+    },
+    isStudent() {
+      const u = localStorage.getItem('user')
+      if (!u) return false
+      const user = JSON.parse(u)
+      return user.role === 'student'
+    },
+    paginatedCourses() {
+      const start = (this.currentPage - 1) * this.pageSize
+      const end = start + this.pageSize
+      return this.courses.slice(start, end)
+    }
   },
-  isStudent() {
-    const u = localStorage.getItem('user')
-    if (!u) return false
-    const user = JSON.parse(u)
-    return user.role === 'student'
-  },
-  paginatedCourses() {
-    const start = (this.currentPage - 1) * this.pageSize
-    const end = start + this.pageSize
-    return this.courses.slice(start, end)
-  }
-},
 
   methods: {
     async fetchCourses() {
-  try {
-    this.loading = true
-    this.error = null
-
-    let res
-
-    if (this.isTeacher) {
       try {
-        // teachers: first try only their courses
-        res = await CourseService.getMine()
-        const data = res.data.data || res.data || []
-        this.courses = data
+        this.loading = true
+        this.error = null
 
-        // 🔽 update pagination based on courses list
+        let res
+
+        if (this.isTeacher) {
+          try {
+            // teachers: first try only their courses
+            res = await CourseService.getMine()
+            const data = res.data.data || res.data || []
+            this.courses = data
+
+            // 🔽 update pagination based on courses list
+            this.total = this.courses.length
+            this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
+
+            return
+          } catch (err) {
+            // If teacher fetch fails (e.g., not assigned yet), fall back to all
+            const params = {
+              page: this.currentPage,
+              limit: this.pageSize
+            }
+            res = await CourseService.getAll(params)
+          }
+        } else if (this.isStudent) {
+          // students: show courses they are enrolled in (from attendances)
+          const enrollments = await CourseService.getStudentEnrollments()
+          const data = enrollments.data.data || enrollments.data || []
+          this.courses = data.map(att => att.course).filter(Boolean)
+
+          // 🔽 update pagination based on courses list
+          this.total = this.courses.length
+          this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
+
+          return
+        } else {
+          // anonymous / admin: show all with pagination
+          const params = {
+            page: this.currentPage,
+            limit: this.pageSize
+          }
+          res = await CourseService.getAll(params)
+        }
+
+        const data = res.data
+
+        this.courses = data.data || data // sometimes API uses data.data or data
+
+        // 🔽 update pagination based on what we actually have
         this.total = this.courses.length
         this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
-
-        return
       } catch (err) {
-        // If teacher fetch fails (e.g., not assigned yet), fall back to all
-        const params = {
-          page: this.currentPage,
-          limit: this.pageSize
-        }
-        res = await CourseService.getAll(params)
+        this.error = err
+        console.error(err)
+      } finally {
+        this.loading = false
       }
-    } else if (this.isStudent) {
-      // students: show courses they are enrolled in (from attendances)
-      const enrollments = await CourseService.getStudentEnrollments()
-      const data = enrollments.data.data || enrollments.data || []
-      this.courses = data.map(att => att.course).filter(Boolean)
-
-      // 🔽 update pagination based on courses list
-      this.total = this.courses.length
-      this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
-
-      return
-    } else {
-      // anonymous / admin: show all with pagination
-      const params = {
-        page: this.currentPage,
-        limit: this.pageSize
-      }
-      res = await CourseService.getAll(params)
-    }
-
-    const data = res.data
-
-    this.courses = data.data || data // sometimes API uses data.data or data
-
-    // 🔽 update pagination based on what we actually have
-    this.total = this.courses.length
-    this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
-  } catch (err) {
-    this.error = err
-    console.error(err)
-  } finally {
-    this.loading = false
-  }
-  },
+    },
 
     formatDate(d) {
       if (!d) return ''
@@ -209,7 +211,6 @@ export default {
   }
 }
 </script>
-
 
 <style scoped>
 .course-card-link {

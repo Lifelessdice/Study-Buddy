@@ -24,11 +24,16 @@
           <input v-model="form.degree" type="text" class="form-control" />
         </div>
 
-        <button class="btn btn-primary" :disabled="submitting">
-          {{ submitting ? 'Creating…' : 'Create Course' }}
-        </button>
+        <BaseButton
+          variant="primary"
+          type="submit"
+          :loading="submitting"
+          :disabled="submitting"
+        >
+          {{ submitting ? 'Creating...' : 'Create Course' }}
+        </BaseButton>
 
-        <router-link to="/courses" class="btn btn-link ms-2">Cancel</router-link>
+        <BaseButton to="/courses" variant="link" class="ms-2">Cancel</BaseButton>
       </form>
     </div>
   </div>

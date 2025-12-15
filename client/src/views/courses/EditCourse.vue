@@ -25,10 +25,16 @@
         </div>
 
         <div class="d-flex gap-2">
-          <button class="btn btn-outline-primary" :disabled="submitting" type="submit">
-            {{ submitting ? 'Saving…' : submitLabel }}
-          </button>
-          <router-link to="/courses" class="btn btn-link ms-2">Cancel</router-link>
+          <BaseButton
+            variant="primary"
+            outline
+            type="submit"
+            :loading="submitting"
+            :disabled="submitting"
+          >
+            {{ submitting ? 'Saving...' : submitLabel }}
+          </BaseButton>
+          <BaseButton to="/courses" variant="link" class="ms-2">Cancel</BaseButton>
         </div>
 
       </form>
