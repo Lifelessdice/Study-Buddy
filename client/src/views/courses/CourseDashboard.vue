@@ -457,7 +457,6 @@
   </div>
 </div>
 
-
     <div v-if="showDeleteConfirm" class="overlay">
       <div class="overlay-card">
         <h5 class="text-danger">Delete Quiz</h5>
@@ -651,38 +650,10 @@ export default {
       return this.myParticipations || {}
     },
     filteredNotes() {
-  if (!Array.isArray(this.notes) || !this.course?._id) return []
-  return this.notes.filter(note => note.course?._id === this.course._id)
-  },
-      attemptsWithScore() {
-      // normalize scores (numbers + numeric strings)
-      return this.attempts
-        .map(a => {
-          const v = a.score
-          if (v === undefined || v === null) return null
-          const num = Number(v)
-          return Number.isNaN(num) ? null : num
-        })
-        .filter(v => v !== null)
+      if (!Array.isArray(this.notes) || !this.course?._id) return []
+      return this.notes.filter(note => note.course?._id === this.course._id)
     },
-    hasAttemptScores() {
-      return this.attemptsWithScore.length > 0
-    },
-    attemptsAverageScore() {
-      if (!this.hasAttemptScores) return null
-      const sum = this.attemptsWithScore.reduce((acc, s) => acc + s, 0)
-      return Math.round((sum / this.attemptsWithScore.length) * 10) / 10 // 1 decimal
-    },
-    attemptsMinScore() {
-      if (!this.hasAttemptScores) return null
-      return Math.min(...this.attemptsWithScore)
-    },
-    attemptsMaxScore() {
-      if (!this.hasAttemptScores) return null
-      return Math.max(...this.attemptsWithScore)
-    },
-
-        attemptsWithScore() {
+    attemptsWithScore() {
       // normalize scores (numbers + numeric strings)
       return this.attempts
         .map(a => {
@@ -736,7 +707,6 @@ export default {
         this.fetchMaterials(this.$route.params.id)
       }
     },
-
 
     async fetchCourse() {
       const res = await CourseService.getById(this.$route.params.id)
@@ -1098,125 +1068,120 @@ export default {
     },
 
     async createNote() {
-  if (!this.newNoteTopic.trim() || !this.newNoteContent.trim()) {
-    alert('Please fill all fields')
-    return
-  }
+      if (!this.newNoteTopic.trim() || !this.newNoteContent.trim()) {
+        alert('Please fill all fields')
+        return
+      }
 
-  this.savingNote = true
-  try {
-    const payload = {
-      topic: this.newNoteTopic,
-      content: this.newNoteContent,
-      course: this.course._id // use current course ID automatically
-    }
-    const res = await Api.post('/notes', payload)
+      this.savingNote = true
+      try {
+        const payload = {
+          topic: this.newNoteTopic,
+          content: this.newNoteContent,
+          course: this.course._id // use current course ID automatically
+        }
+        const res = await Api.post('/notes', payload)
 
-    // Push to notes with course object for filtering
-    const newNote = {
-      ...res.data.data,
-      course: { _id: this.course._id } 
-    }
-    this.notes.push(newNote)
+        // Push to notes with course object for filtering
+        const newNote = {
+          ...res.data.data,
+          course: { _id: this.course._id }
+        }
+        this.notes.push(newNote)
 
-    // Reset input fields
-    this.newNoteTopic = ''
-    this.newNoteContent = ''
-    this.showCreateNote = false
-    alert('Lecture created')
-  } catch (err) {
-    console.error(err)
-    alert('Failed to create note')
-  } finally {
-    this.savingNote = false
-  }
-}
+        // Reset input fields
+        this.newNoteTopic = ''
+        this.newNoteContent = ''
+        this.showCreateNote = false
+        alert('Lecture created')
+      } catch (err) {
+        console.error(err)
+        alert('Failed to create note')
+      } finally {
+        this.savingNote = false
+      }
+    },
 
+    editNote(note) {
+      this.editingNoteId = note._id
+      this.editNoteTopic = note.topic
+      this.editNoteContent = note.content
+    },
 
+    cancelEditNote() {
+      this.editingNoteId = null
+      this.editNoteTopic = ''
+      this.editNoteContent = ''
+    },
 
-,
+    async saveEditedNote(id) {
+      if (!this.editNoteTopic.trim() || !this.editNoteContent.trim()) {
+        alert('Please fill all fields')
+        return
+      }
+      this.savingEditNote = true
+      try {
+        const payload = { topic: this.editNoteTopic, content: this.editNoteContent }
+        const res = await Api.patch(`/notes/${id}`, payload)
 
-  editNote(note) {
-    this.editingNoteId = note._id
-    this.editNoteTopic = note.topic
-    this.editNoteContent = note.content
-  },
+        // Keep the course object so filtering still works
+        const updatedNote = {
+          ...res.data.data,
+          course: this.notes.find(n => n._id === id).course
+        }
 
-  cancelEditNote() {
-    this.editingNoteId = null
-    this.editNoteTopic = ''
-    this.editNoteContent = ''
-  },
+        const idx = this.notes.findIndex(n => n._id === id)
+        if (idx !== -1) this.notes[idx] = updatedNote
 
-  async saveEditedNote(id) {
-  if (!this.editNoteTopic.trim() || !this.editNoteContent.trim()) {
-    alert('Please fill all fields')
-    return
-  }
-  this.savingEditNote = true
-  try {
-    const payload = { topic: this.editNoteTopic, content: this.editNoteContent }
-    const res = await Api.patch(`/notes/${id}`, payload)
-    
-    // Keep the course object so filtering still works
-    const updatedNote = {
-      ...res.data.data,
-      course: this.notes.find(n => n._id === id).course
-    }
+        this.cancelEditNote()
+        alert('Lecture updated')
+      } catch (err) {
+        console.error(err)
+        alert('Failed to update note')
+      } finally {
+        this.savingEditNote = false
+      }
+    },
 
-    const idx = this.notes.findIndex(n => n._id === id)
-    if (idx !== -1) this.notes[idx] = updatedNote
-    
-    this.cancelEditNote()
-    alert('Lecture updated')
-  } catch (err) {
-    console.error(err)
-    alert('Failed to update note')
-  } finally {
-    this.savingEditNote = false
-  }
-}
-,
+    async deleteNote(id) {
+      if (!confirm('Delete this note?')) return
+      try {
+        await Api.delete(`/notes/${id}`)
+        this.notes = this.notes.filter(n => n._id !== id)
+        alert('Lecture deleted')
+      } catch (err) {
+        console.error(err)
+        alert('Failed to delete note')
+      }
+    },
+    // When user clicks Delete
+    promptDeleteNote(note) {
+      this.noteToDelete = note
+      this.showDeleteNoteConfirm = true
+    },
 
-  async deleteNote(id) {
-    if (!confirm('Delete this note?')) return
-    try {
-      await Api.delete(`/notes/${id}`)
-      this.notes = this.notes.filter(n => n._id !== id)
-      alert('Lecture deleted')
-    } catch (err) {
-      console.error(err)
-      alert('Failed to delete note')
-    }
-  },
-   // When user clicks Delete
-  promptDeleteNote(note) {
-    this.noteToDelete = note
-    this.showDeleteNoteConfirm = true
-  },
-
-  // Cancel deletion
-  cancelDeleteNote() {
-    this.noteToDelete = null
-    this.showDeleteNoteConfirm = false
-  },
-
-  // Confirm deletion
-  async deleteNoteConfirmed() {
-    if (!this.noteToDelete) return
-    try {
-      await Api.delete(`/notes/${this.noteToDelete._id}`)
-      this.notes = this.notes.filter(n => n._id !== this.noteToDelete._id)
+    // Cancel deletion
+    cancelDeleteNote() {
       this.noteToDelete = null
       this.showDeleteNoteConfirm = false
-      alert('Lecture deleted') // optional, you can remove this if the modal is enough
-    } catch (err) {
-      console.error(err)
-      alert('Failed to delete note')
+    },
+
+    // Confirm deletion
+    async deleteNoteConfirmed() {
+      if (!this.noteToDelete) return
+      try {
+        await Api.delete(`/notes/${this.noteToDelete._id}`)
+        this.notes = this.notes.filter(n => n._id !== this.noteToDelete._id)
+        this.noteToDelete = null
+        this.showDeleteNoteConfirm = false
+        alert('Lecture deleted') // optional, you can remove this if the modal is enough
+      } catch (err) {
+        console.error(err)
+        alert('Failed to delete note')
+      }
     }
-  }
-},
-  
+  },
+
   async mounted() {
     if (this.$route.query.tab) {
       this.currentTab = this.$route.query.tab

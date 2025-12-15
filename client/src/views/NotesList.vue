@@ -3,8 +3,8 @@
     <h2 class="mb-4">Your Lectures</h2>
 
     <div class="list-group shadow-sm">
-      <template v-for="item in lectures" :key="item._id">
-        <div v-if="item.type === 'pdf'" class="list-group-item text-start">
+      <template v-for="item in lectures">
+        <div v-if="item.type === 'pdf'" :key="`pdf-${item._id}`" class="list-group-item text-start">
           <div class="d-flex justify-content-between align-items-center">
             <strong>{{ item.title }}</strong>
             <small class="text-muted">{{ formatDate(item.createdAt) }}</small>
@@ -96,6 +96,7 @@
 
         <button
           v-else
+          :key="`note-${item._id}`"
           class="list-group-item list-group-item-action text-start"
           @click="goToLecture(item)"
         >

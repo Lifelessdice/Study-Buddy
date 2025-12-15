@@ -54,7 +54,7 @@ export default {
   methods: {
     async signup() {
       try {
-        const res = await api.post('/auth/register', {
+        await api.post('/auth/register', {
           name: this.name,
           email: this.email,
           role: this.role,
