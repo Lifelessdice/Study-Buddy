@@ -142,48 +142,6 @@
 
     <div v-if="currentTab === 'quizzes'" class="card mb-3">
       <div class="card-body">
-        <div class="row g-3 align-items-center mb-3">
-          <div class="col-md-9">
-            <div class="d-flex flex-wrap gap-4 small fw-semibold text-muted">
-              <div class="analytics-pill">
-                <span class="label">Quizzes</span>
-                <span class="value">{{ quizzes.length }}</span>
-              </div>
-              <div class="analytics-pill">
-                <span class="label">Total Questions</span>
-                <span class="value">{{ totalQuizQuestions }}</span>
-              </div>
-              <div class="analytics-pill" v-if="!isTeacher">
-                <span class="label">Completed</span>
-                <span class="value">{{ myCompletedQuizzes }} / {{ quizzes.length || 0 }}</span>
-              </div>
-              <div class="analytics-pill" v-if="hasQuizQuestions">
-                <span class="label">Avg Questions</span>
-                <span class="value">{{ avgQuestionsPerQuiz }}</span>
-              </div>
-              <div class="analytics-pill" v-if="hasMyScores">
-                <span class="label">Avg Score</span>
-                <span class="value">{{ avgMyScore }}%</span>
-              </div>
-              <div class="analytics-pill" v-if="hasMyScores">
-                <span class="label">Best Score</span>
-                <span class="value">{{ bestMyScore }}%</span>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3" v-if="!isTeacher">
-            <div class="completion-meter">
-              <div class="d-flex justify-content-between small text-muted mb-1">
-                <span>Completion</span>
-                <span>{{ completionRate }}%</span>
-              </div>
-              <div class="meter-track">
-                <div class="meter-fill" :style="{ width: completionRate + '%' }"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h5 class="mb-0">Quizzes</h5>
           <BaseButton
@@ -998,47 +956,6 @@ export default {
     myParticipationByQuiz() {
       return this.myParticipations || {}
     },
-    totalQuizQuestions() {
-      if (!Array.isArray(this.quizzes)) return 0
-      return this.quizzes.reduce((sum, q) => sum + ((q.questions && q.questions.length) || 0), 0)
-    },
-    hasQuizQuestions() {
-      return this.totalQuizQuestions > 0
-    },
-    avgQuestionsPerQuiz() {
-      if (!this.quizzes.length) return 0
-      return Math.round((this.totalQuizQuestions / this.quizzes.length) * 10) / 10
-    },
-    myCompletedQuizzes() {
-      if (!this.myParticipations || typeof this.myParticipations !== 'object') return 0
-      return Object.keys(this.myParticipations).length
-    },
-    myScores() {
-      const list = Object.values(this.myParticipations || {})
-      return list
-        .map(p => {
-          const n = Number(p.score)
-          return Number.isNaN(n) ? null : n
-        })
-        .filter(n => n !== null)
-    },
-    hasMyScores() {
-      return this.myScores.length > 0
-    },
-    avgMyScore() {
-      if (!this.hasMyScores) return 0
-      const sum = this.myScores.reduce((a, b) => a + b, 0)
-      return Math.round((sum / this.myScores.length) * 10) / 10
-    },
-    bestMyScore() {
-      if (!this.hasMyScores) return 0
-      return Math.max(...this.myScores)
-    },
-    completionRate() {
-      if (!this.quizzes.length) return 0
-      const pct = (this.myCompletedQuizzes / this.quizzes.length) * 100
-      return Math.round(pct * 10) / 10
-    },
     filteredNotes() {
       if (!Array.isArray(this.notes) || !this.course?._id) return []
       return this.notes.filter(note => note.course?._id === this.course._id)
@@ -1663,36 +1580,6 @@ export default {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
-}
-.analytics-pill {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px 14px;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  background: #f8fafc;
-}
-.analytics-pill .label {
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-size: 11px;
-}
-.analytics-pill .value {
-  font-size: 18px;
-  color: #111827;
-}
-.completion-meter .meter-track {
-  height: 8px;
-  background: #e5e7eb;
-  border-radius: 999px;
-  overflow: hidden;
-}
-.completion-meter .meter-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #2563eb, #38bdf8);
-  border-radius: 999px;
-  transition: width 0.2s ease;
 }
 .nav-tabs-custom .tab {
   padding: 8px 12px;
