@@ -3,21 +3,12 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h2>Courses</h2>
       <div>
-        <BaseButton
-          v-if="isTeacher"
-          to="/courses/create"
-          variant="primary"
-          class="me-2"
-        >
+        <router-link v-if="isTeacher" to="/courses/create" class="btn btn-primary">
           + Create Course
-        </BaseButton>
-        <BaseButton
-          to="/courses/all"
-          variant="secondary"
-          outline
-        >
+        </router-link>
+        <router-link to="/courses/all" class="btn btn-outline-secondary ms-2">
           See All Courses
-        </BaseButton>
+        </router-link>
       </div>
     </div>
 
@@ -45,24 +36,21 @@
     <!-- 🔽 PASTE THIS BLOCK HERE -->
     <div v-if="!loading" class="d-flex justify-content-between align-items-center mt-3">
       <div>
-        <BaseButton
-          variant="secondary"
-          outline
-          class="me-2"
+        <button
+          class="btn btn-outline-secondary me-2"
           @click="prevPage"
           :disabled="currentPage === 1"
         >
           Previous
-        </BaseButton>
+        </button>
 
-        <BaseButton
-          variant="secondary"
-          outline
+        <button
+          class="btn btn-outline-secondary"
           @click="nextPage"
           :disabled="currentPage === totalPages"
         >
           Next
-        </BaseButton>
+        </button>
       </div>
 
       <div class="d-flex align-items-center">
@@ -229,14 +217,10 @@ export default {
 
 .course-card {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
-  border-radius: 16px;
-  overflow: hidden;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
 }
 
 .course-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
 }
 </style>
