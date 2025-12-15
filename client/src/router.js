@@ -18,6 +18,7 @@ import CourseSignupPage from './views/courses/CourseSignupPage.vue'
 import NotesList from './views/NotesList.vue'
 import NoteDetail from './views/NoteDetail.vue'
 
+
 const routes = [
   { path: '/', name: 'Home', component: Home },
   { path: '/signup', name: 'Signup', component: Signup },
@@ -49,7 +50,7 @@ const routes = [
     meta: { requiresAuth: true }
   },
 
-  {
+    {
     path: '/courses/signup',
     name: 'CourseSignup',
     component: CourseSignupPage,
@@ -103,18 +104,18 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/notes',
-    name: 'NotesList',
-    component: NotesList,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/notes/:id',
-    name: 'NoteDetail',
-    component: NoteDetail,
-    props: true,
-    meta: { requiresAuth: true }
-  }
+  path: '/notes',
+  name: 'NotesList',
+  component: NotesList,
+  meta: { requiresAuth: true }
+},
+{
+  path: '/notes/:id',
+  name: 'NoteDetail',
+  component: NoteDetail,
+  props: true,
+  meta: { requiresAuth: true }
+}
 
 ]
 

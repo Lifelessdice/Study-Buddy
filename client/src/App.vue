@@ -1,48 +1,47 @@
 <template>
-  <div id="app">
-    <nav class="navbar navbar-expand-lg navbar-light bg-light px-3 mb-3">
+  <div id="app" class="app-shell">
+    <!-- NAVBAR / UPPER THING -->
+      <nav class="navbar navbar-light bg-light px-3 mb-3 app-header">
       <router-link class="navbar-brand" to="/">StudyBuddy</router-link>
-      <div class="collapse navbar-collapse">
-        <ul class="navbar-nav me-auto">
-          <li class="nav-item" v-if="!user">
-            <router-link class="nav-link" to="/login">Login</router-link>
-          </li>
-          <li class="nav-item" v-if="!user">
-            <router-link class="nav-link" to="/signup">Sign Up</router-link>
-          </li>
-          <li class="nav-item" v-if="user">
-            <router-link class="nav-link" to="/dashboard">Dashboard</router-link>
-          </li>
-          <li class="nav-item" v-if="user && (user.role === 'teacher' || user.role === 'student')">
-            <router-link class="nav-link" to="/courses">
-              {{ user.role === 'teacher' ? 'Courses' : 'My Courses' }}
-            </router-link>
-          </li>
-          <li class="nav-item" v-if="user && user.role === 'student'">
-            <router-link class="nav-link" to="/results">Results</router-link>
-          </li>
-          <li class="nav-item" v-if="user && user.role === 'student'">
-            <router-link class="nav-link" to="/notes">Lectures</router-link>
-          </li>
 
-        </ul>
-        <div class="d-flex align-items-center" v-if="user">
-          <span class="me-2 small text-muted">{{ user.email }} ({{ user.role }})</span>
-          <BaseButton
-            size="sm"
-            variant="danger"
-            outline
-            @click="logout"
-          >
-            Logout
-          </BaseButton>
-        </div>
+      <!-- NO 'collapse' class, NO expand-lg -->
+      <div class="navbar-nav flex-row flex-wrap me-auto ms-3">
+        <li class="nav-item me-2" v-if="!user">
+          <router-link class="nav-link" to="/login">Login</router-link>
+        </li>
+        <li class="nav-item me-2" v-if="!user">
+          <router-link class="nav-link" to="/signup">Sign Up</router-link>
+        </li>
+        <li class="nav-item me-2" v-if="user">
+          <router-link class="nav-link" to="/dashboard">Dashboard</router-link>
+        </li>
+        <li class="nav-item me-2" v-if="user && (user.role === 'teacher' || user.role === 'student')">
+          <router-link class="nav-link" to="/courses">
+            {{ user.role === 'teacher' ? 'Courses' : 'My Courses' }}
+          </router-link>
+        </li>
+        <li class="nav-item me-2" v-if="user && user.role === 'student'">
+          <router-link class="nav-link" to="/results">Results</router-link>
+        </li>
+        <li class="nav-item me-2" v-if="user && user.role === 'student'">
+          <router-link class="nav-link" to="/notes">Lectures</router-link>
+        </li>
+      </div>
+
+      <div class="d-flex align-items-center ms-auto" v-if="user">
+        <span class="me-2 small text-muted">{{ user.email }} ({{ user.role }})</span>
+        <button class="btn btn-outline-danger btn-sm" @click="logout">Logout</button>
       </div>
     </nav>
 
-    <router-view/>
+
+    <!-- MAIN SCROLLABLE AREA -->
+    <main class="app-main">
+      <router-view />
+    </main>
   </div>
 </template>
+
 
 <script>
 export default {
@@ -76,15 +75,60 @@ export default {
 </script>
 
 <style>
+/* GLOBAL LAYOUT */
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+/* Root */
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #2c3e50;
+  text-align: left; /* lets Bootstrap containers look normal */
 }
 
+/* Flex layout: navbar + main content */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Navbar stays at top, content scrolls under it */
+.app-header {
+  position: sticky;  /* if you don't want sticky, change to `static` */
+  top: 0;
+  z-index: 1030;     /* above cards etc. */
+}
+
+/* Router-view area */
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Just in case */
 body {
   margin: 0;
 }
+
+/* Optional: make margins smaller on very short landscape screens */
+@media (max-height: 500px) and (orientation: landscape) {
+  .container.mt-4 {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .card {
+    margin-bottom: 0.5rem !important;
+  }
+}
+
 </style>
