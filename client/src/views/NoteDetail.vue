@@ -85,9 +85,6 @@
                 {{ opt }}
               </li>
             </ul>
-
-
-            <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
           </li>
         </ul>
       </div>
