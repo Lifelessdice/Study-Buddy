@@ -17,7 +17,10 @@
           <router-link class="nav-link" to="/signup">Sign Up</router-link>
         </li>
         <li class="nav-item me-2" v-if="user">
-          <router-link class="nav-link" to="/dashboard">Dashboard</router-link>
+          <router-link class="nav-link" to="/dashboard">
+            <span class="nav-text">Dashboard</span>
+            <span class="nav-icon">📊</span>
+          </router-link>
         </li>
         <li class="nav-item me-2" v-if="user && (user.role === 'teacher' || user.role === 'student')">
           <router-link class="nav-link" to="/courses">
@@ -28,10 +31,16 @@
           </router-link>
         </li>
         <li class="nav-item me-2" v-if="user && user.role === 'student'">
-          <router-link class="nav-link" to="/results">Results</router-link>
+          <router-link class="nav-link" to="/results">
+            <span class="nav-text">Results</span>
+            <span class="nav-icon">🧪</span>
+          </router-link>
         </li>
         <li class="nav-item me-2" v-if="user && user.role === 'student'">
-          <router-link class="nav-link" to="/notes">Lectures</router-link>
+          <router-link class="nav-link" to="/notes">
+            <span class="nav-text">Lectures</span>
+            <span class="nav-icon">🎓</span>
+          </router-link>
         </li>
       </div>
 
