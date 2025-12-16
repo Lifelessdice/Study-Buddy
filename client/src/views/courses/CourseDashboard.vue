@@ -1062,9 +1062,9 @@ export default {
     handleClickOutside(event) {
       if (!this.addDropdownOpen) return
       const dropdown = this.$refs.addStudentDropdown
-      if (!dropdown || !dropdown.contains(event.target)) {
-        this.addDropdownOpen = false
-      }
+      if (!dropdown) return
+      if (dropdown.contains(event.target)) return
+      this.addDropdownOpen = false
     },
     resetAddStudent() {
       this.addStudentSearch = ''
@@ -1613,6 +1613,10 @@ export default {
   border-radius: 12px;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
 }
+.card-body {
+  position: relative;
+  overflow: visible;
+}
 .nav-tabs-custom .tab {
   padding: 8px 12px;
   border-radius: 6px;
@@ -1751,6 +1755,7 @@ export default {
   max-width: 520px;
   width: max-content;
   z-index: 60;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
 }
 
 @media (max-width: 576px) {
