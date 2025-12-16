@@ -122,8 +122,9 @@
           class="me-2"
           @click="prevPage"
           :disabled="currentPage === 1"
+          aria-label="Previous page"
         >
-          Previous
+          ⬅️
         </BaseButton>
 
         <BaseButton
@@ -131,15 +132,16 @@
           outline
           @click="nextPage"
           :disabled="currentPage === totalPages"
+          aria-label="Next page"
         >
-          Next
+          ➡️
         </BaseButton>
       </div>
 
       <div class="d-flex align-items-center">
         <span class="me-3">
-          Page {{ currentPage }} of {{ totalPages }}
-          <span v-if="total"> ({{ total }} total)</span>
+          Page {{ currentPage }}
+          <span v-if="total"> /{{ totalPages }}</span>
         </span>
 
         <select
