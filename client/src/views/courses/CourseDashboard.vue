@@ -278,18 +278,6 @@
           >
         </div>
 
-        <div v-if="isTeacher" class="d-flex justify-content-end mb-2">
-          <BaseButton
-            variant="primary"
-            outline
-            size="sm"
-            class="px-3"
-            @click="openAddOverlay"
-          >
-            + Add Student
-          </BaseButton>
-        </div>
-
         <div v-if="filteredEnrolled.length === 0" class="alert alert-info">No students are enrolled yet.</div>
 
         <div v-else class="table-responsive">
@@ -345,16 +333,9 @@
               class="form-control flex-grow-1"
               placeholder="Search by name or email"
               aria-label="Search students"
+              @input="onSearchInput"
               @keyup.enter="onSearchStudents"
             />
-            <BaseButton
-              variant="secondary"
-              size="sm"
-              :loading="studentsLoading"
-              @click="onSearchStudents"
-            >
-              {{ studentsLoading ? 'Searching...' : 'Search' }}
-            </BaseButton>
           </div>
 
           <div v-if="studentsLoading" class="small text-muted">Loading students...</div>
@@ -379,7 +360,10 @@
               </BaseButton>
             </div>
           </div>
-          <div v-else class="small text-muted">No matching students found.</div>
+          <div v-else class="small text-muted">
+            <span v-if="addStudentSearch.trim().length === 0">Start typing to search students.</span>
+            <span v-else>No matching students found.</span>
+          </div>
 
           <div v-if="addStudentError" class="alert alert-warning py-2 mb-0">
             {{ addStudentError }}
@@ -863,6 +847,7 @@ export default {
       studentsLoading: false,
       enrolled: [],
       showAddOverlay: false,
+      searchDebounce: null,
       addStudentError: '',
       overviewDraft: '',
       overviewEditing: false,
@@ -1051,7 +1036,6 @@ export default {
     openAddOverlay() {
       this.showAddOverlay = true
       this.resetAddStudent()
-      this.onSearchStudents()
       this.$nextTick(() => {
         const input = this.$refs.addOverlayInput
         if (input) input.focus()
@@ -1060,7 +1044,25 @@ export default {
     closeAddOverlay() {
       this.showAddOverlay = false
     },
+    onSearchInput() {
+      if (this.searchDebounce) {
+        clearTimeout(this.searchDebounce)
+      }
+      this.searchDebounce = setTimeout(() => {
+        this.onSearchStudents()
+      }, 250)
+    },
+    handleEsc(event) {
+      if (event.key === 'Escape' && this.showAddOverlay) {
+        event.preventDefault()
+        this.closeAddOverlay()
+      }
+    },
     resetAddStudent() {
+      if (this.searchDebounce) {
+        clearTimeout(this.searchDebounce)
+        this.searchDebounce = null
+      }
       this.addStudentSearch = ''
       this.searchResults = []
       this.addStudentError = ''
@@ -1155,13 +1157,15 @@ export default {
     },
     async onSearchStudents() {
       if (this.studentsLoading) return
+      const term = this.addStudentSearch.trim()
+      if (!term) {
+        this.searchResults = []
+        return
+      }
       this.studentsLoading = true
       this.addStudentError = ''
       try {
-        const params = { role: 'student' }
-        if (this.addStudentSearch.trim()) {
-          params.q = this.addStudentSearch.trim()
-        }
+        const params = { role: 'student', q: term }
         const res = await Api.get('/users', { params })
         const list = res.data.data || res.data || []
         const enrolledIds = new Set(
@@ -1584,10 +1588,15 @@ export default {
   },
 
   async mounted() {
+    document.addEventListener('keydown', this.handleEsc)
     if (this.$route.query.tab) {
       this.currentTab = this.$route.query.tab
     }
     await this.fetchCourse()
+  },
+
+  beforeUnmount() {
+    document.removeEventListener('keydown', this.handleEsc)
   }
 }
 </script>
