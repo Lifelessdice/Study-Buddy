@@ -44,9 +44,9 @@
         </li>
       </div>
 
-      <div class="d-flex align-items-center ms-auto" v-if="user">
+      <div class="d-flex align-items-center ms-auto user-actions" v-if="user">
         <span class="me-2 small text-muted user-info">
-          {{ user.email }} ({{ user.role }})
+          {{ displayName }}
         </span>
         <BaseButton variant="danger" outline size="sm" @click="logout">
           <span class="nav-text">Logout</span>
@@ -90,7 +90,15 @@ export default {
       this.user = null
       this.$router.push({ name: 'Login' })
     }
+  },
+  computed: {
+  displayName() {
+    if (!this.user) return ''
+    const name = this.user.name || this.user.email?.split('@')[0] || 'User'
+    const roleIcon = this.user.role === 'teacher' ? '👩‍🏫' : '🎓'
+    return `${name} ${roleIcon}`
   }
+} 
 }
 </script>
 
@@ -139,7 +147,6 @@ body {
   margin: 0;
 }
 
-/* Optional: make margins smaller on very short landscape screens */
 @media (max-height: 500px) and (orientation: landscape) {
   .container.mt-4 {
     margin-top: 0.5rem !important;
@@ -148,6 +155,12 @@ body {
 
   .card {
     margin-bottom: 0.5rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .user-info {
+    display: none;
   }
 }
 
@@ -186,6 +199,25 @@ body {
   .btn {
     padding: 0.35rem 0.55rem;
   }
+}
+
+@media (max-width: 380px) {
+  .btn .nav-text {
+    display: none;
+  }
+
+  .btn .nav-icon {
+    display: inline;
+  }
+
+  .btn {
+    padding: 0.35rem 0.45rem;
+  }
+}
+
+.user-actions {
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 </style>
