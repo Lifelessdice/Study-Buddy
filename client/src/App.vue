@@ -2,35 +2,60 @@
   <div id="app" class="app-shell">
     <!-- NAVBAR / UPPER THING -->
       <nav class="navbar navbar-light bg-light px-3 mb-3 app-header">
-      <router-link class="navbar-brand" to="/">StudyBuddy</router-link>
+      <router-link class="navbar-brand app-brand" to="/">
+        StudyBuddy
+      </router-link>
+
 
       <!-- NO 'collapse' class, NO expand-lg -->
       <div class="navbar-nav flex-row flex-wrap me-auto ms-3">
         <li class="nav-item me-2" v-if="!user">
-          <router-link class="nav-link" to="/login">Login</router-link>
+          <router-link class="nav-link" to="/login">
+            <span class="nav-text">Login</span>
+            <span class="nav-icon">🔐</span>
+          </router-link>
+
         </li>
         <li class="nav-item me-2" v-if="!user">
           <router-link class="nav-link" to="/signup">Sign Up</router-link>
         </li>
         <li class="nav-item me-2" v-if="user">
-          <router-link class="nav-link" to="/dashboard">Dashboard</router-link>
+          <router-link class="nav-link" to="/dashboard">
+            <span class="nav-text">Dashboard</span>
+            <span class="nav-icon">📊</span>
+          </router-link>
         </li>
         <li class="nav-item me-2" v-if="user && (user.role === 'teacher' || user.role === 'student')">
           <router-link class="nav-link" to="/courses">
-            {{ user.role === 'teacher' ? 'Courses' : 'My Courses' }}
+            <span class="nav-text">
+              {{ user.role === 'teacher' ? 'Courses' : 'My Courses' }}
+            </span>
+            <span class="nav-icon">📚</span>
           </router-link>
         </li>
         <li class="nav-item me-2" v-if="user && user.role === 'student'">
-          <router-link class="nav-link" to="/results">Results</router-link>
+          <router-link class="nav-link" to="/results">
+            <span class="nav-text">Results</span>
+            <span class="nav-icon">🧪</span>
+          </router-link>
         </li>
         <li class="nav-item me-2" v-if="user && user.role === 'student'">
-          <router-link class="nav-link" to="/notes">Lectures</router-link>
+          <router-link class="nav-link" to="/notes">
+            <span class="nav-text">Lectures</span>
+            <span class="nav-icon">🎓</span>
+          </router-link>
         </li>
       </div>
 
-      <div class="d-flex align-items-center ms-auto" v-if="user">
-        <span class="me-2 small text-muted">{{ user.email }} ({{ user.role }})</span>
-        <BaseButton variant="danger" outline size="sm" @click="logout">Logout</BaseButton>
+      <div class="d-flex align-items-center ms-auto user-actions" v-if="user">
+        <span class="me-2 small text-muted user-info">
+          {{ displayName }}
+        </span>
+        <BaseButton variant="danger" outline size="sm" @click="logout">
+          <span class="nav-text">Logout</span>
+          <span class="nav-icon">🚪</span>
+        </BaseButton>
+
       </div>
     </nav>
 
@@ -68,7 +93,15 @@ export default {
       this.user = null
       this.$router.push({ name: 'Login' })
     }
+  },
+  computed: {
+  displayName() {
+    if (!this.user) return ''
+    const name = this.user.name || this.user.email?.split('@')[0] || 'User'
+    const roleIcon = this.user.role === 'teacher' ? '👩‍🏫' : '🎓'
+    return `${name} ${roleIcon}`
   }
+} 
 }
 </script>
 
@@ -117,7 +150,6 @@ body {
   margin: 0;
 }
 
-/* Optional: make margins smaller on very short landscape screens */
 @media (max-height: 500px) and (orientation: landscape) {
   .container.mt-4 {
     margin-top: 0.5rem !important;
@@ -128,5 +160,74 @@ body {
     margin-bottom: 0.5rem !important;
   }
 }
+
+@media (max-width: 768px) {
+  .user-info {
+    display: none;
+  }
+}
+
+/* =========================
+   Responsive Navbar (Mobile)
+   ========================= */
+
+/* Icons hidden by default (desktop) */
+.nav-icon {
+  display: none;
+  font-size: 1.2rem;
+}
+
+/* Mobile breakpoint */
+@media (max-width: 576px) {
+  /* Hide text, show icons */
+  .nav-text {
+    display: none;
+  }
+
+  .nav-icon {
+    display: inline;
+  }
+
+  /* Hide email + role */
+  .user-info {
+    display: none;
+  }
+
+  /* Tighten navbar spacing */
+  .nav-link {
+    padding: 0.4rem 0.55rem;
+  }
+
+  /* Make icon buttons feel balanced */
+  .btn {
+    padding: 0.35rem 0.55rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .btn .nav-text {
+    display: none;
+  }
+
+  .btn .nav-icon {
+    display: inline;
+  }
+
+  .btn {
+    padding: 0.35rem 0.45rem;
+  }
+}
+
+.user-actions {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+@media (max-width: 576px) {
+  .app-brand {
+    display: none;
+  }
+}
+
 
 </style>
