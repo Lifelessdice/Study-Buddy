@@ -69,11 +69,22 @@
           <li v-for="(q, index) in quiz" :key="index" class="list-group-item">
             <strong>Q{{ index + 1 }}: {{ q.question }}</strong>
             <ul class="list-group mt-2">
-              <li v-for="(opt, i) in q.options" :key="i" class="list-group-item">
-                {{ String.fromCharCode(65 + i) }}. {{ opt }}
+              <li
+                v-for="(opt, i) in q.options"
+                :key="i"
+                class="list-group-item"
+                :class="{
+                  'list-group-item-success':
+                    q.selectedIndex !== null && i === q.correctIndex,
+                  'list-group-item-danger':
+                    q.selectedIndex === i && i !== q.correctIndex
+                }"
+                style="cursor: pointer"
+                @click="selectOption(q, i)"
+              >
+                {{ opt }}
               </li>
             </ul>
-            <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
           </li>
         </ul>
       </div>
@@ -145,6 +156,13 @@ export default {
     }
   },
   methods: {
+
+    selectOption(question, index) {
+      if (question.selectedIndex !== null) return
+      question.selectedIndex = index
+    },
+
+    
     async generateSummary() {
       try {
         this.aiError = ''
@@ -163,17 +181,46 @@ export default {
         this.aiError = ''
         this.loadingQuiz = true
         this.quiz = []
+      
         const res = await api.post(`/notes/${this.id}/aiquizzes`)
-        this.quiz = res.data.quiz || res.data.data?.quiz || []
-        if (!this.quiz.length) {
+        const rawQuiz = res.data.quiz || res.data.data?.quiz || []
+      
+        if (!Array.isArray(rawQuiz) || !rawQuiz.length) {
           this.aiError = 'No quiz questions were returned.'
+          return
         }
+      
+        this.quiz = rawQuiz.map(q => {
+          // Normalize answer for matching
+          const normalizedAnswer = (q.answer || '')
+            .toString()
+            .replace(/^[A-D]\.\s*/i, '')
+            .trim()
+            .toLowerCase()
+        
+          // Find correct option index safely
+          const correctIndex = q.options.findIndex(opt =>
+            opt
+              .toString()
+              .toLowerCase()
+              .includes(normalizedAnswer)
+          )
+        
+          return {
+            question: q.question,
+            options: q.options,
+            answer: q.answer,
+            correctIndex: correctIndex >= 0 ? correctIndex : null,
+            selectedIndex: null
+          }
+        })
       } catch (err) {
         this.aiError = 'Failed to generate quiz. Please try again.'
       } finally {
         this.loadingQuiz = false
       }
     },
+
     async generateFlashcards() {
       try {
         this.aiError = ''
