@@ -2,7 +2,10 @@
   <div id="app" class="app-shell">
     <!-- NAVBAR / UPPER THING -->
       <nav class="navbar navbar-light bg-light px-3 mb-3 app-header">
-      <router-link class="navbar-brand" to="/">StudyBuddy</router-link>
+      <router-link class="navbar-brand app-brand" to="/">
+        StudyBuddy
+      </router-link>
+
 
       <!-- NO 'collapse' class, NO expand-lg -->
       <div class="navbar-nav flex-row flex-wrap me-auto ms-3">
@@ -219,5 +222,12 @@ body {
   flex-wrap: nowrap;
   white-space: nowrap;
 }
+
+@media (max-width: 576px) {
+  .app-brand {
+    display: none;
+  }
+}
+
 
 </style>
