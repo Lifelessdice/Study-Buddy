@@ -256,88 +256,16 @@
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-start mb-2 position-relative add-student-header">
           <h5 class="card-title mb-0">Enrolled Students</h5>
-          <div
-            v-if="isTeacher"
-            class="add-student-actions d-flex align-items-center justify-content-end gap-2"
-            ref="addStudentDropdown"
-          >
-            <div class="add-student-dropdown">
-              <BaseButton
-                variant="primary"
-                outline
-                size="sm"
-                class="px-3 d-flex align-items-center gap-1"
-                @click.stop="toggleAddDropdown()"
-              >
-                <span>+ Add Student</span>
-                <span class="dropdown-caret" :class="{ open: addDropdownOpen }">▾</span>
-              </BaseButton>
-              <div
-                v-if="addDropdownOpen"
-                class="add-student-menu shadow-sm"
-                @click.stop
-                @keydown.esc="toggleAddDropdown(false)"
-                tabindex="-1"
-              >
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <div class="fw-semibold small text-muted">Add a student</div>
-                  <BaseButton
-                    variant="link"
-                    size="sm"
-                    class="text-muted"
-                    @click="toggleAddDropdown(false)"
-                  >
-                    Close
-                  </BaseButton>
-                </div>
-                <div class="d-flex gap-2 mb-2 add-student-search">
-                  <input
-                    v-model="addStudentSearch"
-                    type="text"
-                    class="form-control"
-                    placeholder="Search by name or email"
-                    aria-label="Search students"
-                    @keyup.enter="onSearchStudents"
-                  />
-                  <BaseButton
-                    variant="secondary"
-                    size="sm"
-                    :loading="studentsLoading"
-                    @click="onSearchStudents"
-                  >
-                    {{ studentsLoading ? 'Searching...' : 'Search' }}
-                  </BaseButton>
-                </div>
-
-                <div v-if="studentsLoading" class="small text-muted mb-2">Loading students...</div>
-                <div v-else-if="searchResults.length" class="list-group mb-2 suggestion-list">
-                  <div
-                    v-for="stu in searchResults"
-                    :key="stu._id"
-                    class="list-group-item d-flex justify-content-between align-items-center"
-                  >
-                    <div>
-                      <div class="fw-semibold">{{ stu.name || 'Unnamed' }}</div>
-                      <div class="small text-muted">{{ stu.email }}</div>
-                    </div>
-                    <BaseButton
-                      variant="success"
-                      size="sm"
-                      :loading="addingStudentId === stu._id"
-                      :disabled="addingStudentId === stu._id || isAlreadyEnrolled(stu._id)"
-                      @click="addStudentFromResult(stu)"
-                    >
-                      {{ isAlreadyEnrolled(stu._id) ? 'Enrolled' : 'Add' }}
-                    </BaseButton>
-                  </div>
-                </div>
-                <div v-else class="small text-muted mb-2">No matching students found.</div>
-
-                <div v-if="addStudentError" class="alert alert-warning py-2 mb-2">
-                  {{ addStudentError }}
-                </div>
-              </div>
-            </div>
+          <div v-if="isTeacher" class="add-student-actions d-flex align-items-center justify-content-end gap-2">
+            <BaseButton
+              variant="primary"
+              outline
+              size="sm"
+              class="px-3"
+              @click="openAddOverlay"
+            >
+              + Add Student
+            </BaseButton>
           </div>
         </div>
 
@@ -348,6 +276,18 @@
             class="form-control"
             placeholder="Search students..."
           >
+        </div>
+
+        <div v-if="isTeacher" class="d-flex justify-content-end mb-2">
+          <BaseButton
+            variant="primary"
+            outline
+            size="sm"
+            class="px-3"
+            @click="openAddOverlay"
+          >
+            + Add Student
+          </BaseButton>
         </div>
 
         <div v-if="filteredEnrolled.length === 0" class="alert alert-info">No students are enrolled yet.</div>
@@ -382,6 +322,68 @@
             </tbody>
           </table>
           <div class="text-muted small">Total enrolled: {{ filteredEnrolled.length }} students</div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showAddOverlay" class="overlay">
+      <div class="overlay-card wide">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h5 class="mb-1">Add student to course</h5>
+            <div class="small text-muted">Search by name or email and enroll instantly.</div>
+          </div>
+          <BaseButton variant="secondary" outline size="sm" @click="closeAddOverlay">Close</BaseButton>
+        </div>
+
+        <div class="d-flex flex-column gap-2">
+          <div class="d-flex gap-2 flex-wrap">
+            <input
+              ref="addOverlayInput"
+              v-model="addStudentSearch"
+              type="text"
+              class="form-control flex-grow-1"
+              placeholder="Search by name or email"
+              aria-label="Search students"
+              @keyup.enter="onSearchStudents"
+            />
+            <BaseButton
+              variant="secondary"
+              size="sm"
+              :loading="studentsLoading"
+              @click="onSearchStudents"
+            >
+              {{ studentsLoading ? 'Searching...' : 'Search' }}
+            </BaseButton>
+          </div>
+
+          <div v-if="studentsLoading" class="small text-muted">Loading students...</div>
+          <div v-else-if="searchResults.length" class="list-group suggestion-list">
+            <div
+              v-for="stu in searchResults"
+              :key="stu._id"
+              class="list-group-item d-flex justify-content-between align-items-center"
+            >
+              <div>
+                <div class="fw-semibold">{{ stu.name || 'Unnamed' }}</div>
+                <div class="small text-muted">{{ stu.email }}</div>
+              </div>
+              <BaseButton
+                variant="success"
+                size="sm"
+                :loading="addingStudentId === stu._id"
+                :disabled="addingStudentId === stu._id || isAlreadyEnrolled(stu._id)"
+                @click="addStudentFromResult(stu)"
+              >
+                {{ isAlreadyEnrolled(stu._id) ? 'Enrolled' : 'Add' }}
+              </BaseButton>
+            </div>
+          </div>
+          <div v-else class="small text-muted">No matching students found.</div>
+
+          <div v-if="addStudentError" class="alert alert-warning py-2 mb-0">
+            {{ addStudentError }}
+          </div>
         </div>
       </div>
     </div>
@@ -860,7 +862,7 @@ export default {
       addingStudentId: '',
       studentsLoading: false,
       enrolled: [],
-      addDropdownOpen: false,
+      showAddOverlay: false,
       addStudentError: '',
       overviewDraft: '',
       overviewEditing: false,
@@ -1024,7 +1026,7 @@ export default {
     setTab(tab) {
       this.currentTab = tab
       if (tab !== 'students') {
-        this.addDropdownOpen = false
+        this.showAddOverlay = false
       }
       if (tab === 'students') {
         this.$nextTick(() => {
@@ -1046,25 +1048,17 @@ export default {
       this.messageBody = message || ''
       this.showMessageModal = true
     },
-    toggleAddDropdown(force = null) {
-      const next = force === null ? !this.addDropdownOpen : force
-      this.addDropdownOpen = next
-      if (!next) return
+    openAddOverlay() {
+      this.showAddOverlay = true
       this.resetAddStudent()
       this.onSearchStudents()
       this.$nextTick(() => {
-        const input = this.$el.querySelector('.add-student-menu input')
+        const input = this.$refs.addOverlayInput
         if (input) input.focus()
       })
-      const menu = this.$el.querySelector('.add-student-menu')
-      if (menu) menu.focus()
     },
-    handleClickOutside(event) {
-      if (!this.addDropdownOpen) return
-      const dropdown = this.$refs.addStudentDropdown
-      if (!dropdown) return
-      if (dropdown.contains(event.target)) return
-      this.addDropdownOpen = false
+    closeAddOverlay() {
+      this.showAddOverlay = false
     },
     resetAddStudent() {
       this.addStudentSearch = ''
@@ -1195,7 +1189,7 @@ export default {
       try {
         await CourseService.addStudent(this.course._id, student._id)
         await this.fetchEnrolled()
-        this.toggleAddDropdown(false)
+        this.closeAddOverlay()
       } catch (err) {
         console.error(err)
         this.addStudentError = err?.response?.data?.message || 'Failed to add student.'
@@ -1590,15 +1584,10 @@ export default {
   },
 
   async mounted() {
-    document.addEventListener('click', this.handleClickOutside)
     if (this.$route.query.tab) {
       this.currentTab = this.$route.query.tab
     }
     await this.fetchCourse()
-  },
-
-  beforeUnmount() {
-    document.removeEventListener('click', this.handleClickOutside)
   }
 }
 </script>
@@ -1737,42 +1726,6 @@ export default {
 .add-student-actions {
   position: relative;
   overflow: visible;
-}
-
-.add-student-dropdown {
-  position: relative;
-}
-
-.add-student-menu {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 12px;
-  min-width: 340px;
-  max-width: 520px;
-  width: max-content;
-  z-index: 60;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-}
-
-@media (max-width: 576px) {
-  .add-student-menu {
-    width: 100%;
-    min-width: 0;
-    left: 0;
-  }
-}
-
-.dropdown-caret {
-  font-size: 12px;
-  transition: transform 0.15s ease;
-}
-
-.dropdown-caret.open {
-  transform: rotate(180deg);
 }
 
 .add-student-search input {
