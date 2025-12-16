@@ -17,14 +17,6 @@
             >
               Back
             </BaseButton>
-            <BaseButton
-              to="/courses/all"
-              variant="secondary"
-              outline
-              size="sm"
-            >
-              All Courses
-            </BaseButton>
             <template v-if="isTeacher">
               <BaseButton
                 :to="`/courses/${course._id}/edit`"
@@ -213,7 +205,7 @@
                 </div>
                 <div class="small text-muted">Created: {{ formatDate(quiz.createdAt) }}</div>
                 <div v-if="!isTeacher && myParticipationByQuiz[quiz._id]" class="small text-success">
-                  Score: {{ myParticipationByQuiz[quiz._id].score ?? '—' }}%
+                  Score: {{ myParticipationByQuiz[quiz._id].score ?? 'N/A' }}%
                 </div>
               </div>
               <div class="d-flex gap-2">
@@ -264,71 +256,86 @@
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-start mb-2 position-relative add-student-header">
           <h5 class="card-title mb-0">Enrolled Students</h5>
-          <div class="add-student-actions d-flex align-items-center justify-content-end gap-2">
-            <BaseButton
-              v-if="isTeacher"
-              variant="primary"
-              outline
-              size="sm"
-              class="px-3"
-              @click="toggleAddDropdown()"
-            >
-              {{ showAdd ? 'Close Add' : '+ Add Student' }}
-            </BaseButton>
-
-            <div v-if="isTeacher && showAdd" class="add-student-panel shadow-sm">
-              <div class="fw-semibold small text-muted mb-2">Add a student</div>
-              <input
-                v-model="addStudentEmail"
-                type="text"
-                class="form-control mb-2"
-                placeholder="Search by name or email"
-                aria-label="Search students"
-                @input="loadSuggestionsIfNeeded"
-                @focus="loadSuggestionsIfNeeded"
-              />
-
-            <div v-if="studentsLoading" class="small text-muted mb-2">Loading students...</div>
-            <select
-              v-else
-              v-model="selectedStudentId"
-              class="form-select mb-2"
-                size="5"
+          <div
+            v-if="isTeacher"
+            class="add-student-actions d-flex align-items-center justify-content-end gap-2"
+            ref="addStudentDropdown"
+          >
+            <div class="add-student-dropdown">
+              <BaseButton
+                variant="primary"
+                outline
+                size="sm"
+                class="px-3 d-flex align-items-center gap-1"
+                @click.stop="toggleAddDropdown()"
               >
-                <option
-                  v-for="stu in filteredStudentSuggestions"
-                  :key="stu._id"
-                  :value="stu._id"
-                >
-                  {{ stu.name || 'Unnamed' }} — {{ stu.email }}
-                </option>
-              </select>
-              <div v-if="!studentsLoading && !filteredStudentSuggestions.length" class="small text-muted mb-2">
-                No matching students (they may already be enrolled).
-              </div>
-              <div v-if="addStudentError" class="alert alert-warning py-2 mb-2">
-                {{ addStudentError }}
-              </div>
+                <span>+ Add Student</span>
+                <span class="dropdown-caret" :class="{ open: addDropdownOpen }">▾</span>
+              </BaseButton>
+              <div
+                v-if="addDropdownOpen"
+                class="add-student-menu shadow-sm"
+                @click.stop
+                @keydown.esc="toggleAddDropdown(false)"
+                tabindex="-1"
+              >
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="fw-semibold small text-muted">Add a student</div>
+                  <BaseButton
+                    variant="link"
+                    size="sm"
+                    class="text-muted"
+                    @click="toggleAddDropdown(false)"
+                  >
+                    Close
+                  </BaseButton>
+                </div>
+                <div class="d-flex gap-2 mb-2 add-student-search">
+                  <input
+                    v-model="addStudentSearch"
+                    type="text"
+                    class="form-control"
+                    placeholder="Search by name or email"
+                    aria-label="Search students"
+                    @keyup.enter="onSearchStudents"
+                  />
+                  <BaseButton
+                    variant="secondary"
+                    size="sm"
+                    :loading="studentsLoading"
+                    @click="onSearchStudents"
+                  >
+                    {{ studentsLoading ? 'Searching...' : 'Search' }}
+                  </BaseButton>
+                </div>
 
-              <div class="d-flex flex-wrap gap-2 justify-content-end">
-                <BaseButton
-                  variant="success"
-                  size="sm"
-                  :disabled="adding || (!selectedStudentId && !addStudentEmail.trim())"
-                  :loading="adding"
-                  @click="addStudent"
-                >
-                  {{ adding ? 'Adding...' : 'Add student' }}
-                </BaseButton>
-                <BaseButton
-                  variant="secondary"
-                  outline
-                  size="sm"
-                  type="button"
-                  @click="toggleAddDropdown(false)"
-                >
-                  Cancel
-                </BaseButton>
+                <div v-if="studentsLoading" class="small text-muted mb-2">Loading students...</div>
+                <div v-else-if="searchResults.length" class="list-group mb-2 suggestion-list">
+                  <div
+                    v-for="stu in searchResults"
+                    :key="stu._id"
+                    class="list-group-item d-flex justify-content-between align-items-center"
+                  >
+                    <div>
+                      <div class="fw-semibold">{{ stu.name || 'Unnamed' }}</div>
+                      <div class="small text-muted">{{ stu.email }}</div>
+                    </div>
+                    <BaseButton
+                      variant="success"
+                      size="sm"
+                      :loading="addingStudentId === stu._id"
+                      :disabled="addingStudentId === stu._id || isAlreadyEnrolled(stu._id)"
+                      @click="addStudentFromResult(stu)"
+                    >
+                      {{ isAlreadyEnrolled(stu._id) ? 'Enrolled' : 'Add' }}
+                    </BaseButton>
+                  </div>
+                </div>
+                <div v-else class="small text-muted mb-2">No matching students found.</div>
+
+                <div v-if="addStudentError" class="alert alert-warning py-2 mb-2">
+                  {{ addStudentError }}
+                </div>
               </div>
             </div>
           </div>
@@ -376,10 +383,10 @@
           </table>
           <div class="text-muted small">Total enrolled: {{ filteredEnrolled.length }} students</div>
         </div>
+      </div>
     </div>
-  </div>
 
-        <div v-if="currentTab === 'notes'" class="card mb-3">
+    <div v-if="currentTab === 'notes'" class="card mb-3">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h5 class="mb-0">Lectures</h5>
@@ -442,11 +449,29 @@
                   </BaseButton>
                 </div>
               </div>
-              <div v-else class="d-flex justify-content-between align-items-start list-group-item">
+              <div class="d-flex justify-content-between align-items-start list-group-item">
                 <div class="lecture-text">
                   <h6 class="mb-1">{{ note.topic }}</h6>
                   <div class="small text-muted">Created: {{ formatDate(note.createdAt) }}</div>
                   <p class="mb-0">{{ note.content }}</p>
+                </div>
+                <div v-if="isTeacher" class="d-flex gap-2 ms-3">
+                  <BaseButton
+                    size="sm"
+                    variant="secondary"
+                    outline
+                    @click.stop="editNote(note)"
+                  >
+                    Edit
+                  </BaseButton>
+                  <BaseButton
+                    size="sm"
+                    variant="danger"
+                    outline
+                    @click.stop="promptDeleteNote(note)"
+                  >
+                    Delete
+                  </BaseButton>
                 </div>
               </div>
             </div>
@@ -512,126 +537,181 @@
             <div
               v-for="mat in materials"
               :key="mat._id"
-              class="list-group-item d-flex justify-content-between align-items-start flex-wrap gap-2"
-              >
-                <div class="me-2">
-                  <a
+              class="list-group-item list-group-item-action text-start w-100"
+              role="button"
+              tabindex="0"
+              @click="toggleMaterial(mat)"
+              @keydown.enter.prevent="toggleMaterial(mat)"
+              @keydown.space.prevent="toggleMaterial(mat)"
+            >
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <strong>{{ mat.title || mat.originalName }}</strong>
+                  <div class="small text-muted">PDF • {{ prettySize(mat.size) }}</div>
+                  <div v-if="mat.description" class="small text-muted">{{ mat.description }}</div>
+                </div>
+                <div class="d-flex align-items-center gap-2 ms-2">
+                  <small class="text-muted">{{ formatDate(mat.createdAt) }}</small>
+                  <BaseButton
+                    v-if="isTeacher"
+                    variant="danger"
+                    outline
+                    size="sm"
+                    @click.stop="promptDeleteMaterial(mat)"
+                  >
+                    Delete
+                  </BaseButton>
+                </div>
+              </div>
+
+              <div v-if="expandedMaterialId === mat._id" class="mt-3 p-3 border rounded bg-light-subtle">
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                  <BaseButton
+                    size="sm"
+                    variant="primary"
+                    outline
                     :href="materialUrl(mat.filePath)"
                     target="_blank"
-                  rel="noopener"
-                  :download="mat.originalName || (mat.title || 'material') + '.pdf'"
-                  class="fw-bold d-block"
-                >
-                  {{ mat.title || mat.originalName }}
-                </a>
-                  <div class="small text-muted">
-                    Uploaded: {{ formatDate(mat.createdAt) }} | {{ prettySize(mat.size) }}
-                  </div>
-                  <div v-if="mat.description" class="small text-muted">{{ mat.description }}</div>
-                  <div class="mt-3 p-3 border rounded bg-light-subtle w-100">
-                    <!-- Summary -->
-                    <div class="mb-3">
-                      <div v-if="materialAi[mat._id]?.error" class="alert alert-warning mb-3">
-                        {{ materialAi[mat._id].error }}
-                      </div>
-                      <BaseButton
-                        class="mb-2"
-                        variant="primary"
-                        :loading="materialAi[mat._id]?.loadingSummary"
-                        :disabled="materialAi[mat._id]?.loadingSummary"
-                        @click="generateMaterialSummary(mat)"
-                      >
-                        Generate Summary
-                      </BaseButton>
-                      <div v-if="materialAi[mat._id]?.loadingSummary" class="text-center my-2">
-                        <div class="spinner-border text-primary" role="status">
-                          <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p>Generating summary, please wait...</p>
-                      </div>
-                      <div v-if="materialAi[mat._id]?.summary && !materialAi[mat._id]?.loadingSummary">
-                        {{ materialAi[mat._id].summary }}
-                      </div>
-                    </div>
+                    rel="noopener"
+                    :download="mat.originalName || (mat.title || 'material') + '.pdf'"
+                    @click.stop
+                  >
+                    Open PDF
+                  </BaseButton>
+                </div>
 
-                    <!-- Quiz -->
-                    <div class="mb-3">
-                      <BaseButton
-                        class="mb-2"
-                        variant="success"
-                        :loading="materialAi[mat._id]?.loadingQuiz"
-                        :disabled="materialAi[mat._id]?.loadingQuiz"
-                        @click="generateMaterialQuiz(mat)"
-                      >
-                        Generate Quiz
-                      </BaseButton>
-                      <div v-if="materialAi[mat._id]?.loadingQuiz" class="text-center my-2">
-                        <div class="spinner-border text-success" role="status">
-                          <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p>Generating quiz, please wait...</p>
-                      </div>
-                      <ul v-if="materialAi[mat._id]?.quiz?.length && !materialAi[mat._id]?.loadingQuiz" class="list-group">
-                        <li v-for="(q, idx) in materialAi[mat._id].quiz" :key="idx" class="list-group-item">
-                          <strong>Q{{ idx + 1 }}: {{ q.question }}</strong>
-                          <ul class="list-group mt-2">
-                            <li v-for="(opt, i) in q.options" :key="i" class="list-group-item">
-                              {{ String.fromCharCode(65 + i) }}. {{ opt }}
-                            </li>
-                          </ul>
-                          <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
+                <ul class="nav nav-tabs mb-3">
+                  <li class="nav-item">
+                    <a
+                      class="nav-link"
+                      :class="{ active: materialAi[mat._id]?.activeTab === 'summary' }"
+                      @click.stop.prevent="setMaterialTab(mat._id, 'summary')"
+                    >
+                      Summary
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a
+                      class="nav-link"
+                      :class="{ active: materialAi[mat._id]?.activeTab === 'quiz' }"
+                      @click.stop.prevent="setMaterialTab(mat._id, 'quiz')"
+                    >
+                      Quiz
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a
+                      class="nav-link"
+                      :class="{ active: materialAi[mat._id]?.activeTab === 'flashcards' }"
+                      @click.stop.prevent="setMaterialTab(mat._id, 'flashcards')"
+                    >
+                      Flashcards
+                    </a>
+                  </li>
+                </ul>
+
+                <div v-if="materialAi[mat._id]?.error" class="alert alert-warning mb-3">
+                  {{ materialAi[mat._id].error }}
+                </div>
+
+                <div v-show="materialAi[mat._id]?.activeTab === 'summary'">
+                  <BaseButton
+                    class="mb-2"
+                    variant="primary"
+                    :loading="materialAi[mat._id]?.loadingSummary"
+                    :disabled="materialAi[mat._id]?.loadingSummary"
+                    @click.stop="generateMaterialSummary(mat)"
+                  >
+                    Generate Summary
+                  </BaseButton>
+                  <div v-if="materialAi[mat._id]?.loadingSummary" class="text-center my-2">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Generating summary, please wait...</p>
+                  </div>
+                  <div v-if="materialAi[mat._id]?.summary && !materialAi[mat._id]?.loadingSummary">
+                    {{ materialAi[mat._id].summary }}
+                  </div>
+                </div>
+
+                <div v-show="materialAi[mat._id]?.activeTab === 'quiz'">
+                  <BaseButton
+                    class="mb-2"
+                    variant="success"
+                    :loading="materialAi[mat._id]?.loadingQuiz"
+                    :disabled="materialAi[mat._id]?.loadingQuiz"
+                    @click.stop="generateMaterialQuiz(mat)"
+                  >
+                    Generate Quiz
+                  </BaseButton>
+                  <div v-if="materialAi[mat._id]?.loadingQuiz" class="text-center my-2">
+                    <div class="spinner-border text-success" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Generating quiz, please wait...</p>
+                  </div>
+                  <ul v-if="materialAi[mat._id]?.quiz?.length && !materialAi[mat._id]?.loadingQuiz" class="list-group">
+                    <li v-for="(q, idx) in materialAi[mat._id].quiz" :key="idx" class="list-group-item">
+                      <strong>Q{{ idx + 1 }}: {{ q.question }}</strong>
+                      <ul class="list-group mt-2">
+                        <li v-for="(opt, i) in q.options" :key="i" class="list-group-item">
+                          {{ String.fromCharCode(65 + i) }}. {{ opt }}
                         </li>
                       </ul>
-                    </div>
+                      <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
+                    </li>
+                  </ul>
+                </div>
 
-                    <!-- Flashcards -->
-                    <div>
-                      <BaseButton
-                        class="mb-2"
-                        variant="warning"
-                        :loading="materialAi[mat._id]?.loadingFlashcards"
-                        :disabled="materialAi[mat._id]?.loadingFlashcards"
-                        @click="generateMaterialFlashcards(mat)"
-                      >
-                        <span v-if="materialAi[mat._id]?.loadingFlashcards">Generating...</span>
-                        <span v-else>Generate Flashcards</span>
-                      </BaseButton>
-                      <div v-if="materialAi[mat._id]?.loadingFlashcards" class="text-center my-2">
-                        <div class="spinner-border text-warning" role="status">
-                          <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p>Generating flashcards, please wait...</p>
+                <div v-show="materialAi[mat._id]?.activeTab === 'flashcards'">
+                  <BaseButton
+                    class="mb-2"
+                    variant="warning"
+                    :loading="materialAi[mat._id]?.loadingFlashcards"
+                    :disabled="materialAi[mat._id]?.loadingFlashcards"
+                    @click.stop="generateMaterialFlashcards(mat)"
+                  >
+                    <span v-if="materialAi[mat._id]?.loadingFlashcards">Generating...</span>
+                    <span v-else>Generate Flashcards</span>
+                  </BaseButton>
+                  <div v-if="materialAi[mat._id]?.loadingFlashcards" class="text-center my-2">
+                    <div class="spinner-border text-warning" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Generating flashcards, please wait...</p>
+                  </div>
+                  <div v-if="materialAi[mat._id]?.flashcards?.length && !materialAi[mat._id]?.loadingFlashcards" class="flashcards-container">
+                    <div
+                      class="flashcard"
+                      v-for="(fc, idx) in materialAi[mat._id].flashcards"
+                      :key="idx"
+                      :class="{ flipped: fc.flipped }"
+                      @click.stop="fc.flipped = !fc.flipped"
+                    >
+                      <div class="front">
+                        Q: {{ fc.question }}
                       </div>
-                      <div v-if="materialAi[mat._id]?.flashcards?.length && !materialAi[mat._id]?.loadingFlashcards" class="flashcards-container">
-                        <div
-                          class="flashcard"
-                          v-for="(fc, idx) in materialAi[mat._id].flashcards"
-                          :key="idx"
-                          :class="{ flipped: fc.flipped }"
-                          @click="fc.flipped = !fc.flipped"
-                        >
-                          <div class="front">
-                            Q: {{ fc.question }}
-                          </div>
-                          <div class="back">
-                            A: {{ fc.answer }}
-                          </div>
-                        </div>
+                      <div class="back">
+                        A: {{ fc.answer }}
                       </div>
                     </div>
                   </div>
                 </div>
-                <BaseButton
-                  v-if="isTeacher"
-                  variant="danger"
-                  outline
-                  size="sm"
-                  @click="deleteMaterial(mat)"
-                >
-                  Delete
-                </BaseButton>
+              </div>
             </div>
           </div>
+        </div>
+    </div>
+  </div>
+
+    <div v-if="showDeleteMaterialConfirm" class="overlay">
+      <div class="overlay-card">
+        <h5 class="text-danger">Delete Material</h5>
+        <p class="mb-3">Are you sure you want to delete "{{ materialToDelete?.title || materialToDelete?.originalName }}"?</p>
+        <div class="d-flex justify-content-end gap-2">
+          <BaseButton variant="secondary" outline @click="cancelDeleteMaterial">Cancel</BaseButton>
+          <BaseButton variant="danger" @click="deleteMaterialConfirmed">Delete</BaseButton>
         </div>
       </div>
     </div>
@@ -641,11 +721,43 @@
     <h5 class="text-danger">Delete Lecture</h5>
     <p class="mb-3">Are you sure you want to delete "{{ noteToDelete?.topic }}"?</p>
     <div class="d-flex justify-content-end gap-2">
-      <BaseButton variant="secondary" outline @click="cancelDeleteNote">Cancel</BaseButton>
-      <BaseButton variant="danger" @click="deleteNoteConfirmed">Delete</BaseButton>
+          <BaseButton variant="secondary" outline @click="cancelDeleteNote">Cancel</BaseButton>
+          <BaseButton variant="danger" @click="deleteNoteConfirmed">Delete</BaseButton>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
+
+    <div v-if="showMessageModal" class="overlay">
+      <div class="overlay-card">
+        <h5 class="mb-2">{{ messageTitle || 'Notice' }}</h5>
+        <p class="mb-3">{{ messageBody }}</p>
+        <div class="d-flex justify-content-end">
+          <BaseButton variant="primary" @click="showMessageModal = false">OK</BaseButton>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showDeleteCourseConfirm" class="overlay">
+      <div class="overlay-card">
+        <h5 class="text-danger">Delete Course</h5>
+        <p class="mb-3">This will permanently delete "{{ course.name }}". Continue?</p>
+        <div class="d-flex justify-content-end gap-2">
+          <BaseButton variant="secondary" outline @click="cancelDeleteCourse">Cancel</BaseButton>
+          <BaseButton variant="danger" @click="confirmDeleteCourse">Delete</BaseButton>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showRemoveStudentConfirm" class="overlay">
+      <div class="overlay-card">
+        <h5 class="text-danger">Remove Student</h5>
+        <p class="mb-3">Remove this student from the course?</p>
+        <div class="d-flex justify-content-end gap-2">
+          <BaseButton variant="secondary" outline @click="cancelRemoveStudent">Cancel</BaseButton>
+          <BaseButton variant="danger" @click="confirmRemoveStudent">Remove</BaseButton>
+        </div>
+      </div>
+    </div>
 
     <div v-if="showDeleteConfirm" class="overlay">
       <div class="overlay-card">
@@ -661,7 +773,7 @@
     <div v-if="showAttemptsModal" class="overlay">
       <div class="overlay-card wide">
         <div class="d-flex justify-content-between align-items-center mb-2">
-          <h5 class="mb-0">Quiz Attempts � {{ attemptsQuizTitle }}</h5>
+          <h5 class="mb-0">Quiz Attempts - {{ attemptsQuizTitle }}</h5>
           <BaseButton variant="secondary" outline size="sm" @click="closeAttempts">Close</BaseButton>
         </div>
         <div v-if="attemptsLoading" class="text-muted">Loading attempts...</div>
@@ -743,13 +855,12 @@ export default {
   data() {
     return {
       course: null,
-      addStudentEmail: '',
-      adding: false,
-      selectedStudentId: '',
+      addStudentSearch: '',
+      searchResults: [],
+      addingStudentId: '',
       studentsLoading: false,
       enrolled: [],
-      showAdd: false,
-      allStudents: [],
+      addDropdownOpen: false,
       addStudentError: '',
       overviewDraft: '',
       overviewEditing: false,
@@ -789,27 +900,16 @@ export default {
       materialAi: {},
       newMaterial: { title: '', description: '', file: null },
       uploading: false,
-      uploadError: null
+      uploadError: null,
+      expandedMaterialId: null,
+      showDeleteMaterialConfirm: false,
+      materialToDelete: null,
+      showMessageModal: false,
+      messageTitle: '',
+      messageBody: ''
     }
   },
   computed: {
-    availableStudents() {
-      const enrolledIds = new Set(
-        (this.enrolled || [])
-          .map(att => att?.student?._id || att.student)
-          .filter(Boolean)
-      )
-      return (this.allStudents || []).filter(stu => !enrolledIds.has(stu._id))
-    },
-    filteredStudentSuggestions() {
-      const term = this.addStudentEmail.trim().toLowerCase()
-      const base = this.availableStudents
-      if (!Array.isArray(base) || !base.length) return []
-      if (!term) return base.slice(0, 10)
-      return base
-        .filter(stu => (stu.email || '').toLowerCase().includes(term) || (stu.name || '').toLowerCase().includes(term))
-        .slice(0, 10)
-    },
     currentUser() {
       const u = localStorage.getItem('user')
       return u ? JSON.parse(u) : null
@@ -923,6 +1023,9 @@ export default {
   methods: {
     setTab(tab) {
       this.currentTab = tab
+      if (tab !== 'students') {
+        this.addDropdownOpen = false
+      }
       if (tab === 'students') {
         this.$nextTick(() => {
           if (this.$refs.studentsCard) {
@@ -938,14 +1041,36 @@ export default {
         this.fetchMaterials(this.$route.params.id)
       }
     },
+    notify(title, message) {
+      this.messageTitle = title || ''
+      this.messageBody = message || ''
+      this.showMessageModal = true
+    },
     toggleAddDropdown(force = null) {
-      const next = force === null ? !this.showAdd : force
-      this.showAdd = next
-      if (next) {
-        this.addStudentEmail = ''
-        this.selectedStudentId = ''
-        this.loadSuggestionsIfNeeded()
+      const next = force === null ? !this.addDropdownOpen : force
+      this.addDropdownOpen = next
+      if (!next) return
+      this.resetAddStudent()
+      this.onSearchStudents()
+      this.$nextTick(() => {
+        const input = this.$el.querySelector('.add-student-menu input')
+        if (input) input.focus()
+      })
+      const menu = this.$el.querySelector('.add-student-menu')
+      if (menu) menu.focus()
+    },
+    handleClickOutside(event) {
+      if (!this.addDropdownOpen) return
+      const dropdown = this.$refs.addStudentDropdown
+      if (!dropdown || !dropdown.contains(event.target)) {
+        this.addDropdownOpen = false
       }
+    },
+    resetAddStudent() {
+      this.addStudentSearch = ''
+      this.searchResults = []
+      this.addStudentError = ''
+      this.addingStudentId = ''
     },
 
     async fetchCourse() {
@@ -1026,7 +1151,7 @@ export default {
         await CourseService.remove(this.course._id)
         this.$router.push({ name: 'Courses' })
       } catch (err) {
-        alert('Failed to delete course')
+        this.notify('Error', 'Failed to delete course')
       } finally {
         this.showDeleteCourseConfirm = false
       }
@@ -1034,74 +1159,49 @@ export default {
     cancelDeleteCourse() {
       this.showDeleteCourseConfirm = false
     },
-    async addStudent() {
-      const email = this.addStudentEmail.trim()
-      const selectedId = this.selectedStudentId
-      if (!selectedId && !email) {
-        this.addStudentError = 'Please select a student from the list or search by email.'
-        return
-      }
-      this.adding = true
+    async onSearchStudents() {
+      if (this.studentsLoading) return
+      this.studentsLoading = true
       this.addStudentError = ''
       try {
-        // Try to use locally loaded suggestions first
-        await this.loadSuggestionsIfNeeded()
-        const fromId = this.availableStudents.find(stu => stu._id === selectedId)
-        const fromCache = fromId || this.availableStudents.find(
-          stu => (stu.email || '').toLowerCase() === email.toLowerCase()
+        const params = { role: 'student' }
+        if (this.addStudentSearch.trim()) {
+          params.q = this.addStudentSearch.trim()
+        }
+        const res = await Api.get('/users', { params })
+        const list = res.data.data || res.data || []
+        const enrolledIds = new Set(
+          (this.enrolled || []).map(att => att?.student?._id || att.student).filter(Boolean)
         )
-
-        let student = fromCache
-        if (!student) {
-          const res = await Api.get('/users', {
-            params: { role: 'student', email }
-          })
-          const students = res.data.data || res.data
-          student = Array.isArray(students) ? students[0] : null
-        }
-
-        if (!student) {
-          this.addStudentError = 'Student not found.'
-          return
-        }
-
-        const alreadyEnrolled = (this.enrolled || []).some(
-          att => (att.student?._id || att.student) === student._id
-        )
-        if (alreadyEnrolled) {
-          this.addStudentError = 'Student is already enrolled in this course.'
-          return
-        }
-
-        await CourseService.addStudent(this.course._id, student._id)
-        this.addStudentEmail = ''
-        this.selectedStudentId = ''
-        this.toggleAddDropdown(false)
-        await this.fetchEnrolled()
-        this.addStudentError = ''
+        this.searchResults = (Array.isArray(list) ? list : []).filter(s => !enrolledIds.has(s._id))
       } catch (err) {
         console.error(err)
-        this.addStudentError = err?.response?.data?.message || 'Failed to add student.'
-      } finally {
-        this.adding = false
-      }
-    },
-    async loadSuggestionsIfNeeded() {
-      if (this.allStudents.length > 0 || this.studentsLoading) return
-      this.studentsLoading = true
-      try {
-        const res = await Api.get('/users', { params: { role: 'student' } })
-        this.allStudents = res.data.data || res.data
-      } catch (err) {
-        console.error(err)
-        this.addStudentError = 'Could not load students list.'
+        this.addStudentError = 'Could not load students.'
       } finally {
         this.studentsLoading = false
       }
     },
-    selectSuggestion(email, id = '') {
-      this.addStudentEmail = email
-      this.selectedStudentId = id
+    isAlreadyEnrolled(studentId) {
+      return (this.enrolled || []).some(att => (att.student?._id || att.student) === studentId)
+    },
+    async addStudentFromResult(student) {
+      if (!student || !student._id) return
+      if (this.isAlreadyEnrolled(student._id)) {
+        this.addStudentError = 'Student is already enrolled.'
+        return
+      }
+      this.addingStudentId = student._id
+      this.addStudentError = ''
+      try {
+        await CourseService.addStudent(this.course._id, student._id)
+        await this.fetchEnrolled()
+        this.toggleAddDropdown(false)
+      } catch (err) {
+        console.error(err)
+        this.addStudentError = err?.response?.data?.message || 'Failed to add student.'
+      } finally {
+        this.addingStudentId = ''
+      }
     },
     async saveOverview() {
       if (!this.isTeacher) return
@@ -1110,10 +1210,10 @@ export default {
         await CourseService.update(this.course._id, { overview: this.overviewDraft })
         this.course.overview = this.overviewDraft
         this.overviewEditing = false
-        alert('Overview saved')
+        this.notify('Success', 'Overview saved')
       } catch (err) {
         console.error(err)
-        alert('Failed to save overview')
+        this.notify('Error', 'Failed to save overview')
       } finally {
         this.savingOverview = false
       }
@@ -1139,7 +1239,7 @@ export default {
         await this.fetchEnrolled()
       } catch (err) {
         console.error(err)
-        alert('Failed to remove student')
+        this.notify('Error', 'Failed to remove student')
       } finally {
         this.studentToRemove = null
         this.showRemoveStudentConfirm = false
@@ -1156,7 +1256,7 @@ export default {
         this.$router.push({ name: 'Courses' })
       } catch (err) {
         console.error(err)
-        alert('Failed to leave course')
+        this.notify('Error', 'Failed to leave course')
       } finally {
         this.showLeaveConfirm = false
       }
@@ -1174,7 +1274,7 @@ export default {
         await this.fetchQuizzes()
       } catch (err) {
         console.error(err)
-        alert('Failed to delete quiz')
+        this.notify('Error', 'Failed to delete quiz')
       }
     },
     cancelDeleteQuiz() {
@@ -1191,7 +1291,7 @@ export default {
         this.attempts = res.data.data || res.data || []
       } catch (err) {
         console.error(err)
-        alert('Failed to load attempts')
+        this.notify('Error', 'Failed to load attempts')
       } finally {
         this.attemptsLoading = false
       }
@@ -1212,7 +1312,7 @@ export default {
         this.notes = res.data.data || res.data
       } catch (err) {
         console.error(err)
-        alert('Failed to load lectures')
+        this.notify('Error', 'Failed to load lectures')
       } finally {
         this.loadingNotes = false
       }
@@ -1229,6 +1329,10 @@ export default {
       } finally {
         this.loadingMaterials = false
       }
+    },
+    toggleMaterial(mat) {
+      if (!mat || !mat._id) return
+      this.expandedMaterialId = this.expandedMaterialId === mat._id ? null : mat._id
     },
     ensureMaterialState(id) {
       if (!this.materialAi[id]) {
@@ -1335,15 +1439,28 @@ export default {
         this.uploading = false
       }
     },
-    async deleteMaterial(material) {
+    promptDeleteMaterial(material) {
+      if (!material) return
+      this.materialToDelete = material
+      this.showDeleteMaterialConfirm = true
+    },
+    cancelDeleteMaterial() {
+      this.materialToDelete = null
+      this.showDeleteMaterialConfirm = false
+    },
+    async deleteMaterialConfirmed() {
+      const material = this.materialToDelete
       if (!material || !material._id) return
-      if (!confirm('Delete this material?')) return
       try {
         await CourseMaterialService.remove(this.course._id, material._id)
         this.materials = this.materials.filter(m => m._id !== material._id)
       } catch (err) {
         console.error(err)
-        alert('Failed to delete material')
+        if (typeof this.notify === 'function') {
+          this.notify('Error', 'Failed to delete material')
+        }
+      } finally {
+        this.cancelDeleteMaterial()
       }
     },
     prettySize(bytes) {
@@ -1360,7 +1477,7 @@ export default {
 
     async createNote() {
       if (!this.newNoteTopic.trim() || !this.newNoteContent.trim()) {
-        alert('Please fill all fields')
+        this.notify('Missing info', 'Please fill all fields')
         return
       }
 
@@ -1384,10 +1501,10 @@ export default {
         this.newNoteTopic = ''
         this.newNoteContent = ''
         this.showCreateNote = false
-        alert('Lecture created')
+        this.notify('Success', 'Lecture created')
       } catch (err) {
         console.error(err)
-        alert('Failed to create note')
+        this.notify('Error', 'Failed to create note')
       } finally {
         this.savingNote = false
       }
@@ -1407,7 +1524,7 @@ export default {
 
     async saveEditedNote(id) {
       if (!this.editNoteTopic.trim() || !this.editNoteContent.trim()) {
-        alert('Please fill all fields')
+        this.notify('Missing info', 'Please fill all fields')
         return
       }
       this.savingEditNote = true
@@ -1425,10 +1542,10 @@ export default {
         if (idx !== -1) this.notes[idx] = updatedNote
 
         this.cancelEditNote()
-        alert('Lecture updated')
+        this.notify('Success', 'Lecture updated')
       } catch (err) {
         console.error(err)
-        alert('Failed to update note')
+        this.notify('Error', 'Failed to update note')
       } finally {
         this.savingEditNote = false
       }
@@ -1438,10 +1555,10 @@ export default {
       try {
         await Api.delete(`/notes/${id}`)
         this.notes = this.notes.filter(n => n._id !== id)
-        alert('Lecture deleted')
+        this.notify('Success', 'Lecture deleted')
       } catch (err) {
         console.error(err)
-        alert('Failed to delete note')
+        this.notify('Error', 'Failed to delete note')
       }
     },
     // When user clicks Delete
@@ -1464,19 +1581,24 @@ export default {
         this.notes = this.notes.filter(n => n._id !== this.noteToDelete._id)
         this.noteToDelete = null
         this.showDeleteNoteConfirm = false
-        alert('Lecture deleted') // optional, you can remove this if the modal is enough
+        this.notify('Success', 'Lecture deleted')
       } catch (err) {
         console.error(err)
-        alert('Failed to delete note')
+        this.notify('Error', 'Failed to delete note')
       }
     }
   },
 
   async mounted() {
+    document.addEventListener('click', this.handleClickOutside)
     if (this.$route.query.tab) {
       this.currentTab = this.$route.query.tab
     }
     await this.fetchCourse()
+  },
+
+  beforeUnmount() {
+    document.removeEventListener('click', this.handleClickOutside)
   }
 }
 </script>
@@ -1516,7 +1638,6 @@ export default {
 .suggestion-list {
   max-height: 200px;
   overflow-y: auto;
-  cursor: pointer;
   z-index: 2000;
 }
 .overlay {
@@ -1606,21 +1727,50 @@ export default {
 
 .add-student-header {
   position: relative;
+  overflow: visible;
 }
 
 .add-student-actions {
   position: relative;
+  overflow: visible;
 }
 
-.add-student-panel {
+.add-student-dropdown {
+  position: relative;
+}
+
+.add-student-menu {
   position: absolute;
-  top: 110%;
+  top: calc(100% + 10px);
   right: 0;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 12px;
-  min-width: 320px;
-  z-index: 20;
+  min-width: 340px;
+  max-width: 520px;
+  width: max-content;
+  z-index: 60;
+}
+
+@media (max-width: 576px) {
+  .add-student-menu {
+    width: 100%;
+    min-width: 0;
+    left: 0;
+  }
+}
+
+.dropdown-caret {
+  font-size: 12px;
+  transition: transform 0.15s ease;
+}
+
+.dropdown-caret.open {
+  transform: rotate(180deg);
+}
+
+.add-student-search input {
+  min-width: 220px;
 }
 </style>

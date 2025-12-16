@@ -22,6 +22,10 @@ export default {
   name: 'BaseButton',
   props: {
     to: [String, Object],
+    href: {
+      type: String,
+      default: ''
+    },
     variant: {
       type: String,
       default: 'primary'
@@ -42,6 +46,18 @@ export default {
       type: Boolean,
       default: false
     },
+    target: {
+      type: String,
+      default: undefined
+    },
+    rel: {
+      type: String,
+      default: undefined
+    },
+    download: {
+      type: [Boolean, String],
+      default: undefined
+    },
     type: {
       type: String,
       default: 'button'
@@ -49,12 +65,23 @@ export default {
   },
   computed: {
     tag() {
-      return this.to ? 'router-link' : 'button'
+      if (this.to) return 'router-link'
+      if (this.href) return 'a'
+      return 'button'
     },
     linkAttrs() {
-      return this.to
-        ? { to: this.to }
-        : { type: this.type }
+      if (this.to) {
+        return { to: this.to }
+      }
+      if (this.href) {
+        return {
+          href: this.href,
+          target: this.target,
+          rel: this.rel,
+          download: this.download
+        }
+      }
+      return { type: this.type }
     },
     variantClass() {
       return this.outline ? '' : ''
