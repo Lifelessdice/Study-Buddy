@@ -39,27 +39,28 @@
         <BaseButton
           variant="secondary"
           outline
-          class="me-2"
+          class="page-btn"
           @click="prevPage"
           :disabled="currentPage === 1"
         >
-          Previous
+          <span class="page-icon">⬅️</span>
         </BaseButton>
 
         <BaseButton
           variant="secondary"
           outline
+          class="page-btn"
           @click="nextPage"
           :disabled="currentPage === totalPages"
         >
-          Next
+          <span class="page-icon">➡️</span>
         </BaseButton>
       </div>
 
       <div class="d-flex align-items-center">
         <span class="me-3">
-          Page {{ currentPage }} of {{ totalPages }}
-          <span v-if="total"> ({{ total }} total)</span>
+          Pg {{ currentPage }}/{{ totalPages }}
+          <span v-if="total">({{ total }})</span>
         </span>
 
         <select
