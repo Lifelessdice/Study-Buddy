@@ -30,10 +30,9 @@
 
       <div class="d-flex align-items-center ms-auto" v-if="user">
         <span class="me-2 small text-muted">{{ user.email }} ({{ user.role }})</span>
-        <button class="btn btn-outline-danger btn-sm" @click="logout">Logout</button>
+        <BaseButton variant="danger" outline size="sm" @click="logout">Logout</BaseButton>
       </div>
     </nav>
-
 
     <!-- MAIN SCROLLABLE AREA -->
     <main class="app-main">
@@ -41,7 +40,6 @@
     </main>
   </div>
 </template>
-
 
 <script>
 export default {

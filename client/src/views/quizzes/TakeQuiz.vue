@@ -10,12 +10,14 @@
             <span v-if="quiz.timeLimit">• Time: {{ quiz.timeLimit }} min</span>
           </div>
         </div>
-        <router-link
-          class="btn btn-outline-secondary btn-sm"
+        <BaseButton
           :to="{ name: 'CourseDashboard', params: { id: quiz.course }, query: { tab: 'quizzes' } }"
+          variant="secondary"
+          outline
+          size="sm"
         >
           Back to course
-        </router-link>
+        </BaseButton>
       </div>
     </div>
 
@@ -51,12 +53,17 @@
       </div>
 
       <div class="d-flex justify-content-end gap-2 mt-3">
-        <button class="btn btn-outline-secondary" :disabled="submitting" @click="cancel">
+        <BaseButton variant="secondary" outline :disabled="submitting" @click="cancel">
           Cancel
-        </button>
-        <button class="btn btn-primary" :disabled="submitting || !allAnswered" @click="submit">
+        </BaseButton>
+        <BaseButton
+          variant="primary"
+          :loading="submitting"
+          :disabled="submitting || !allAnswered"
+          @click="submit"
+        >
           {{ submitting ? 'Submitting...' : 'Submit answers' }}
-        </button>
+        </BaseButton>
       </div>
     </div>
   </div>
