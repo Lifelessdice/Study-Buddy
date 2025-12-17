@@ -107,11 +107,20 @@
                 <li v-for="(q, idx) in aiState[item._id].quiz" :key="idx" class="list-group-item">
                   <strong>Q{{ idx + 1 }}: {{ q.question }}</strong>
                   <ul class="list-group mt-2">
-                    <li v-for="(opt, i) in q.options" :key="i" class="list-group-item">
-                      {{ String.fromCharCode(65 + i) }}. {{ opt }}
+                    <li
+                      v-for="(opt, i) in q.options"
+                      :key="i"
+                      class="list-group-item"
+                      :class="{
+                        'list-group-item-success': q.selectedIndex !== null && i === q.correctIndex,
+                        'list-group-item-danger': q.selectedIndex === i && i !== q.correctIndex
+                      }"
+                      style="cursor: pointer"
+                      @click.stop="selectOption(q, i)"
+                    >
+                      {{ opt }}
                     </li>
                   </ul>
-                  <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
                 </li>
               </ul>
             </div>
@@ -175,6 +184,7 @@
 import api from '../Api'
 import Api from '@/Api'
 import CourseMaterialService from '@/services/CourseMaterialService'
+import { normalizeAiQuiz } from '@/utils/aiQuiz'
 
 export default {
   data() {
@@ -283,6 +293,10 @@ export default {
       this.aiState = { ...this.aiState, [id]: fresh }
       return fresh
     },
+    selectOption(question, index) {
+      if (!question || question.selectedIndex !== null) return
+      question.selectedIndex = index
+    },
     setAiTab(id, tab) {
       const state = this.ensureState(id)
       state.activeTab = tab
@@ -330,7 +344,8 @@ export default {
           return
         }
         const res = await CourseMaterialService.quiz(item.courseId, item._id)
-        state.quiz = res.data.quiz || res.data.data?.quiz || []
+        const rawQuiz = res.data.quiz || res.data.data?.quiz || []
+        state.quiz = normalizeAiQuiz(rawQuiz)
         if (!state.quiz.length) state.error = 'No quiz questions were returned.'
       } catch (err) {
         state.error = 'Failed to generate quiz. Please try again.'

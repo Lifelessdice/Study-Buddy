@@ -7,7 +7,9 @@ const Course = require("../models/courses");
 const CourseMaterial = require("../models/courseMaterials");
 const upload = require("../Utils/upload");
 const protect = require("../middleware/protect");
-const { summarizeText, generateQuiz, generateFlashcards } = require("../config/openAIconfig");
+const { buildAiQuizResponse } = require("../services/aiQuiz");
+const { buildAiSummaryResponse } = require("../services/aiSummary");
+const { buildAiFlashcardsResponse } = require("../services/aiFlashcards");
 
 const router = express.Router();
 
@@ -178,12 +180,15 @@ router.post("/:courseId/materials/:materialId/summaries", async (req, res, next)
       });
     }
 
-    const summary = await summarizeText(text);
-    return res.status(200).json({
-      status: "success",
-      data: { materialId: material._id, courseId: course._id, summary },
-      summary
+    const payload = await buildAiSummaryResponse({
+      text,
+      data: {
+        materialId: material._id,
+        courseId: course._id,
+        topic: material.title
+      }
     });
+    return res.status(200).json(payload);
   } catch (err) {
     next(err);
   }
@@ -206,12 +211,15 @@ router.post("/:courseId/materials/:materialId/aiquizzes", async (req, res, next)
       });
     }
 
-    const quiz = await generateQuiz(text);
-    return res.status(200).json({
-      status: "success",
-      data: { materialId: material._id, courseId: course._id, quiz },
-      quiz
+    const payload = await buildAiQuizResponse({
+      text,
+      data: {
+        materialId: material._id,
+        courseId: course._id,
+        topic: material.title
+      }
     });
+    return res.status(200).json(payload);
   } catch (err) {
     next(err);
   }
@@ -234,12 +242,15 @@ router.post("/:courseId/materials/:materialId/flashcards", async (req, res, next
       });
     }
 
-    const flashcards = await generateFlashcards(text);
-    return res.status(200).json({
-      status: "success",
-      data: { materialId: material._id, courseId: course._id, flashcards },
-      flashcards
+    const payload = await buildAiFlashcardsResponse({
+      text,
+      data: {
+        materialId: material._id,
+        courseId: course._id,
+        topic: material.title
+      }
     });
+    return res.status(200).json(payload);
   } catch (err) {
     next(err);
   }

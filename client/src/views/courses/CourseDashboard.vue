@@ -160,48 +160,6 @@
 
     <div v-if="currentTab === 'quizzes'" class="card mb-3">
       <div class="card-body">
-        <div class="row g-3 align-items-center mb-3">
-          <div class="col-md-9">
-            <div class="d-flex flex-wrap gap-3 small fw-semibold text-muted">
-              <div class="analytics-pill">
-                <span class="label">Quizzes</span>
-                <span class="value">{{ quizzes.length }}</span>
-              </div>
-              <div class="analytics-pill">
-                <span class="label">Total Questions</span>
-                <span class="value">{{ totalQuizQuestions }}</span>
-              </div>
-              <div class="analytics-pill" v-if="!isTeacher">
-                <span class="label">Completed</span>
-                <span class="value">{{ myCompletedQuizzes }} / {{ quizzes.length || 0 }}</span>
-              </div>
-              <div class="analytics-pill" v-if="hasQuizQuestions">
-                <span class="label">Avg Questions</span>
-                <span class="value">{{ avgQuestionsPerQuiz }}</span>
-              </div>
-              <div class="analytics-pill" v-if="hasMyScores">
-                <span class="label">Avg Score</span>
-                <span class="value">{{ avgMyScore }}%</span>
-              </div>
-              <div class="analytics-pill" v-if="hasMyScores">
-                <span class="label">Best Score</span>
-                <span class="value">{{ bestMyScore }}%</span>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3" v-if="!isTeacher">
-            <div class="completion-meter">
-              <div class="d-flex justify-content-between small text-muted mb-1">
-                <span>Completion</span>
-                <span>{{ completionRate }}%</span>
-              </div>
-              <div class="meter-track">
-                <div class="meter-fill" :style="{ width: completionRate + '%' }"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h5 class="mb-0">Quizzes</h5>
           <BaseButton
@@ -476,29 +434,173 @@
                   </BaseButton>
                 </div>
               </div>
-              <div class="d-flex justify-content-between align-items-start list-group-item">
-                <div class="lecture-text">
-                  <h6 class="mb-1">{{ note.topic }}</h6>
-                  <div class="small text-muted">Created: {{ formatDate(note.createdAt) }}</div>
-                  <p class="mb-0">{{ note.content }}</p>
+              <div
+                v-else
+                class="list-group-item list-group-item-action text-start w-100"
+                role="button"
+                tabindex="0"
+                @click="toggleNote(note)"
+                @keydown.enter.prevent="toggleNote(note)"
+                @keydown.space.prevent="toggleNote(note)"
+              >
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <strong>{{ note.topic }}</strong>
+                    <div class="small text-muted">Created: {{ formatDate(note.createdAt) }}</div>
+                    <div class="small text-muted">Text</div>
+                  </div>
+                  <div v-if="isTeacher" class="d-flex gap-2 ms-3 flex-wrap">
+                    <BaseButton
+                      size="sm"
+                      variant="secondary"
+                      outline
+                      @click.stop="editNote(note)"
+                    >
+                      Edit
+                    </BaseButton>
+                    <BaseButton
+                      size="sm"
+                      variant="danger"
+                      outline
+                      @click.stop="promptDeleteNote(note)"
+                    >
+                      Delete
+                    </BaseButton>
+                  </div>
                 </div>
-                <div v-if="isTeacher" class="d-flex gap-2 ms-3">
-                  <BaseButton
-                    size="sm"
-                    variant="secondary"
-                    outline
-                    @click.stop="editNote(note)"
-                  >
-                    Edit
-                  </BaseButton>
-                  <BaseButton
-                    size="sm"
-                    variant="danger"
-                    outline
-                    @click.stop="promptDeleteNote(note)"
-                  >
-                    Delete
-                  </BaseButton>
+
+                <div v-if="expandedNoteId === note._id" class="mt-3 p-3 border rounded bg-light-subtle">
+                  <div class="lecture-text mb-3">
+                    <p class="mb-0">{{ note.content }}</p>
+                  </div>
+
+                  <ul class="nav nav-tabs mb-3">
+                    <li class="nav-item">
+                      <a
+                        class="nav-link"
+                        :class="{ active: noteAi[note._id]?.activeTab === 'summary' }"
+                        @click.stop.prevent="setNoteTab(note._id, 'summary')"
+                      >
+                        Summary
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a
+                        class="nav-link"
+                        :class="{ active: noteAi[note._id]?.activeTab === 'quiz' }"
+                        @click.stop.prevent="setNoteTab(note._id, 'quiz')"
+                      >
+                        Quiz
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a
+                        class="nav-link"
+                        :class="{ active: noteAi[note._id]?.activeTab === 'flashcards' }"
+                        @click.stop.prevent="setNoteTab(note._id, 'flashcards')"
+                      >
+                        Flashcards
+                      </a>
+                    </li>
+                  </ul>
+
+                  <div v-if="noteAi[note._id]?.error" class="alert alert-warning mb-3">
+                    {{ noteAi[note._id].error }}
+                  </div>
+
+                  <div v-show="noteAi[note._id]?.activeTab === 'summary'">
+                    <BaseButton
+                      class="mb-2"
+                      variant="primary"
+                      :loading="noteAi[note._id]?.loadingSummary"
+                      :disabled="noteAi[note._id]?.loadingSummary"
+                      @click.stop="generateNoteSummary(note)"
+                    >
+                      Generate Summary
+                    </BaseButton>
+                    <div v-if="noteAi[note._id]?.loadingSummary" class="text-center my-2">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                      </div>
+                      <p>Generating summary, please wait...</p>
+                    </div>
+                    <div v-if="noteAi[note._id]?.summary && !noteAi[note._id]?.loadingSummary">
+                      {{ noteAi[note._id].summary }}
+                    </div>
+                  </div>
+
+                  <div v-show="noteAi[note._id]?.activeTab === 'quiz'">
+                    <BaseButton
+                      class="mb-2"
+                      variant="success"
+                      :loading="noteAi[note._id]?.loadingQuiz"
+                      :disabled="noteAi[note._id]?.loadingQuiz"
+                      @click.stop="generateNoteQuiz(note)"
+                    >
+                      Generate Quiz
+                    </BaseButton>
+                    <div v-if="noteAi[note._id]?.loadingQuiz" class="text-center my-2">
+                      <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                      </div>
+                      <p>Generating quiz, please wait...</p>
+                    </div>
+                    <ul v-if="noteAi[note._id]?.quiz?.length && !noteAi[note._id]?.loadingQuiz" class="list-group">
+                      <li v-for="(q, idx) in noteAi[note._id].quiz" :key="idx" class="list-group-item">
+                        <strong>Q{{ idx + 1 }}: {{ q.question }}</strong>
+                        <ul class="list-group mt-2">
+                          <li
+                            v-for="(opt, i) in q.options"
+                            :key="i"
+                            class="list-group-item"
+                            :class="{
+                              'list-group-item-success': q.selectedIndex !== null && i === q.correctIndex,
+                              'list-group-item-danger': q.selectedIndex === i && i !== q.correctIndex
+                            }"
+                            style="cursor: pointer"
+                            @click.stop="selectOption(q, i)"
+                          >
+                            {{ opt }}
+                          </li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div v-show="noteAi[note._id]?.activeTab === 'flashcards'">
+                    <BaseButton
+                      class="mb-2"
+                      variant="warning"
+                      :loading="noteAi[note._id]?.loadingFlashcards"
+                      :disabled="noteAi[note._id]?.loadingFlashcards"
+                      @click.stop="generateNoteFlashcards(note)"
+                    >
+                      <span v-if="noteAi[note._id]?.loadingFlashcards">Generating...</span>
+                      <span v-else>Generate Flashcards</span>
+                    </BaseButton>
+                    <div v-if="noteAi[note._id]?.loadingFlashcards" class="text-center my-2">
+                      <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                      </div>
+                      <p>Generating flashcards, please wait...</p>
+                    </div>
+                    <div v-if="noteAi[note._id]?.flashcards?.length && !noteAi[note._id]?.loadingFlashcards" class="flashcards-container">
+                      <div
+                        class="flashcard"
+                        v-for="(fc, idx) in noteAi[note._id].flashcards"
+                        :key="idx"
+                        :class="{ flipped: fc.flipped }"
+                        @click.stop="fc.flipped = !fc.flipped"
+                      >
+                        <div class="front">
+                          Q: {{ fc.question }}
+                        </div>
+                        <div class="back">
+                          A: {{ fc.answer }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -682,11 +784,20 @@
                     <li v-for="(q, idx) in materialAi[mat._id].quiz" :key="idx" class="list-group-item">
                       <strong>Q{{ idx + 1 }}: {{ q.question }}</strong>
                       <ul class="list-group mt-2">
-                        <li v-for="(opt, i) in q.options" :key="i" class="list-group-item">
-                          {{ String.fromCharCode(65 + i) }}. {{ opt }}
+                        <li
+                          v-for="(opt, i) in q.options"
+                          :key="i"
+                          class="list-group-item"
+                          :class="{
+                            'list-group-item-success': q.selectedIndex !== null && i === q.correctIndex,
+                            'list-group-item-danger': q.selectedIndex === i && i !== q.correctIndex
+                          }"
+                          style="cursor: pointer"
+                          @click.stop="selectOption(q, i)"
+                        >
+                          {{ opt }}
                         </li>
                       </ul>
-                      <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
                     </li>
                   </ul>
                 </div>
@@ -874,6 +985,7 @@ import QuizService from '@/services/QuizService'
 import QuizParticipationService from '@/services/QuizParticipationService'
 import CourseMaterialService from '@/services/CourseMaterialService'
 import BaseButton from '@/components/BaseButton.vue'
+import { normalizeAiQuiz } from '@/utils/aiQuiz'
 
 export default {
   name: 'CourseDashboard',
@@ -922,6 +1034,8 @@ export default {
       savingEditNote: false,
       showDeleteNoteConfirm: false,
       noteToDelete: null,
+      noteAi: {},
+      expandedNoteId: null,
       // materials
       materials: [],
       loadingMaterials: false,
@@ -1180,6 +1294,10 @@ export default {
       if (!d) return '-'
       return new Date(d).toLocaleString()
     },
+    selectOption(question, index) {
+      if (!question || question.selectedIndex !== null) return
+      question.selectedIndex = index
+    },
     async removeCourse() {
       this.showDeleteCourseConfirm = true
     },
@@ -1369,9 +1487,89 @@ export default {
         this.loadingMaterials = false
       }
     },
+    toggleNote(note) {
+      if (!note || !note._id) return
+      const isSame = this.expandedNoteId === note._id
+      this.expandedNoteId = isSame ? null : note._id
+      if (!isSame) {
+        this.ensureNoteState(note._id)
+      }
+    },
+    ensureNoteState(id) {
+      if (!this.noteAi[id]) {
+        this.noteAi[id] = {
+          summary: '',
+          quiz: [],
+          flashcards: [],
+          loadingSummary: false,
+          loadingQuiz: false,
+          loadingFlashcards: false,
+          error: '',
+          activeTab: 'summary'
+        }
+      }
+      return this.noteAi[id]
+    },
+    setNoteTab(id, tab) {
+      const state = this.ensureNoteState(id)
+      state.activeTab = tab
+    },
+    async generateNoteSummary(note) {
+      const state = this.ensureNoteState(note._id)
+      state.loadingSummary = true
+      state.summary = ''
+      state.error = ''
+      try {
+        const res = await Api.post(`/notes/${note._id}/summaries`)
+        state.summary = res.data.summary || res.data.data?.summary || 'No summary returned'
+      } catch (err) {
+        state.error = 'Failed to generate summary. Please try again.'
+      } finally {
+        state.loadingSummary = false
+      }
+    },
+    async generateNoteQuiz(note) {
+      const state = this.ensureNoteState(note._id)
+      state.loadingQuiz = true
+      state.quiz = []
+      state.error = ''
+      try {
+        const res = await Api.post(`/notes/${note._id}/aiquizzes`)
+        const rawQuiz = res.data.quiz || res.data.data?.quiz || []
+        state.quiz = normalizeAiQuiz(rawQuiz)
+        if (!state.quiz.length) state.error = 'No quiz questions were returned.'
+      } catch (err) {
+        state.error = 'Failed to generate quiz. Please try again.'
+      } finally {
+        state.loadingQuiz = false
+      }
+    },
+    async generateNoteFlashcards(note) {
+      const state = this.ensureNoteState(note._id)
+      state.loadingFlashcards = true
+      state.flashcards = []
+      state.error = ''
+      try {
+        const res = await Api.post(`/notes/${note._id}/flashcards`)
+        const payload = res.data.flashcards || res.data.data?.flashcards || []
+        state.flashcards = payload.map(fc => ({
+          ...fc,
+          flipped: false
+        }))
+        if (!state.flashcards.length) state.error = 'No flashcards were returned.'
+      } catch (err) {
+        state.error = 'Failed to generate flashcards. Please try again.'
+      } finally {
+        state.loadingFlashcards = false
+      }
+    },
     toggleMaterial(mat) {
       if (!mat || !mat._id) return
-      this.expandedMaterialId = this.expandedMaterialId === mat._id ? null : mat._id
+      const isSame = this.expandedMaterialId === mat._id
+      this.expandedMaterialId = isSame ? null : mat._id
+      if (!isSame) {
+        this.ensureMaterialState(mat._id)
+      }
     },
     ensureMaterialState(id) {
       if (!this.materialAi[id]) {
@@ -1382,10 +1580,15 @@ export default {
           loadingSummary: false,
           loadingQuiz: false,
           loadingFlashcards: false,
-          error: ''
+          error: '',
+          activeTab: 'summary'
         }
       }
       return this.materialAi[id]
+    },
+    setMaterialTab(id, tab) {
+      const state = this.ensureMaterialState(id)
+      state.activeTab = tab
     },
 
     async generateMaterialSummary(mat) {
@@ -1409,7 +1612,8 @@ export default {
       state.error = ''
       try {
         const res = await CourseMaterialService.quiz(this.course._id, mat._id)
-        state.quiz = res.data.quiz || res.data.data?.quiz || []
+        const rawQuiz = res.data.quiz || res.data.data?.quiz || []
+        state.quiz = normalizeAiQuiz(rawQuiz)
         if (!state.quiz.length) state.error = 'No quiz questions were returned.'
       } catch (err) {
         state.error = 'Failed to generate quiz. Please try again.'

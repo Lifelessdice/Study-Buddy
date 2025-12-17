@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const Note = require("../models/notes");
-const { generateQuiz } = require("../config/openAIconfig");
+const { buildAiQuizResponse } = require("../services/aiQuiz");
 
 // ---------------------------------------------
 // POST /api/v1/notes/:id/aiquizzes
@@ -26,17 +26,14 @@ router.post("/:id/aiquizzes", async (req, res, next) => {
             });
         }
 
-        const quiz = await generateQuiz(note.content);
-
-        return res.status(200).json({
-            status: "success",
+        const payload = await buildAiQuizResponse({
+            text: note.content,
             data: {
                 noteId: note._id,
-                topic: note.topic,
-                quiz
-            },
-            quiz
+                topic: note.topic
+            }
         });
+        return res.status(200).json(payload);
 
     } catch (err) {
         next(err); // global error handler

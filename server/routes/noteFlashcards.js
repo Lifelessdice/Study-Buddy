@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const Note = require("../models/notes");
-const { generateFlashcards } = require("../config/openAIconfig");
+const { buildAiFlashcardsResponse } = require("../services/aiFlashcards");
 
 // ---------------------------------------------
 // POST /api/v1/notes/:id/flashcards
@@ -26,17 +26,14 @@ router.post("/:id/flashcards", async (req, res, next) => {
             });
         }
 
-        const flashcards = await generateFlashcards(note.content);
-
-        return res.status(200).json({
-            status: "success",
+        const payload = await buildAiFlashcardsResponse({
+            text: note.content,
             data: {
                 noteId: note._id,
-                topic: note.topic,
-                flashcards
-            },
-            flashcards
+                topic: note.topic
+            }
         });
+        return res.status(200).json(payload);
 
     } catch (err) {
         console.error("Error generating flashcards:", err);

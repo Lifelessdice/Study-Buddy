@@ -2,7 +2,7 @@ var express = require("express");
 var router = express.Router();
 
 const Note = require("../models/notes");
-const { summarizeText } = require("../config/openAIconfig");
+const { buildAiSummaryResponse } = require("../services/aiSummary");
 
 async function handleSummarize(req, res) {
     try {
@@ -34,9 +34,12 @@ async function handleSummarize(req, res) {
         }
 
         // 4. Summarize the note content
-        const summary = await summarizeText(note.content);
+        const payload = await buildAiSummaryResponse({
+            text: note.content,
+            data: { noteId: note._id, topic: note.topic }
+        });
 
-        if (!summary) {
+        if (!payload.summary) {
             return res.status(500).json({
                 success: false,
                 message: "Failed to generate summary"
@@ -44,12 +47,7 @@ async function handleSummarize(req, res) {
         }
 
         // 5. Success response
-        return res.status(200).json({
-            success: true,
-            data: { noteId: note._id, topic: note.topic, summary },
-            summary,
-            message: "Summary generated successfully"
-        });
+        return res.status(200).json(payload);
 
     } catch (error) {
         console.error("Error summarizing note:", error);

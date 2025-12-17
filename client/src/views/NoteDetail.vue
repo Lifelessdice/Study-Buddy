@@ -132,6 +132,7 @@
 
 <script>
 import api from '../Api'
+import { normalizeAiQuiz } from '@/utils/aiQuiz'
 
 export default {
   props: ['id'],
@@ -181,39 +182,17 @@ export default {
         this.aiError = ''
         this.loadingQuiz = true
         this.quiz = []
-      
+
         const res = await api.post(`/notes/${this.id}/aiquizzes`)
         const rawQuiz = res.data.quiz || res.data.data?.quiz || []
-      
-        if (!Array.isArray(rawQuiz) || !rawQuiz.length) {
+        const normalized = normalizeAiQuiz(rawQuiz)
+
+        if (!normalized.length) {
           this.aiError = 'No quiz questions were returned.'
           return
         }
-      
-        this.quiz = rawQuiz.map(q => {
-          // Normalize answer for matching
-          const normalizedAnswer = (q.answer || '')
-            .toString()
-            .replace(/^[A-D]\.\s*/i, '')
-            .trim()
-            .toLowerCase()
-        
-          // Find correct option index safely
-          const correctIndex = q.options.findIndex(opt =>
-            opt
-              .toString()
-              .toLowerCase()
-              .includes(normalizedAnswer)
-          )
-        
-          return {
-            question: q.question,
-            options: q.options,
-            answer: q.answer,
-            correctIndex: correctIndex >= 0 ? correctIndex : null,
-            selectedIndex: null
-          }
-        })
+
+        this.quiz = normalized
       } catch (err) {
         this.aiError = 'Failed to generate quiz. Please try again.'
       } finally {
@@ -298,4 +277,3 @@ export default {
   transform: rotateY(0deg);
 }
 </style>
-
