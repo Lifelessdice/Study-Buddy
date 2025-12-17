@@ -68,6 +68,7 @@ import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
 import { handleAiFlashcards, handleAiQuiz, handleAiSummary } from '@/utils/aiHandlers'
 import { toggleFlashcard } from '@/utils/aiFlashcards'
 import { selectQuizOption } from '@/utils/aiQuiz'
+import { noteSlug } from '@/utils/slug'
 
 export default {
   props: ['noteSlug'],
@@ -87,9 +88,20 @@ export default {
   },
   async created() {
     try {
-      const res = await api.get(`/notes/${this.noteSlug}`)
-      this.note = res.data.data
-      this.noteId = this.note?._id || ''
+      const listRes = await api.get('/notes')
+      const notes = listRes.data.data || listRes.data || []
+      const found = notes.find(n => noteSlug(n) === this.noteSlug)
+      if (!found) {
+        alert('Note not found')
+        return
+      }
+      this.noteId = found._id
+      try {
+        const detailRes = await api.get(`/notes/${found._id}`)
+        this.note = detailRes.data.data || found
+      } catch (err) {
+        this.note = found
+      }
     } catch (err) {
       alert('Failed to load note')
     }
