@@ -17,6 +17,7 @@ import StudentResults from './views/quizzes/StudentResults.vue'
 import CourseSignupPage from './views/courses/CourseSignupPage.vue'
 import NotesList from './views/NotesList.vue'
 import NoteDetail from './views/NoteDetail.vue'
+import Profile from './views/Profile.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -113,6 +114,12 @@ const routes = [
     name: 'NoteDetail',
     component: NoteDetail,
     props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: Profile,
     meta: { requiresAuth: true }
   }
 

@@ -66,10 +66,10 @@ export default {
   },
   async mounted() {
     try {
-      const courseSlug = this.$route.params.courseSlug
+      const courseSlugParam = this.$route.params.courseSlug
       const listRes = await CourseService.getAll({ limit: 1000 })
       const list = listRes.data.data || listRes.data || []
-      const found = list.find(c => courseSlug(c) === courseSlug)
+      const found = list.find(c => courseSlug(c) === courseSlugParam)
       if (!found) {
         throw new Error('Course not found')
       }

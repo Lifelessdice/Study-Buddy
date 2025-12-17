@@ -132,6 +132,7 @@ import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
 import { handleAiFlashcards, handleAiQuiz, handleAiSummary } from '@/utils/aiHandlers'
 import { toggleFlashcard } from '@/utils/aiFlashcards'
 import { selectQuizOption } from '@/utils/aiQuiz'
+import { createAiState } from '@/utils/aiState'
 import { noteSlug } from '@/utils/slug'
 
 export default {
@@ -230,16 +231,7 @@ export default {
   methods: {
     ensureState(id) {
       if (this.aiState[id]) return this.aiState[id]
-      const fresh = {
-        summary: '',
-        quiz: [],
-        flashcards: [],
-        loadingSummary: false,
-        loadingQuiz: false,
-        loadingFlashcards: false,
-        error: '',
-        activeTab: 'summary'
-      }
+      const fresh = createAiState()
       this.aiState = { ...this.aiState, [id]: fresh }
       return fresh
     },

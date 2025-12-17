@@ -863,6 +863,7 @@ import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
 import { handleAiFlashcards, handleAiQuiz, handleAiSummary } from '@/utils/aiHandlers'
 import { toggleFlashcard } from '@/utils/aiFlashcards'
 import { selectQuizOption } from '@/utils/aiQuiz'
+import { createAiState } from '@/utils/aiState'
 import { courseSlug, quizSlug } from '@/utils/slug'
 
 export default {
@@ -1429,16 +1430,7 @@ export default {
     },
     ensureNoteState(id) {
       if (!this.noteAi[id]) {
-        this.noteAi[id] = {
-          summary: '',
-          quiz: [],
-          flashcards: [],
-          loadingSummary: false,
-          loadingQuiz: false,
-          loadingFlashcards: false,
-          error: '',
-          activeTab: 'summary'
-        }
+        this.noteAi[id] = createAiState()
       }
       return this.noteAi[id]
     },
@@ -1487,16 +1479,7 @@ export default {
     },
     ensureMaterialState(id) {
       if (!this.materialAi[id]) {
-        this.materialAi[id] = {
-          summary: '',
-          quiz: [],
-          flashcards: [],
-          loadingSummary: false,
-          loadingQuiz: false,
-          loadingFlashcards: false,
-          error: '',
-          activeTab: 'summary'
-        }
+        this.materialAi[id] = createAiState()
       }
       return this.materialAi[id]
     },

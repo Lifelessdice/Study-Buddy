@@ -40,9 +40,9 @@
         </li>
       </div>
       <div class="d-flex align-items-center ms-auto user-actions" v-if="user">
-        <span class="me-2 small text-muted user-info">
+        <router-link class="me-2 small text-muted user-info user-profile-link" to="/profile">
           {{ displayName }}
-        </span>
+        </router-link>
         <BaseButton variant="danger" outline size="sm" class="logout-btn" @click="logout">
           Logout
         </BaseButton>
@@ -59,7 +59,9 @@
       </div>
       <div v-if="user" class="menu-user">
         <span class="menu-user-label">Signed in as</span>
-        <span class="menu-user-name">{{ displayName }}</span>
+        <router-link class="menu-user-name" to="/profile" @click="closeMenu">
+          {{ displayName }}
+        </router-link>
       </div>
       <ul class="menu-list">
         <li v-if="!user">
@@ -81,6 +83,9 @@
         </li>
         <li v-if="user && user.role === 'student'">
           <router-link class="menu-link" to="/notes" @click="closeMenu">Lectures</router-link>
+        </li>
+        <li v-if="user">
+          <router-link class="menu-link" to="/profile" @click="closeMenu">Profile</router-link>
         </li>
         <li v-if="user">
           <BaseButton variant="danger" outline size="sm" class="menu-logout" @click="logout">
@@ -283,6 +288,12 @@ body,
 
 .menu-user-name {
   font-weight: 600;
+  text-decoration: none;
+  color: #2c3e50;
+}
+
+.menu-user-name:hover {
+  color: #0d6efd;
 }
 
 .menu-list {
@@ -393,6 +404,16 @@ body {
 .user-actions {
   flex-wrap: nowrap;
   white-space: nowrap;
+}
+
+.user-profile-link {
+  text-decoration: none;
+  color: inherit;
+  font-weight: 600;
+}
+
+.user-profile-link:hover {
+  color: #0d6efd;
 }
 
 @media (max-width: 576px) {
