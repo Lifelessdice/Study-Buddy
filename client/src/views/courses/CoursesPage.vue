@@ -2,14 +2,28 @@
   <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h2>Courses</h2>
-      <div>
-        <BaseButton v-if="isTeacher" to="/courses/create" variant="primary">
-          + Create Course
+      <div class="d-flex align-items-center gap-2">
+        <BaseButton
+          v-if="isTeacher"
+          to="/courses/create"
+          variant="primary"
+        >
+          <span class="btn-text btn-text-long">+ Create Course</span>
+          <span class="btn-text btn-text-short">Add Course</span>
+          <span class="btn-icon">➕</span>
         </BaseButton>
-        <BaseButton to="/courses/all" variant="secondary" outline class="ms-2">
-          See All Courses
+
+        <BaseButton
+          to="/courses/all"
+          variant="secondary"
+          outline
+        >
+          <span class="btn-text btn-text-long">See All Courses</span>
+          <span class="btn-text btn-text-short">All Courses</span>
+          <span class="btn-icon">📚</span>
         </BaseButton>
       </div>
+
     </div>
 
     <div v-if="loading">Loading courses...</div>
@@ -226,5 +240,33 @@ export default {
 .course-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Default: desktop */
+.btn-text-short,
+.btn-icon {
+  display: none;
+}
+
+/* Small tablets / phones */
+@media (max-width: 576px) {
+  .btn-text-long {
+    display: none;
+  }
+
+  .btn-text-short {
+    display: inline;
+  }
+}
+
+/* Small phones (320px) */
+@media (max-width: 360px) {
+  .btn-text-short {
+    display: none;
+  }
+
+  .btn-icon {
+    display: inline;
+  }
 }
 </style>
