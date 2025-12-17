@@ -9,7 +9,7 @@
     </div>
 
     <!-- AI Feature Tabs -->
-    <ul class="nav nav-tabs mt-4" role="tablist">
+    <ul class="nav nav-tabs mt-4 responsive-tabs" role="tablist">
       <li class="nav-item">
         <a class="nav-link active" data-bs-toggle="tab" href="#summary">Summary</a>
       </li>

@@ -108,4 +108,15 @@ export default {
 .flashcard.flipped .back {
   transform: rotateY(0deg);
 }
+
+@media (max-width: 576px) {
+  .flashcards-container {
+    gap: 0.75rem;
+  }
+
+  .flashcard {
+    width: 100%;
+    height: 150px;
+  }
+}
 </style>

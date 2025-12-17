@@ -52,7 +52,7 @@
         </div>
       </div>
 
-      <div class="d-flex justify-content-end gap-2 mt-3">
+      <div class="d-flex justify-content-end gap-2 mt-3 quiz-actions">
         <BaseButton variant="secondary" outline :disabled="submitting" @click="cancel">
           Cancel
         </BaseButton>
@@ -149,5 +149,20 @@ export default {
 <style scoped>
 .list-group-item {
   cursor: pointer;
+}
+
+.quiz-actions {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 576px) {
+  .quiz-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .quiz-actions .btn {
+    width: 100%;
+  }
 }
 </style>

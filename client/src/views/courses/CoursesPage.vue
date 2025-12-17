@@ -48,8 +48,8 @@
     </div>
 
     <!-- 🔽 PASTE THIS BLOCK HERE -->
-    <div v-if="!loading" class="d-flex justify-content-between align-items-center mt-3">
-      <div>
+    <div v-if="!loading" class="d-flex justify-content-between align-items-center mt-3 pagination-bar">
+      <div class="d-flex align-items-center gap-2 page-actions">
         <BaseButton
           variant="secondary"
           outline
@@ -71,14 +71,14 @@
         </BaseButton>
       </div>
 
-      <div class="d-flex align-items-center">
+      <div class="d-flex align-items-center page-info">
         <span class="me-3">
           Pg {{ currentPage }}/{{ totalPages }}
           <span v-if="total">({{ total }})</span>
         </span>
 
         <select
-          class="form-select"
+          class="form-select page-size-select"
           style="width: auto;"
           :value="pageSize"
           @change="changePageSize($event.target.value)"
@@ -267,6 +267,28 @@ export default {
 
   .btn-icon {
     display: inline;
+  }
+}
+
+.pagination-bar {
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+@media (max-width: 576px) {
+  .pagination-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-actions,
+  .page-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .page-size-select {
+    min-width: 5rem;
   }
 }
 </style>
