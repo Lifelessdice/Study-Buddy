@@ -3,14 +3,21 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h2>All Courses</h2>
       <div class="d-flex align-items-center gap-2">
-        <BaseButton to="/courses" variant="secondary" outline>Back to My Courses</BaseButton>
+        <BaseButton to="/courses" variant="secondary" outline>
+          <span class="btn-text btn-text-long">Back to My Courses</span>
+          <span class="btn-text btn-text-short">My Courses</span>
+          <span class="btn-icon">📚</span>
+        </BaseButton>
+
         <BaseButton
           v-if="isTeacher"
           to="/courses/delete-all"
           variant="danger"
           outline
         >
-          Delete All Courses
+          <span class="btn-text btn-text-long">Delete All Courses</span>
+          <span class="btn-text btn-text-short">Delete</span>
+          <span class="btn-icon">🗑️</span>
         </BaseButton>
       </div>
     </div>
@@ -373,5 +380,40 @@ export default {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   background: #fff;
   border: 1px solid #dee2e6;
+}
+
+/* Buttons: text / icon switching */
+.btn-text-short,
+.btn-icon {
+  display: none;
+}
+
+/* Tablet & small desktop */
+@media (max-width: 576px) {
+  .btn-text-long {
+    display: none;
+  }
+
+  .btn-text-short {
+    display: inline;
+  }
+}
+
+/* Small phones (320px) */
+@media (max-width: 360px) {
+  .btn-text-short {
+    display: none;
+  }
+
+  .btn-icon {
+    display: inline;
+  }
+}
+
+@media (max-width: 480px) {
+  h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
 }
 </style>

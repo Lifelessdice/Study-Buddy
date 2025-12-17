@@ -15,35 +15,51 @@
               outline
               size="sm"
             >
-              Back
+              <span class="btn-text btn-text-long">Back</span>
+              <span class="btn-text btn-text-short">Back</span>
+              <span class="btn-icon">⬅️</span>
             </BaseButton>
+
             <template v-if="isTeacher">
+              <!-- Edit -->
               <BaseButton
                 :to="`/courses/${course._id}/edit`"
                 variant="primary"
                 outline
                 size="sm"
               >
-                Edit
+                <span class="btn-text btn-text-long">Edit</span>
+                <span class="btn-text btn-text-short">Edit</span>
+                <span class="btn-icon">✏️</span>
               </BaseButton>
+
+              <!-- Overwrite -->
               <BaseButton
                 :to="{ path: `/courses/${course._id}/edit`, query: { mode: 'overwrite' } }"
                 variant="primary"
                 outline
                 size="sm"
               >
-                Overwrite
+                <span class="btn-text btn-text-long">Overwrite</span>
+                <span class="btn-text btn-text-short">Overwrite</span>
+                <span class="btn-icon">♻️</span>
               </BaseButton>
+
+              <!-- Delete -->
               <BaseButton
                 variant="danger"
                 outline
                 size="sm"
                 @click="removeCourse"
               >
-                Delete
+                <span class="btn-text btn-text-long">Delete</span>
+                <span class="btn-text btn-text-short">Delete</span>
+                <span class="btn-icon">🗑️</span>
               </BaseButton>
             </template>
+
             <template v-else>
+              <!-- Leave course -->
               <BaseButton
                 v-if="myAttendance"
                 variant="danger"
@@ -51,7 +67,9 @@
                 size="sm"
                 @click="showLeaveConfirm = true"
               >
-                Leave Course
+                <span class="btn-text btn-text-long">Leave Course</span>
+                <span class="btn-text btn-text-short">Leave</span>
+                <span class="btn-icon">🚪</span>
               </BaseButton>
             </template>
           </div>
@@ -98,7 +116,15 @@
               size="sm"
               @click="toggleOverviewEdit"
             >
-              {{ overviewEditing ? 'Cancel' : 'Edit Overview' }}
+              <span class="btn-text btn-text-long">
+                {{ overviewEditing ? 'Cancel Editing' : 'Edit Overview' }}
+              </span>
+              <span class="btn-text btn-text-short">
+                {{ overviewEditing ? 'Cancel' : 'Edit' }}
+              </span>
+              <span class="btn-icon">
+                {{ overviewEditing ? '❌' : '✏️' }}
+              </span>
             </BaseButton>
           </div>
           <div v-if="overviewEditing && isTeacher">
@@ -209,6 +235,7 @@
                 </div>
               </div>
               <div class="d-flex gap-2">
+                <!-- Edit quiz (teacher) -->
                 <BaseButton
                   v-if="isTeacher"
                   :to="{ name: 'EditQuiz', params: { quizId: quiz._id } }"
@@ -216,8 +243,12 @@
                   outline
                   size="sm"
                 >
-                  Edit
+                  <span class="btn-text btn-text-long">Edit</span>
+                  <span class="btn-text btn-text-short">Edit</span>
+                  <span class="btn-icon">✏️</span>
                 </BaseButton>
+
+                <!-- Take quiz (student) -->
                 <BaseButton
                   v-else-if="!myParticipationByQuiz[quiz._id]"
                   :to="{ name: 'TakeQuiz', params: { quizId: quiz._id } }"
@@ -225,8 +256,12 @@
                   outline
                   size="sm"
                 >
-                  Take Quiz
+                  <span class="btn-text btn-text-long">Take Quiz</span>
+                  <span class="btn-text btn-text-short">Take</span>
+                  <span class="btn-icon">📝</span>
                 </BaseButton>
+
+                <!-- View attempts (teacher) -->
                 <BaseButton
                   v-if="isTeacher"
                   variant="secondary"
@@ -234,8 +269,12 @@
                   size="sm"
                   @click="viewAttempts(quiz)"
                 >
-                  View Attempts
+                  <span class="btn-text btn-text-long">View Attempts</span>
+                  <span class="btn-text btn-text-short">Attempts</span>
+                  <span class="btn-icon">📊</span>
                 </BaseButton>
+
+                <!-- Delete quiz (teacher) -->
                 <BaseButton
                   v-if="isTeacher"
                   variant="danger"
@@ -243,7 +282,9 @@
                   size="sm"
                   @click="promptDeleteQuiz(quiz)"
                 >
-                  Delete
+                  <span class="btn-text btn-text-long">Delete</span>
+                  <span class="btn-text btn-text-short">Delete</span>
+                  <span class="btn-icon">🗑️</span>
                 </BaseButton>
               </div>
             </div>
@@ -1739,5 +1780,30 @@ export default {
 
 .add-student-search input {
   min-width: 220px;
+}
+
+.btn-text-short,
+.btn-icon {
+  display: none;
+}
+
+@media (max-width: 576px) {
+  .btn-text-long {
+    display: none;
+  }
+
+  .btn-text-short {
+    display: inline;
+  }
+}
+
+@media (max-width: 360px) {
+  .btn-text-short {
+    display: none;
+  }
+
+  .btn-icon {
+    display: inline;
+  }
 }
 </style>
