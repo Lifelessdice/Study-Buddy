@@ -91,40 +91,12 @@
 
       <!-- Flashcards Tab -->
       <div class="tab-pane fade" id="flashcards">
-      <BaseButton
-          class="mb-3"
-          variant="warning"
+        <FlashcardsPanel
+          :flashcards="flashcards"
           :loading="loadingFlashcards"
-          :disabled="loadingFlashcards"
-          @click="generateFlashcards"
-  >
-          <span v-if="loadingFlashcards">Generating...</span>
-          <span v-else>Generate Flashcards</span>
-      </BaseButton>
-
-      <div v-if="loadingFlashcards" class="text-center my-3">
-          <div class="spinner-border text-warning" role="status">
-          <span class="visually-hidden">Loading...</span>
-          </div>
-          <p>Generating flashcards, please wait...</p>
-      </div>
-
-      <div v-if="flashcards.length && !loadingFlashcards" class="flashcards-container">
-          <div
-          class="flashcard"
-          v-for="(fc, index) in flashcards"
-          :key="index"
-          :class="{ flipped: fc.flipped }"
-          @click="fc.flipped = !fc.flipped"
-    >
-          <div class="front">
-              Q: {{ fc.question }}
-          </div>
-          <div class="back">
-              A: {{ fc.answer }}
-          </div>
-          </div>
-      </div>
+          @generate="generateFlashcards"
+          @toggle="toggleFlashcard"
+        />
       </div>
     </div>
   </div>
@@ -132,10 +104,13 @@
 
 <script>
 import api from '../Api'
+import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
+import { normalizeAiFlashcards, toggleFlashcard } from '@/utils/aiFlashcards'
 import { normalizeAiQuiz } from '@/utils/aiQuiz'
 
 export default {
   props: ['id'],
+  components: { FlashcardsPanel },
   data() {
     return {
       note: {},
@@ -200,18 +175,17 @@ export default {
       }
     },
 
+    toggleFlashcard(index) {
+      toggleFlashcard(this.flashcards, index)
+    },
     async generateFlashcards() {
       try {
         this.aiError = ''
         this.loadingFlashcards = true
         this.flashcards = []
         const res = await api.post(`/notes/${this.id}/flashcards`)
-        // Add a flipped property for animation
         const payload = res.data.flashcards || res.data.data?.flashcards || []
-        this.flashcards = payload.map(fc => ({
-          ...fc,
-          flipped: false
-        }))
+        this.flashcards = normalizeAiFlashcards(payload)
         if (!this.flashcards.length) {
           this.aiError = 'No flashcards were returned.'
         }
@@ -224,56 +198,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.flashcards-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.flashcard {
-  width: 250px; 
-  height: 160px;
-  perspective: 1000px;
-  cursor: pointer;
-  position: relative;
-  transform-style: preserve-3d;
-}
-
-.flashcard .front,
-.flashcard .back {
-  width: 100%;
-  height: 100%;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #fff;
-  display: flex;
-  align-items: flex-start; /* text starts at top */
-  justify-content: flex-start;
-  padding: 0.5rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  backface-visibility: hidden;
-  transition: transform 0.6s;
-  position: absolute;
-
-  /* prevent overflow */
-  overflow-y: auto;
-  overflow-x: hidden;
-  word-wrap: break-word;
-}
-
-.flashcard .back {
-  background: #f8f9fa;
-  transform: rotateY(180deg);
-}
-
-.flashcard.flipped .front {
-  transform: rotateY(180deg);
-}
-
-.flashcard.flipped .back {
-  transform: rotateY(0deg);
-}
-</style>

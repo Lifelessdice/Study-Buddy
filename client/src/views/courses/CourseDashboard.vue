@@ -280,7 +280,7 @@
         <div v-if="filteredEnrolled.length === 0" class="alert alert-info">No students are enrolled yet.</div>
 
         <div v-else class="table-responsive">
-          <table class="table table-sm align-middle">
+          <table class="table table-sm align-middle table-responsive-stack">
             <thead class="table-light">
               <tr>
                 <th>#</th>
@@ -291,10 +291,10 @@
             </thead>
             <tbody>
               <tr v-for="(att, idx) in filteredEnrolled" :key="att._id">
-                <td>{{ idx + 1 }}</td>
-                <td>{{ att.student?.name || 'Unknown' }}</td>
-                <td>{{ att.student?.email }}</td>
-                <td class="text-end">
+                <td data-label="#">{{ idx + 1 }}</td>
+                <td data-label="Name">{{ att.student?.name || 'Unknown' }}</td>
+                <td data-label="Email">{{ att.student?.email }}</td>
+                <td class="text-end" data-label="Actions">
                   <BaseButton
                     v-if="isTeacher"
                     variant="danger"
@@ -474,7 +474,7 @@
                     <p class="mb-0">{{ note.content }}</p>
                   </div>
 
-                  <ul class="nav nav-tabs mb-3">
+                  <ul class="nav nav-tabs mb-3 responsive-tabs">
                     <li class="nav-item">
                       <a
                         class="nav-link"
@@ -568,38 +568,12 @@
                   </div>
 
                   <div v-show="noteAi[note._id]?.activeTab === 'flashcards'">
-                    <BaseButton
-                      class="mb-2"
-                      variant="warning"
+                    <FlashcardsPanel
+                      :flashcards="noteAi[note._id]?.flashcards || []"
                       :loading="noteAi[note._id]?.loadingFlashcards"
-                      :disabled="noteAi[note._id]?.loadingFlashcards"
-                      @click.stop="generateNoteFlashcards(note)"
-                    >
-                      <span v-if="noteAi[note._id]?.loadingFlashcards">Generating...</span>
-                      <span v-else>Generate Flashcards</span>
-                    </BaseButton>
-                    <div v-if="noteAi[note._id]?.loadingFlashcards" class="text-center my-2">
-                      <div class="spinner-border text-warning" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                      </div>
-                      <p>Generating flashcards, please wait...</p>
-                    </div>
-                    <div v-if="noteAi[note._id]?.flashcards?.length && !noteAi[note._id]?.loadingFlashcards" class="flashcards-container">
-                      <div
-                        class="flashcard"
-                        v-for="(fc, idx) in noteAi[note._id].flashcards"
-                        :key="idx"
-                        :class="{ flipped: fc.flipped }"
-                        @click.stop="fc.flipped = !fc.flipped"
-                      >
-                        <div class="front">
-                          Q: {{ fc.question }}
-                        </div>
-                        <div class="back">
-                          A: {{ fc.answer }}
-                        </div>
-                      </div>
-                    </div>
+                      @generate="generateNoteFlashcards(note)"
+                      @toggle="toggleNoteFlashcard(note, $event)"
+                    />
                   </div>
                 </div>
               </div>
@@ -709,7 +683,7 @@
                   </BaseButton>
                 </div>
 
-                <ul class="nav nav-tabs mb-3">
+                <ul class="nav nav-tabs mb-3 responsive-tabs">
                   <li class="nav-item">
                     <a
                       class="nav-link"
@@ -803,38 +777,12 @@
                 </div>
 
                 <div v-show="materialAi[mat._id]?.activeTab === 'flashcards'">
-                  <BaseButton
-                    class="mb-2"
-                    variant="warning"
+                  <FlashcardsPanel
+                    :flashcards="materialAi[mat._id]?.flashcards || []"
                     :loading="materialAi[mat._id]?.loadingFlashcards"
-                    :disabled="materialAi[mat._id]?.loadingFlashcards"
-                    @click.stop="generateMaterialFlashcards(mat)"
-                  >
-                    <span v-if="materialAi[mat._id]?.loadingFlashcards">Generating...</span>
-                    <span v-else>Generate Flashcards</span>
-                  </BaseButton>
-                  <div v-if="materialAi[mat._id]?.loadingFlashcards" class="text-center my-2">
-                    <div class="spinner-border text-warning" role="status">
-                      <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p>Generating flashcards, please wait...</p>
-                  </div>
-                  <div v-if="materialAi[mat._id]?.flashcards?.length && !materialAi[mat._id]?.loadingFlashcards" class="flashcards-container">
-                    <div
-                      class="flashcard"
-                      v-for="(fc, idx) in materialAi[mat._id].flashcards"
-                      :key="idx"
-                      :class="{ flipped: fc.flipped }"
-                      @click.stop="fc.flipped = !fc.flipped"
-                    >
-                      <div class="front">
-                        Q: {{ fc.question }}
-                      </div>
-                      <div class="back">
-                        A: {{ fc.answer }}
-                      </div>
-                    </div>
-                  </div>
+                    @generate="generateMaterialFlashcards(mat)"
+                    @toggle="toggleMaterialFlashcard(mat, $event)"
+                  />
                 </div>
               </div>
             </div>
@@ -939,7 +887,7 @@
             </div>
           </div>
           <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0">
+            <table class="table table-sm align-middle mb-0 table-responsive-stack">
               <thead class="table-light">
                 <tr>
                   <th>#</th>
@@ -951,11 +899,11 @@
               </thead>
               <tbody>
                 <tr v-for="(att, idx) in attempts" :key="att._id">
-                  <td>{{ idx + 1 }}</td>
-                  <td>{{ att.student?.name || 'Unknown' }}</td>
-                  <td>{{ att.student?.email || 'Unknown' }}</td>
-                  <td>{{ att.score ?? 'N/A' }}%</td>
-                  <td>{{ formatDate(att.createdAt) }}</td>
+                  <td data-label="#">{{ idx + 1 }}</td>
+                  <td data-label="Name">{{ att.student?.name || 'Unknown' }}</td>
+                  <td data-label="Email">{{ att.student?.email || 'Unknown' }}</td>
+                  <td data-label="Score">{{ att.score ?? 'N/A' }}%</td>
+                  <td data-label="Submitted">{{ formatDate(att.createdAt) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -985,11 +933,13 @@ import QuizService from '@/services/QuizService'
 import QuizParticipationService from '@/services/QuizParticipationService'
 import CourseMaterialService from '@/services/CourseMaterialService'
 import BaseButton from '@/components/BaseButton.vue'
+import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
+import { normalizeAiFlashcards, toggleFlashcard } from '@/utils/aiFlashcards'
 import { normalizeAiQuiz } from '@/utils/aiQuiz'
 
 export default {
   name: 'CourseDashboard',
-  components: { BaseButton },
+  components: { BaseButton, FlashcardsPanel },
   props: ['id'],
   data() {
     return {
@@ -1514,6 +1464,10 @@ export default {
       const state = this.ensureNoteState(id)
       state.activeTab = tab
     },
+    toggleNoteFlashcard(note, index) {
+      const state = this.ensureNoteState(note._id)
+      toggleFlashcard(state.flashcards, index)
+    },
     async generateNoteSummary(note) {
       const state = this.ensureNoteState(note._id)
       state.loadingSummary = true
@@ -1552,10 +1506,7 @@ export default {
       try {
         const res = await Api.post(`/notes/${note._id}/flashcards`)
         const payload = res.data.flashcards || res.data.data?.flashcards || []
-        state.flashcards = payload.map(fc => ({
-          ...fc,
-          flipped: false
-        }))
+        state.flashcards = normalizeAiFlashcards(payload)
         if (!state.flashcards.length) state.error = 'No flashcards were returned.'
       } catch (err) {
         state.error = 'Failed to generate flashcards. Please try again.'
@@ -1589,6 +1540,10 @@ export default {
     setMaterialTab(id, tab) {
       const state = this.ensureMaterialState(id)
       state.activeTab = tab
+    },
+    toggleMaterialFlashcard(mat, index) {
+      const state = this.ensureMaterialState(mat._id)
+      toggleFlashcard(state.flashcards, index)
     },
 
     async generateMaterialSummary(mat) {
@@ -1629,10 +1584,7 @@ export default {
       try {
         const res = await CourseMaterialService.flashcards(this.course._id, mat._id)
         const payload = res.data.flashcards || res.data.data?.flashcards || []
-        state.flashcards = payload.map(fc => ({
-          ...fc,
-          flipped: false
-        }))
+        state.flashcards = normalizeAiFlashcards(payload)
         if (!state.flashcards.length) state.error = 'No flashcards were returned.'
       } catch (err) {
         state.error = 'Failed to generate flashcards. Please try again.'
@@ -1924,52 +1876,6 @@ export default {
   text-align: left;
   white-space: pre-line;
   line-height: 1.5;
-}
-
-.flashcards-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.flashcard {
-  width: 200px;
-  height: 120px;
-  perspective: 1000px;
-  cursor: pointer;
-  position: relative;
-  transform-style: preserve-3d;
-}
-
-.flashcard .front,
-.flashcard .back {
-  width: 100%;
-  height: 100%;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  backface-visibility: hidden;
-  transition: transform 0.6s;
-  position: absolute;
-}
-
-.flashcard .back {
-  background: #f8f9fa;
-  transform: rotateY(180deg);
-}
-
-.flashcard.flipped .front {
-  transform: rotateY(180deg);
-}
-
-.flashcard.flipped .back {
-  transform: rotateY(0deg);
 }
 
 .add-student-header {

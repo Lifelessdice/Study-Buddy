@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const Note = require("../models/notes");
-const { buildAiFlashcardsResponse } = require("../services/aiFlashcards");
+const { buildAiFlashcardsPayload } = require("../services/aiFlashcards");
 
 // ---------------------------------------------
 // POST /api/v1/notes/:id/flashcards
@@ -19,28 +19,29 @@ router.post("/:id/flashcards", async (req, res, next) => {
             });
         }
 
-        if (!note.content) {
-            return res.status(400).json({
-                status: "fail",
-                message: "Note has no content to generate flashcards"
-            });
-        }
-
-        const payload = await buildAiFlashcardsResponse({
+        const payload = await buildAiFlashcardsPayload({
             text: note.content,
             data: {
                 noteId: note._id,
                 topic: note.topic
-            }
+            },
+            emptyMessage: "Note has no content to generate flashcards"
         });
         return res.status(200).json(payload);
 
     } catch (err) {
-        console.error("Error generating flashcards:", err);
-        return res.status(500).json({
-            status: "error",
-            message: "Internal server error",
-            error: err.message
+        const statusCode = err.statusCode || 500;
+        if (statusCode === 500) {
+            console.error("Error generating flashcards:", err);
+            return res.status(500).json({
+                status: "error",
+                message: "Internal server error",
+                error: err.message
+            });
+        }
+        return res.status(statusCode).json({
+            status: "fail",
+            message: err.message
         });
     }
 });

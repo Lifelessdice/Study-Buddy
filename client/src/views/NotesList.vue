@@ -126,36 +126,12 @@
             </div>
 
             <div v-show="aiState[item._id]?.activeTab === 'flashcards'">
-              <BaseButton
-                class="mb-2"
-                variant="warning"
+              <FlashcardsPanel
+                :flashcards="aiState[item._id]?.flashcards || []"
                 :loading="aiState[item._id]?.loadingFlashcards"
-                @click.stop="generateMaterialFlashcards(item)"
-              >
-                Generate Flashcards
-              </BaseButton>
-              <div v-if="aiState[item._id]?.loadingFlashcards" class="text-center my-2">
-                <div class="spinner-border text-warning" role="status">
-                  <span class="visually-hidden">Loading...</span>
-                </div>
-                <p>Generating flashcards, please wait...</p>
-              </div>
-              <div v-if="aiState[item._id]?.flashcards?.length && !aiState[item._id]?.loadingFlashcards" class="flashcards-container">
-                <div
-                  class="flashcard"
-                  v-for="(fc, idx) in aiState[item._id].flashcards"
-                  :key="idx"
-                  :class="{ flipped: fc.flipped }"
-                  @click.stop="fc.flipped = !fc.flipped"
-                >
-                  <div class="front">
-                    Q: {{ fc.question }}
-                  </div>
-                  <div class="back">
-                    A: {{ fc.answer }}
-                  </div>
-                </div>
-              </div>
+                @generate="generateMaterialFlashcards(item)"
+                @toggle="toggleMaterialFlashcard(item, $event)"
+              />
             </div>
           </div>
         </div>
@@ -184,9 +160,12 @@
 import api from '../Api'
 import Api from '@/Api'
 import CourseMaterialService from '@/services/CourseMaterialService'
+import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
+import { normalizeAiFlashcards, toggleFlashcard } from '@/utils/aiFlashcards'
 import { normalizeAiQuiz } from '@/utils/aiQuiz'
 
 export default {
+  components: { FlashcardsPanel },
   data() {
     return {
       notes: [],
@@ -301,6 +280,10 @@ export default {
       const state = this.ensureState(id)
       state.activeTab = tab
     },
+    toggleMaterialFlashcard(item, index) {
+      const state = this.ensureState(item._id)
+      toggleFlashcard(state.flashcards, index)
+    },
     toggleMaterial(item) {
       const isSame = this.expandedMaterialId === item._id
       this.expandedMaterialId = isSame ? null : item._id
@@ -365,10 +348,7 @@ export default {
         }
         const res = await CourseMaterialService.flashcards(item.courseId, item._id)
         const payload = res.data.flashcards || res.data.data?.flashcards || []
-        state.flashcards = payload.map(fc => ({
-          ...fc,
-          flipped: false
-        }))
+        state.flashcards = normalizeAiFlashcards(payload)
         if (!state.flashcards.length) state.error = 'No flashcards were returned.'
       } catch (err) {
         state.error = 'Failed to generate flashcards. Please try again.'
@@ -379,51 +359,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.flashcards-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.flashcard {
-  width: 200px;
-  height: 120px;
-  perspective: 1000px;
-  cursor: pointer;
-  position: relative;
-  transform-style: preserve-3d;
-}
-
-.flashcard .front,
-.flashcard .back {
-  width: 100%;
-  height: 100%;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  backface-visibility: hidden;
-  transition: transform 0.6s;
-  position: absolute;
-}
-
-.flashcard .back {
-  background: #f8f9fa;
-  transform: rotateY(180deg);
-}
-
-.flashcard.flipped .front {
-  transform: rotateY(180deg);
-}
-
-.flashcard.flipped .back {
-  transform: rotateY(0deg);
-}
-</style>

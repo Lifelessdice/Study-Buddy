@@ -9,7 +9,7 @@ const upload = require("../Utils/upload");
 const protect = require("../middleware/protect");
 const { buildAiQuizResponse } = require("../services/aiQuiz");
 const { buildAiSummaryResponse } = require("../services/aiSummary");
-const { buildAiFlashcardsResponse } = require("../services/aiFlashcards");
+const { buildAiFlashcardsPayload } = require("../services/aiFlashcards");
 
 const router = express.Router();
 
@@ -235,23 +235,23 @@ router.post("/:courseId/materials/:materialId/flashcards", async (req, res, next
     if (!material) return;
 
     const text = await extractPdfText(material);
-    if (!text) {
-      return res.status(400).json({
-        status: "fail",
-        message: "PDF has no extractable text"
-      });
-    }
-
-    const payload = await buildAiFlashcardsResponse({
+    const payload = await buildAiFlashcardsPayload({
       text,
       data: {
         materialId: material._id,
         courseId: course._id,
         topic: material.title
-      }
+      },
+      emptyMessage: "PDF has no extractable text"
     });
     return res.status(200).json(payload);
   } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({
+        status: "fail",
+        message: err.message
+      });
+    }
     next(err);
   }
 });
