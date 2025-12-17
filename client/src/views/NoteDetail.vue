@@ -26,67 +26,25 @@
 
       <!-- Summary -->
       <div class="tab-pane fade show active" id="summary">
-        <BaseButton
-          class="mb-3"
-          variant="primary"
+        <AiSummaryPanel
+          :summary="summary"
           :loading="loadingSummary"
-          :disabled="loadingSummary"
-          @click="generateSummary"
-        >
-          Generate Summary
-        </BaseButton>
-
-        <div v-if="loadingSummary" class="text-center my-3">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-          <p>Generating summary, please wait...</p>
-        </div>
-
-        <div v-if="summary && !loadingSummary">{{ summary }}</div>
+          button-class="mb-3"
+          loading-class="text-center my-3"
+          @generate="generateSummary"
+        />
       </div>
 
       <!-- Quiz -->
       <div class="tab-pane fade" id="quiz">
-        <BaseButton
-          class="mb-3"
-          variant="success"
+        <AiQuizPanel
+          :quiz="quiz"
           :loading="loadingQuiz"
-          :disabled="loadingQuiz"
-          @click="generateQuiz"
-        >
-          Generate Quiz
-        </BaseButton>
-
-        <div v-if="loadingQuiz" class="text-center my-3">
-          <div class="spinner-border text-success" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-          <p>Generating quiz, please wait...</p>
-        </div>
-
-        <ul v-if="quiz.length && !loadingQuiz" class="list-group">
-          <li v-for="(q, index) in quiz" :key="index" class="list-group-item">
-            <strong>Q{{ index + 1 }}: {{ q.question }}</strong>
-            <ul class="list-group mt-2">
-              <li
-                v-for="(opt, i) in q.options"
-                :key="i"
-                class="list-group-item"
-                :class="{
-                  'list-group-item-success':
-                    q.selectedIndex !== null && i === q.correctIndex,
-                  'list-group-item-danger':
-                    q.selectedIndex === i && i !== q.correctIndex
-                }"
-                style="cursor: pointer"
-                @click="selectOption(q, i)"
-              >
-                {{ opt }}
-              </li>
-            </ul>
-          </li>
-        </ul>
+          button-class="mb-3"
+          loading-class="text-center my-3"
+          @generate="generateQuiz"
+          @select="selectOption"
+        />
       </div>
 
       <!-- Flashcards Tab -->
@@ -104,16 +62,19 @@
 
 <script>
 import api from '../Api'
+import AiQuizPanel from '@/components/AiQuizPanel.vue'
+import AiSummaryPanel from '@/components/AiSummaryPanel.vue'
 import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
 import { normalizeAiFlashcards, toggleFlashcard } from '@/utils/aiFlashcards'
-import { normalizeAiQuiz } from '@/utils/aiQuiz'
+import { normalizeAiQuiz, selectQuizOption } from '@/utils/aiQuiz'
 
 export default {
-  props: ['id'],
-  components: { FlashcardsPanel },
+  props: ['noteSlug'],
+  components: { AiQuizPanel, AiSummaryPanel, FlashcardsPanel },
   data() {
     return {
       note: {},
+      noteId: '',
       summary: '',
       quiz: [],
       flashcards: [],
@@ -125,8 +86,9 @@ export default {
   },
   async created() {
     try {
-      const res = await api.get(`/notes/${this.id}`)
+      const res = await api.get(`/notes/${this.noteSlug}`)
       this.note = res.data.data
+      this.noteId = this.note?._id || ''
     } catch (err) {
       alert('Failed to load note')
     }
@@ -134,8 +96,7 @@ export default {
   methods: {
 
     selectOption(question, index) {
-      if (question.selectedIndex !== null) return
-      question.selectedIndex = index
+      selectQuizOption(question, index)
     },
 
     
@@ -144,7 +105,7 @@ export default {
         this.aiError = ''
         this.loadingSummary = true
         this.summary = ''
-        const res = await api.post(`/notes/${this.id}/summaries`)
+        const res = await api.post(`/notes/${this.noteId}/summaries`)
         this.summary = res.data.summary || res.data.data?.summary || 'No summary returned'
       } catch (err) {
         this.aiError = 'Failed to generate summary. Please try again.'
@@ -158,7 +119,7 @@ export default {
         this.loadingQuiz = true
         this.quiz = []
 
-        const res = await api.post(`/notes/${this.id}/aiquizzes`)
+        const res = await api.post(`/notes/${this.noteId}/aiquizzes`)
         const rawQuiz = res.data.quiz || res.data.data?.quiz || []
         const normalized = normalizeAiQuiz(rawQuiz)
 
@@ -183,7 +144,7 @@ export default {
         this.aiError = ''
         this.loadingFlashcards = true
         this.flashcards = []
-        const res = await api.post(`/notes/${this.id}/flashcards`)
+      const res = await api.post(`/notes/${this.noteId}/flashcards`)
         const payload = res.data.flashcards || res.data.data?.flashcards || []
         this.flashcards = normalizeAiFlashcards(payload)
         if (!this.flashcards.length) {

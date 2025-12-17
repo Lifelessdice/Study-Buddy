@@ -71,58 +71,24 @@
             </div>
 
             <div v-show="aiState[item._id]?.activeTab === 'summary'">
-              <BaseButton
-                class="mb-2"
-                variant="primary"
+              <AiSummaryPanel
+                :summary="aiState[item._id]?.summary || ''"
                 :loading="aiState[item._id]?.loadingSummary"
-                @click.stop="generateMaterialSummary(item)"
-              >
-                Generate Summary
-              </BaseButton>
-              <div v-if="aiState[item._id]?.loadingSummary" class="text-center my-2">
-                <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Loading...</span>
-                </div>
-                <p>Generating summary, please wait...</p>
-              </div>
-              <div v-if="aiState[item._id]?.summary && !aiState[item._id]?.loadingSummary">{{ aiState[item._id].summary }}</div>
+                button-class="mb-2"
+                loading-class="text-center my-2"
+                @generate="generateMaterialSummary(item)"
+              />
             </div>
 
             <div v-show="aiState[item._id]?.activeTab === 'quiz'">
-              <BaseButton
-                class="mb-2"
-                variant="success"
+              <AiQuizPanel
+                :quiz="aiState[item._id]?.quiz || []"
                 :loading="aiState[item._id]?.loadingQuiz"
-                @click.stop="generateMaterialQuiz(item)"
-              >
-                Generate Quiz
-              </BaseButton>
-              <div v-if="aiState[item._id]?.loadingQuiz" class="text-center my-2">
-                <div class="spinner-border text-success" role="status">
-                  <span class="visually-hidden">Loading...</span>
-                </div>
-                <p>Generating quiz, please wait...</p>
-              </div>
-              <ul v-if="aiState[item._id]?.quiz?.length && !aiState[item._id]?.loadingQuiz" class="list-group">
-                <li v-for="(q, idx) in aiState[item._id].quiz" :key="idx" class="list-group-item">
-                  <strong>Q{{ idx + 1 }}: {{ q.question }}</strong>
-                  <ul class="list-group mt-2">
-                    <li
-                      v-for="(opt, i) in q.options"
-                      :key="i"
-                      class="list-group-item"
-                      :class="{
-                        'list-group-item-success': q.selectedIndex !== null && i === q.correctIndex,
-                        'list-group-item-danger': q.selectedIndex === i && i !== q.correctIndex
-                      }"
-                      style="cursor: pointer"
-                      @click.stop="selectOption(q, i)"
-                    >
-                      {{ opt }}
-                    </li>
-                  </ul>
-                </li>
-              </ul>
+                button-class="mb-2"
+                loading-class="text-center my-2"
+                @generate="generateMaterialQuiz(item)"
+                @select="selectOption"
+              />
             </div>
 
             <div v-show="aiState[item._id]?.activeTab === 'flashcards'">
@@ -160,12 +126,14 @@
 import api from '../Api'
 import Api from '@/Api'
 import CourseMaterialService from '@/services/CourseMaterialService'
+import AiQuizPanel from '@/components/AiQuizPanel.vue'
+import AiSummaryPanel from '@/components/AiSummaryPanel.vue'
 import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
 import { normalizeAiFlashcards, toggleFlashcard } from '@/utils/aiFlashcards'
-import { normalizeAiQuiz } from '@/utils/aiQuiz'
+import { normalizeAiQuiz, selectQuizOption } from '@/utils/aiQuiz'
 
 export default {
-  components: { FlashcardsPanel },
+  components: { AiQuizPanel, AiSummaryPanel, FlashcardsPanel },
   data() {
     return {
       notes: [],
@@ -201,6 +169,7 @@ export default {
     lectures() {
       const noteItems = (this.filteredNotes || []).map(n => ({
         _id: n._id,
+        slug: n.slug,
         title: n.topic,
         description: '',
         createdAt: n.createdAt,
@@ -273,8 +242,7 @@ export default {
       return fresh
     },
     selectOption(question, index) {
-      if (!question || question.selectedIndex !== null) return
-      question.selectedIndex = index
+      selectQuizOption(question, index)
     },
     setAiTab(id, tab) {
       const state = this.ensureState(id)
@@ -292,7 +260,7 @@ export default {
       }
     },
     goToLecture(item) {
-      this.$router.push(`/notes/${item._id}`)
+      this.$router.push(`/notes/${item.slug}`)
     },
     formatDate(iso) {
       if (!iso) return ''

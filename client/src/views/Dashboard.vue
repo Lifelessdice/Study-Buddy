@@ -47,7 +47,7 @@
               <div class="small text-muted mb-1">Due: {{ item.dueLabel }}</div>
             </div>
             <BaseButton
-              :to="{ name: 'TakeQuiz', params: { quizId: item._id } }"
+              :to="{ name: 'TakeQuiz', params: { quizSlug: item.slug } }"
               variant="primary"
               size="sm"
             >

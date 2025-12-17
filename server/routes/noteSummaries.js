@@ -2,7 +2,7 @@ var express = require("express");
 var router = express.Router();
 
 const Note = require("../models/notes");
-const { buildAiSummaryResponse } = require("../services/aiSummary");
+const { buildAiSummaryPayload } = require("../services/aiSummary");
 
 async function handleSummarize(req, res) {
     try {
@@ -25,18 +25,11 @@ async function handleSummarize(req, res) {
             });
         }
 
-        // 3. If content is missing
-        if (!note.content) {
-            return res.status(400).json({
-                success: false,
-                message: "Note has no content to summarize"
-            });
-        }
-
         // 4. Summarize the note content
-        const payload = await buildAiSummaryResponse({
+        const payload = await buildAiSummaryPayload({
             text: note.content,
-            data: { noteId: note._id, topic: note.topic }
+            data: { noteId: note._id, topic: note.topic },
+            emptyMessage: "Note has no content to summarize"
         });
 
         if (!payload.summary) {
@@ -50,6 +43,12 @@ async function handleSummarize(req, res) {
         return res.status(200).json(payload);
 
     } catch (error) {
+        if (error.statusCode) {
+            return res.status(error.statusCode).json({
+                success: false,
+                message: error.message
+            });
+        }
         console.error("Error summarizing note:", error);
         return res.status(500).json({
             success: false,

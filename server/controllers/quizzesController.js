@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Quiz = require("../models/quizzes");
 const Course = require("../models/courses");
+const { ensureDocSlug } = require("../Utils/slugify");
 
 function ensureRequiredFields(body) {
   const required = {
@@ -52,6 +53,14 @@ async function ensureCourseExists(courseId) {
   }
 }
 
+function buildQuizQueryByParam(param) {
+  if (!param) return null;
+  if (mongoose.Types.ObjectId.isValid(param)) {
+    return Quiz.findById(param);
+  }
+  return Quiz.findOne({ slug: param });
+}
+
 // ---------------------------------------------
 // Create a new quiz
 // ---------------------------------------------
@@ -93,6 +102,9 @@ exports.getAllQuizzes = async (req, res, next) => {
     }
 
     const quizzes = await Quiz.find(filter);
+    for (const quiz of quizzes) {
+      await ensureDocSlug(quiz, quiz.title);
+    }
 
     res.status(200).json({
       status: "success",
@@ -117,15 +129,8 @@ exports.getQuizById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // Invalid ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        error: "CastError",
-        message: "Invalid ID format",
-      });
-    }
-
-    const quiz = await Quiz.findById(id);
+    const query = buildQuizQueryByParam(id);
+    const quiz = query ? await query : null;
 
     if (!quiz) {
       return res.status(404).json({
@@ -134,6 +139,7 @@ exports.getQuizById = async (req, res, next) => {
       });
     }
 
+    await ensureDocSlug(quiz, quiz.title);
     res.status(200).json({
       status: "success",
       data: quiz,

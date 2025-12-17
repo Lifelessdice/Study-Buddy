@@ -43,7 +43,7 @@
         <span class="me-2 small text-muted user-info">
           {{ displayName }}
         </span>
-        <BaseButton variant="danger" outline size="sm" @click="logout">
+        <BaseButton variant="danger" outline size="sm" class="logout-btn" @click="logout">
           Logout
         </BaseButton>
       </div>
@@ -355,6 +355,13 @@ body {
 .user-actions {
   flex-wrap: nowrap;
   white-space: nowrap;
+}
+
+@media (max-width: 576px) {
+  .logout-btn {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8rem;
+  }
 }
 
 /* Responsive tabs */

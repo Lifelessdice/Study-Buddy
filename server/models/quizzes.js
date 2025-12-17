@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { slugify, ensureUniqueSlug } = require("../Utils/slugify");
 
 const questionSchema = new mongoose.Schema(
   {
@@ -44,11 +45,28 @@ const quizSchema = new mongoose.Schema(
       type: [questionSchema],
       default: [],
     },
+    slug: {
+      type: String,
+      unique: true,
+      index: true
+    }
   },
   {
     timestamps: true,
   }
 );
+
+quizSchema.pre("validate", async function (next) {
+  try {
+    if (!this.slug && this.title) {
+      const base = slugify(this.title);
+      await ensureUniqueSlug(this, base);
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 const Quiz = mongoose.model('Quiz', quizSchema);
 

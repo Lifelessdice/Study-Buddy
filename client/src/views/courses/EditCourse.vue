@@ -49,7 +49,7 @@ import CourseService from '@/services/CourseService'
 
 export default {
   name: 'EditCourse',
-  props: ['id'],
+  props: ['courseSlug'],
   data() {
     return {
       form: {
@@ -58,15 +58,17 @@ export default {
         overview: '',
         degree: ''
       },
+      courseId: '',
       loaded: false,
       submitting: false
     }
   },
   async mounted() {
     try {
-      const courseId = this.$route.params.id
-      const res = await CourseService.getById(courseId)
+      const courseSlug = this.$route.params.courseSlug
+      const res = await CourseService.getById(courseSlug)
       const c = res.data.data || res.data
+      this.courseId = c._id
       this.form.name = c.name
       this.form.code = c.code
       this.form.overview = c.overview || ''
@@ -81,11 +83,10 @@ export default {
     async submit() {
       try {
         this.submitting = true
-        const courseId = this.$route.params.id
         if (this.isOverwrite) {
-          await CourseService.replace(courseId, this.form)
+          await CourseService.replace(this.courseId, this.form)
         } else {
-          await CourseService.update(courseId, this.form)
+          await CourseService.update(this.courseId, this.form)
         }
         this.$router.push({ name: 'Courses' })
       } catch (err) {

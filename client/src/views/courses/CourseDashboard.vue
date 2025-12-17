@@ -23,7 +23,7 @@
             <template v-if="isTeacher">
               <!-- Edit -->
               <BaseButton
-                :to="`/courses/${course._id}/edit`"
+                :to="`/courses/${course.slug}/edit`"
                 variant="primary"
                 outline
                 size="sm"
@@ -35,7 +35,7 @@
 
               <!-- Overwrite -->
               <BaseButton
-                :to="{ path: `/courses/${course._id}/edit`, query: { mode: 'overwrite' } }"
+                :to="{ path: `/courses/${course.slug}/edit`, query: { mode: 'overwrite' } }"
                 variant="primary"
                 outline
                 size="sm"
@@ -164,7 +164,7 @@
           <h5 class="mb-0">Quizzes</h5>
           <BaseButton
             v-if="isTeacher"
-            :to="{ name: 'CreateQuiz', params: { id: course._id } }"
+            :to="{ name: 'CreateQuiz', params: { courseSlug: course.slug } }"
             variant="primary"
             outline
             size="sm"
@@ -196,7 +196,7 @@
                 <!-- Edit quiz (teacher) -->
                 <BaseButton
                   v-if="isTeacher"
-                  :to="{ name: 'EditQuiz', params: { quizId: quiz._id } }"
+                  :to="{ name: 'EditQuiz', params: { quizSlug: quiz.slug } }"
                   variant="secondary"
                   outline
                   size="sm"
@@ -209,7 +209,7 @@
                 <!-- Take quiz (student) -->
                 <BaseButton
                   v-else-if="!myParticipationByQuiz[quiz._id]"
-                  :to="{ name: 'TakeQuiz', params: { quizId: quiz._id } }"
+                  :to="{ name: 'TakeQuiz', params: { quizSlug: quiz.slug } }"
                   variant="primary"
                   outline
                   size="sm"
@@ -509,62 +509,24 @@
                   </div>
 
                   <div v-show="noteAi[note._id]?.activeTab === 'summary'">
-                    <BaseButton
-                      class="mb-2"
-                      variant="primary"
+                    <AiSummaryPanel
+                      :summary="noteAi[note._id]?.summary || ''"
                       :loading="noteAi[note._id]?.loadingSummary"
-                      :disabled="noteAi[note._id]?.loadingSummary"
-                      @click.stop="generateNoteSummary(note)"
-                    >
-                      Generate Summary
-                    </BaseButton>
-                    <div v-if="noteAi[note._id]?.loadingSummary" class="text-center my-2">
-                      <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                      </div>
-                      <p>Generating summary, please wait...</p>
-                    </div>
-                    <div v-if="noteAi[note._id]?.summary && !noteAi[note._id]?.loadingSummary">
-                      {{ noteAi[note._id].summary }}
-                    </div>
+                      button-class="mb-2"
+                      loading-class="text-center my-2"
+                      @generate="generateNoteSummary(note)"
+                    />
                   </div>
 
                   <div v-show="noteAi[note._id]?.activeTab === 'quiz'">
-                    <BaseButton
-                      class="mb-2"
-                      variant="success"
+                    <AiQuizPanel
+                      :quiz="noteAi[note._id]?.quiz || []"
                       :loading="noteAi[note._id]?.loadingQuiz"
-                      :disabled="noteAi[note._id]?.loadingQuiz"
-                      @click.stop="generateNoteQuiz(note)"
-                    >
-                      Generate Quiz
-                    </BaseButton>
-                    <div v-if="noteAi[note._id]?.loadingQuiz" class="text-center my-2">
-                      <div class="spinner-border text-success" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                      </div>
-                      <p>Generating quiz, please wait...</p>
-                    </div>
-                    <ul v-if="noteAi[note._id]?.quiz?.length && !noteAi[note._id]?.loadingQuiz" class="list-group">
-                      <li v-for="(q, idx) in noteAi[note._id].quiz" :key="idx" class="list-group-item">
-                        <strong>Q{{ idx + 1 }}: {{ q.question }}</strong>
-                        <ul class="list-group mt-2">
-                          <li
-                            v-for="(opt, i) in q.options"
-                            :key="i"
-                            class="list-group-item"
-                            :class="{
-                              'list-group-item-success': q.selectedIndex !== null && i === q.correctIndex,
-                              'list-group-item-danger': q.selectedIndex === i && i !== q.correctIndex
-                            }"
-                            style="cursor: pointer"
-                            @click.stop="selectOption(q, i)"
-                          >
-                            {{ opt }}
-                          </li>
-                        </ul>
-                      </li>
-                    </ul>
+                      button-class="mb-2"
+                      loading-class="text-center my-2"
+                      @generate="generateNoteQuiz(note)"
+                      @select="selectOption"
+                    />
                   </div>
 
                   <div v-show="noteAi[note._id]?.activeTab === 'flashcards'">
@@ -718,62 +680,24 @@
                 </div>
 
                 <div v-show="materialAi[mat._id]?.activeTab === 'summary'">
-                  <BaseButton
-                    class="mb-2"
-                    variant="primary"
+                  <AiSummaryPanel
+                    :summary="materialAi[mat._id]?.summary || ''"
                     :loading="materialAi[mat._id]?.loadingSummary"
-                    :disabled="materialAi[mat._id]?.loadingSummary"
-                    @click.stop="generateMaterialSummary(mat)"
-                  >
-                    Generate Summary
-                  </BaseButton>
-                  <div v-if="materialAi[mat._id]?.loadingSummary" class="text-center my-2">
-                    <div class="spinner-border text-primary" role="status">
-                      <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p>Generating summary, please wait...</p>
-                  </div>
-                  <div v-if="materialAi[mat._id]?.summary && !materialAi[mat._id]?.loadingSummary">
-                    {{ materialAi[mat._id].summary }}
-                  </div>
+                    button-class="mb-2"
+                    loading-class="text-center my-2"
+                    @generate="generateMaterialSummary(mat)"
+                  />
                 </div>
 
                 <div v-show="materialAi[mat._id]?.activeTab === 'quiz'">
-                  <BaseButton
-                    class="mb-2"
-                    variant="success"
+                  <AiQuizPanel
+                    :quiz="materialAi[mat._id]?.quiz || []"
                     :loading="materialAi[mat._id]?.loadingQuiz"
-                    :disabled="materialAi[mat._id]?.loadingQuiz"
-                    @click.stop="generateMaterialQuiz(mat)"
-                  >
-                    Generate Quiz
-                  </BaseButton>
-                  <div v-if="materialAi[mat._id]?.loadingQuiz" class="text-center my-2">
-                    <div class="spinner-border text-success" role="status">
-                      <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p>Generating quiz, please wait...</p>
-                  </div>
-                  <ul v-if="materialAi[mat._id]?.quiz?.length && !materialAi[mat._id]?.loadingQuiz" class="list-group">
-                    <li v-for="(q, idx) in materialAi[mat._id].quiz" :key="idx" class="list-group-item">
-                      <strong>Q{{ idx + 1 }}: {{ q.question }}</strong>
-                      <ul class="list-group mt-2">
-                        <li
-                          v-for="(opt, i) in q.options"
-                          :key="i"
-                          class="list-group-item"
-                          :class="{
-                            'list-group-item-success': q.selectedIndex !== null && i === q.correctIndex,
-                            'list-group-item-danger': q.selectedIndex === i && i !== q.correctIndex
-                          }"
-                          style="cursor: pointer"
-                          @click.stop="selectOption(q, i)"
-                        >
-                          {{ opt }}
-                        </li>
-                      </ul>
-                    </li>
-                  </ul>
+                    button-class="mb-2"
+                    loading-class="text-center my-2"
+                    @generate="generateMaterialQuiz(mat)"
+                    @select="selectOption"
+                  />
                 </div>
 
                 <div v-show="materialAi[mat._id]?.activeTab === 'flashcards'">
@@ -933,13 +857,15 @@ import QuizService from '@/services/QuizService'
 import QuizParticipationService from '@/services/QuizParticipationService'
 import CourseMaterialService from '@/services/CourseMaterialService'
 import BaseButton from '@/components/BaseButton.vue'
+import AiQuizPanel from '@/components/AiQuizPanel.vue'
+import AiSummaryPanel from '@/components/AiSummaryPanel.vue'
 import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
 import { normalizeAiFlashcards, toggleFlashcard } from '@/utils/aiFlashcards'
-import { normalizeAiQuiz } from '@/utils/aiQuiz'
+import { normalizeAiQuiz, selectQuizOption } from '@/utils/aiQuiz'
 
 export default {
   name: 'CourseDashboard',
-  components: { BaseButton, FlashcardsPanel },
+  components: { AiQuizPanel, AiSummaryPanel, BaseButton, FlashcardsPanel },
   props: ['id'],
   data() {
     return {
@@ -1130,7 +1056,7 @@ export default {
       }
       if (tab === 'notes') {
         this.fetchNotes()
-        this.fetchMaterials(this.$route.params.id)
+        this.fetchMaterials(this.course?._id)
       }
     },
     notify(title, message) {
@@ -1175,7 +1101,7 @@ export default {
     },
 
     async fetchCourse() {
-      const res = await CourseService.getById(this.$route.params.id)
+      const res = await CourseService.getById(this.$route.params.courseSlug)
       this.course = res.data.data || res.data
       this.overviewDraft = this.course.overview || ''
       await this.fetchEnrolled()
@@ -1186,7 +1112,8 @@ export default {
     },
     async fetchEnrolled() {
       try {
-        const res = await CourseService.getStudents(this.$route.params.id)
+        if (!this.course?._id) return
+        const res = await CourseService.getStudents(this.course._id)
         this.enrolled = res.data.data || res.data
       } catch (err) {
         console.error(err)
@@ -1245,8 +1172,7 @@ export default {
       return new Date(d).toLocaleString()
     },
     selectOption(question, index) {
-      if (!question || question.selectedIndex !== null) return
-      question.selectedIndex = index
+      selectQuizOption(question, index)
     },
     async removeCourse() {
       this.showDeleteCourseConfirm = true

@@ -34,7 +34,7 @@
 
         <div class="row">
       <div v-for="course in paginatedCourses" :key="course._id" class="col-md-6 mb-3">
-        <router-link :to="`/courses/${course._id}`" class="course-card-link">
+        <router-link :to="`/courses/${course.slug}`" class="course-card-link">
           <div class="card h-100 course-card">
             <div class="card-body">
               <h5 class="card-title">{{ course.name }} <small class="text-muted">({{ course.code }})</small></h5>

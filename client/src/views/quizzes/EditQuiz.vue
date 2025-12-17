@@ -68,7 +68,7 @@
           {{ submitting ? 'Saving...' : 'Save Changes' }}
         </BaseButton>
         <BaseButton
-          :to="{ name: 'CourseDashboard', params: { id: courseId }, query: { tab: 'quizzes' } }"
+          :to="{ name: 'CourseDashboard', params: { courseSlug: courseSlug }, query: { tab: 'quizzes' } }"
           variant="link"
         >
           Cancel
@@ -85,11 +85,12 @@ import CourseService from '@/services/CourseService'
 
 export default {
   name: 'EditQuiz',
-  props: ['quizId'],
+  props: ['quizSlug'],
   data() {
     return {
       quiz: null,
       courseId: null,
+      courseSlug: '',
       courseName: '',
       loaded: false,
       submitting: false,
@@ -103,7 +104,7 @@ export default {
   },
   async mounted() {
     try {
-      const res = await QuizService.get(this.$route.params.quizId)
+      const res = await QuizService.get(this.$route.params.quizSlug)
       const quiz = res.data.data || res.data
       this.quiz = quiz
       this.courseId = quiz.course
@@ -124,6 +125,7 @@ export default {
         const courseRes = await CourseService.getById(this.courseId)
         const c = courseRes.data.data || courseRes.data
         this.courseName = c.name
+        this.courseSlug = c.slug || ''
       } catch (err) {
         // non-fatal
       }
@@ -174,7 +176,7 @@ export default {
           questions
         }
         await QuizService.update(this.quiz._id, payload)
-        this.$router.push({ name: 'CourseDashboard', params: { id: this.courseId }, query: { tab: 'quizzes' } })
+        this.$router.push({ name: 'CourseDashboard', params: { courseSlug: this.courseSlug }, query: { tab: 'quizzes' } })
       } catch (err) {
         console.error(err)
         alert('Failed to save quiz')

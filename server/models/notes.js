@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { slugify, ensureUniqueSlug } = require("../Utils/slugify");
 
 const noteSchema = new mongoose.Schema(
   {
@@ -21,8 +22,25 @@ const noteSchema = new mongoose.Schema(
       ref: "Course",
       required: [true, "Associated course is required"],
     },
+    slug: {
+      type: String,
+      unique: true,
+      index: true
+    },
   },
   { timestamps: true }
 );
+
+noteSchema.pre("validate", async function (next) {
+  try {
+    if (!this.slug && this.topic) {
+      const base = slugify(this.topic);
+      await ensureUniqueSlug(this, base);
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 module.exports = mongoose.model("Note", noteSchema);

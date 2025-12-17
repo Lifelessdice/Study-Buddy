@@ -26,3 +26,8 @@ export function normalizeAiQuiz(rawQuiz) {
     }
   })
 }
+
+export function selectQuizOption(question, index) {
+  if (!question || question.selectedIndex !== null) return
+  question.selectedIndex = index
+}
