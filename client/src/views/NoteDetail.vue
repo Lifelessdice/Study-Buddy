@@ -255,10 +255,12 @@ export default {
 }
 
 .flashcard {
-  width: 200px;
-  height: 120px;
+  width: 250px; 
+  height: 160px;
   perspective: 1000px;
   cursor: pointer;
+  position: relative;
+  transform-style: preserve-3d;
 }
 
 .flashcard .front,
@@ -269,13 +271,18 @@ export default {
   border-radius: 8px;
   background: #fff;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start; /* text starts at top */
+  justify-content: flex-start;
   padding: 0.5rem;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   backface-visibility: hidden;
   transition: transform 0.6s;
   position: absolute;
+
+  /* prevent overflow */
+  overflow-y: auto;
+  overflow-x: hidden;
+  word-wrap: break-word;
 }
 
 .flashcard .back {
@@ -290,9 +297,5 @@ export default {
 .flashcard.flipped .back {
   transform: rotateY(0deg);
 }
-
-.flashcard {
-  position: relative;
-  transform-style: preserve-3d;
-}
 </style>
+
