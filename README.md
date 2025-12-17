@@ -113,35 +113,74 @@ This means:
 - MS1 will only implement the essential backend entities and relationships needed for CRUD and relationship endpoints, exactly as required by the checklist, and
 - Additional functionality from the ER will be introduced gradually and only after the core system is stable.
 
-##Advanced Feature Candidates
-The system includes several advanced functionalities that go beyond basic CRUD. These features are built on top of the core StudyBuddy entities and provide meaningful learning support for students. Each feature requires non-trivial backend logic and dedicated frontend UI, fulfilling the requirements for an advanced milestone.
-### Summary Maker (Advanced Feature)
+## Advanced Feature: AI-Powered Study Tools
 
-StudyBuddy includes an optional summary-generation feature for notes.  
-This feature helps students review content more efficiently by allowing them to generate concise summaries of long or detailed notes.
+### Overview
+As an advanced feature, our system provides **AI-powered study tools** that allow students to generate **summaries, quizzes, and flashcards** directly from course materials. This functionality integrates both backend processing and interactive frontend behavior, extending the system beyond standard CRUD operations.
 
-**Key capabilities:**
-- Students can generate a summary for any note they have access to.
-- The backend processes the note content and produces a condensed version.
-- Summaries can be stored alongside the original note for later viewing.
-- The frontend displays the summary in the Notes page for quick studying.
+The feature uses the OpenAI API (GPT-5 Nano) to process user-provided content and return **structured JSON responses**, ensuring predictable parsing, reliable storage, and consistent rendering in the frontend.
 
-### Flashcards & Quiz Generator (Advanced Feature)
+---
 
-StudyBuddy provides interactive study tools based on existing note content.  
-Students can automatically turn their notes into flashcards and quizzes to support active recall and self-testing.
+### Supported Content
+Study tools can be generated from:
 
-**Flashcards:**
-- Users can generate flashcards directly from a selected note.
-- Flashcards display a prompt (front) and answer (back).
-- Students can flip cards and mark difficulty after reviewing them.
-- Progress can be tracked to help students focus on difficult areas.
+- **Text-based notes** created within the application  
+- **PDF files** uploaded by teachers as course materials  
 
-**Quiz Generator:**
-- Students can start a lightweight quiz generated from the content of their notes.
-- The system produces a short set of questions (e.g., five items) from the note.
-- Quizzes support quick self-assessment before deadlines or exams.
+Teachers upload PDFs to courses, while students can view these materials and generate AI-based study aids without modifying the original files.
 
-## Teaser (MS3)
+---
 
-![Teaser](./images/teaser.png)
+### Frontend Functionality
+The advanced feature is directly exposed through the frontend interface:
+
+- When viewing a **note**, students can generate:
+  - A summary  
+  - A quiz  
+  - Flashcards
+- When viewing a **PDF**, students can:
+  - Open and read the PDF  
+  - Generate the same AI-powered study tools from the document  
+
+All generated content is displayed **dynamically on the same page without reloading**, providing immediate feedback and interaction. If no usable content is returned, the frontend shows a clear message instead of an empty result.
+
+---
+
+### Quiz Interaction Design
+AI-generated quizzes are presented as interactive multiple-choice quizzes:
+
+- Each quiz contains **multiple-choice questions**
+- Every question has **four answer options**
+- Only **one option** can be selected per question
+- After selection:
+  - Correct answers are highlighted in **green**
+  - Incorrect selections are highlighted in **red**
+  - The correct answer is shown immediately
+
+Answer validation is handled **entirely on the frontend**. Since the backend returns both questions and correct answers in structured JSON, quiz results are shown instantly without additional API calls or page reloads.
+
+---
+
+### Backend Responsibilities
+The backend supports this feature by:
+
+- Sending structured prompts to the OpenAI API  
+- Ensuring responses are returned in **valid JSON format**
+- Extracting text from PDFs before AI processing
+- Storing generated summaries, quizzes, and flashcards
+- Exposing versioned REST endpoints used by the frontend  
+
+Additional formatting and validation are applied where needed to ensure consistent and reliable data for frontend rendering.
+
+---
+
+### Justification as Advanced Functionality
+This feature qualifies as advanced functionality because it:
+
+- Integrates an **external AI service**
+- Requires **non-trivial backend processing** (prompt design, PDF text extraction, structured responses)
+- Provides **interactive frontend behavior** with immediate user feedback
+- Extends the system beyond standard entity-based CRUD operations  
+
+The feature aligns with the system’s educational purpose and demonstrates a deeper understanding of full-stack web application development.
