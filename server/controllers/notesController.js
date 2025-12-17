@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const Note = require("../models/notes");
 const Course = require("../models/courses");
-const { ensureDocSlug } = require("../Utils/slugify");
 
 function ensureRequiredFields(body) {
   const required = {
@@ -54,14 +53,6 @@ async function ensureCourseExists(courseId) {
   }
 }
 
-function buildNoteQueryByParam(param) {
-  if (!param) return null;
-  if (mongoose.Types.ObjectId.isValid(param)) {
-    return Note.findById(param);
-  }
-  return Note.findOne({ slug: param });
-}
-
 // CREATE
 exports.createNote = async (req, res, next) => {
   try {
@@ -85,9 +76,6 @@ exports.createNote = async (req, res, next) => {
 exports.getNotes = async (req, res, next) => {
   try {
     const notes = await Note.find().populate("course");
-    for (const note of notes) {
-      await ensureDocSlug(note, note.topic);
-    }
     res.status(200).json({
       status: "success",
       results: notes.length,
@@ -103,8 +91,15 @@ exports.getNoteById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const query = buildNoteQueryByParam(id);
-    const note = query ? await query.populate("course") : null;
+    // Invalid ID -> 400 CastError
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: "CastError",
+        message: "Invalid ID format"
+      });
+    }
+
+    const note = await Note.findById(id).populate("course");
 
     if (!note) {
       return res.status(404).json({
@@ -113,7 +108,6 @@ exports.getNoteById = async (req, res, next) => {
       });
     }
 
-    await ensureDocSlug(note, note.topic);
     res.status(200).json({ status: "success", data: note });
   } catch (err) {
     next(err);

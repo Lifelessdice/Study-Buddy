@@ -126,12 +126,13 @@ export default {
       return new Date(d).toLocaleString()
     },
     courseLabel(courseRef) {
-      if (!courseRef) return '—'
+      if (!courseRef) return 'Unknown course'
       if (typeof courseRef === 'object') {
-        return courseRef.name || courseRef.code || courseRef._id || '—'
+        return courseRef.name || courseRef.code || courseRef.slug || 'Unknown course'
       }
-      return this.courseNameById[courseRef] || courseRef || '—'
+      return this.courseNameById[courseRef] || 'Unknown course'
     },
+
     async hydrateCourseMap(courseIds) {
       const idsToFetch = courseIds.filter(id => id && !this.courseNameById[id])
       if (!idsToFetch.length) return
@@ -141,7 +142,7 @@ export default {
         enrollments.forEach(att => {
           const c = att.course
           if (c && c._id) {
-            this.courseNameById[c._id] = c.name || c.code || c._id
+            this.courseNameById[c._id] = c.name || c.code || c.slug || 'Unknown course'
           }
         })
       } catch (err) {
@@ -165,7 +166,7 @@ export default {
             courseIds.push(courseRef)
           }
           if (courseRef && typeof courseRef === 'object' && courseRef._id) {
-            this.courseNameById[courseRef._id] = courseRef.name || courseRef.code || courseRef._id
+            this.courseNameById[courseRef._id] = courseRef.name || courseRef.code || courseRef.slug || 'Unknown course'
           }
         })
         await this.hydrateCourseMap(courseIds)
@@ -209,3 +210,4 @@ table {
   }
 }
 </style>
+

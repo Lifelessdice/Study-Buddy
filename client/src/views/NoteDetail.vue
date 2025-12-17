@@ -65,8 +65,9 @@ import api from '../Api'
 import AiQuizPanel from '@/components/AiQuizPanel.vue'
 import AiSummaryPanel from '@/components/AiSummaryPanel.vue'
 import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
-import { normalizeAiFlashcards, toggleFlashcard } from '@/utils/aiFlashcards'
-import { normalizeAiQuiz, selectQuizOption } from '@/utils/aiQuiz'
+import { handleAiFlashcards, handleAiQuiz, handleAiSummary } from '@/utils/aiHandlers'
+import { toggleFlashcard } from '@/utils/aiFlashcards'
+import { selectQuizOption } from '@/utils/aiQuiz'
 
 export default {
   props: ['noteSlug'],
@@ -101,60 +102,32 @@ export default {
 
     
     async generateSummary() {
-      try {
-        this.aiError = ''
-        this.loadingSummary = true
-        this.summary = ''
-        const res = await api.post(`/notes/${this.noteId}/summaries`)
-        this.summary = res.data.summary || res.data.data?.summary || 'No summary returned'
-      } catch (err) {
-        this.aiError = 'Failed to generate summary. Please try again.'
-      } finally {
-        this.loadingSummary = false
-      }
+      await handleAiSummary({
+        request: () => api.post(`/notes/${this.noteId}/summaries`),
+        setLoading: (value) => { this.loadingSummary = value },
+        setSummary: (value) => { this.summary = value },
+        setError: (value) => { this.aiError = value }
+      })
     },
     async generateQuiz() {
-      try {
-        this.aiError = ''
-        this.loadingQuiz = true
-        this.quiz = []
-
-        const res = await api.post(`/notes/${this.noteId}/aiquizzes`)
-        const rawQuiz = res.data.quiz || res.data.data?.quiz || []
-        const normalized = normalizeAiQuiz(rawQuiz)
-
-        if (!normalized.length) {
-          this.aiError = 'No quiz questions were returned.'
-          return
-        }
-
-        this.quiz = normalized
-      } catch (err) {
-        this.aiError = 'Failed to generate quiz. Please try again.'
-      } finally {
-        this.loadingQuiz = false
-      }
+      await handleAiQuiz({
+        request: () => api.post(`/notes/${this.noteId}/aiquizzes`),
+        setLoading: (value) => { this.loadingQuiz = value },
+        setQuiz: (value) => { this.quiz = value },
+        setError: (value) => { this.aiError = value }
+      })
     },
 
     toggleFlashcard(index) {
       toggleFlashcard(this.flashcards, index)
     },
     async generateFlashcards() {
-      try {
-        this.aiError = ''
-        this.loadingFlashcards = true
-        this.flashcards = []
-      const res = await api.post(`/notes/${this.noteId}/flashcards`)
-        const payload = res.data.flashcards || res.data.data?.flashcards || []
-        this.flashcards = normalizeAiFlashcards(payload)
-        if (!this.flashcards.length) {
-          this.aiError = 'No flashcards were returned.'
-        }
-      } catch (err) {
-        this.aiError = 'Failed to generate flashcards. Please try again.'
-      } finally {
-        this.loadingFlashcards = false
-      }
+      await handleAiFlashcards({
+        request: () => api.post(`/notes/${this.noteId}/flashcards`),
+        setLoading: (value) => { this.loadingFlashcards = value },
+        setFlashcards: (value) => { this.flashcards = value },
+        setError: (value) => { this.aiError = value }
+      })
     }
   }
 }

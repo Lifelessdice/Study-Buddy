@@ -129,8 +129,10 @@ import CourseMaterialService from '@/services/CourseMaterialService'
 import AiQuizPanel from '@/components/AiQuizPanel.vue'
 import AiSummaryPanel from '@/components/AiSummaryPanel.vue'
 import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
-import { normalizeAiFlashcards, toggleFlashcard } from '@/utils/aiFlashcards'
-import { normalizeAiQuiz, selectQuizOption } from '@/utils/aiQuiz'
+import { handleAiFlashcards, handleAiQuiz, handleAiSummary } from '@/utils/aiHandlers'
+import { toggleFlashcard } from '@/utils/aiFlashcards'
+import { selectQuizOption } from '@/utils/aiQuiz'
+import { noteSlug } from '@/utils/slug'
 
 export default {
   components: { AiQuizPanel, AiSummaryPanel, FlashcardsPanel },
@@ -169,7 +171,7 @@ export default {
     lectures() {
       const noteItems = (this.filteredNotes || []).map(n => ({
         _id: n._id,
-        slug: n.slug,
+        slug: noteSlug(n),
         title: n.topic,
         description: '',
         createdAt: n.createdAt,
@@ -268,61 +270,42 @@ export default {
     },
     async generateMaterialSummary(item) {
       const state = this.ensureState(item._id)
-      state.loadingSummary = true
-      state.summary = ''
-      state.error = ''
-      try {
-        if (!item.courseId) {
-          state.error = 'Missing course for this PDF.'
-          return
-        }
-        const res = await CourseMaterialService.summarize(item.courseId, item._id)
-        state.summary = res.data.summary || res.data.data?.summary || 'No summary returned'
-      } catch (err) {
-        state.error = 'Failed to generate summary. Please try again.'
-      } finally {
-        state.loadingSummary = false
+      if (!item.courseId) {
+        state.error = 'Missing course for this PDF.'
+        return
       }
+      await handleAiSummary({
+        request: () => CourseMaterialService.summarize(item.courseId, item._id),
+        setLoading: (value) => { state.loadingSummary = value },
+        setSummary: (value) => { state.summary = value },
+        setError: (value) => { state.error = value }
+      })
     },
     async generateMaterialQuiz(item) {
       const state = this.ensureState(item._id)
-      state.loadingQuiz = true
-      state.quiz = []
-      state.error = ''
-      try {
-        if (!item.courseId) {
-          state.error = 'Missing course for this PDF.'
-          return
-        }
-        const res = await CourseMaterialService.quiz(item.courseId, item._id)
-        const rawQuiz = res.data.quiz || res.data.data?.quiz || []
-        state.quiz = normalizeAiQuiz(rawQuiz)
-        if (!state.quiz.length) state.error = 'No quiz questions were returned.'
-      } catch (err) {
-        state.error = 'Failed to generate quiz. Please try again.'
-      } finally {
-        state.loadingQuiz = false
+      if (!item.courseId) {
+        state.error = 'Missing course for this PDF.'
+        return
       }
+      await handleAiQuiz({
+        request: () => CourseMaterialService.quiz(item.courseId, item._id),
+        setLoading: (value) => { state.loadingQuiz = value },
+        setQuiz: (value) => { state.quiz = value },
+        setError: (value) => { state.error = value }
+      })
     },
     async generateMaterialFlashcards(item) {
       const state = this.ensureState(item._id)
-      state.loadingFlashcards = true
-      state.flashcards = []
-      state.error = ''
-      try {
-        if (!item.courseId) {
-          state.error = 'Missing course for this PDF.'
-          return
-        }
-        const res = await CourseMaterialService.flashcards(item.courseId, item._id)
-        const payload = res.data.flashcards || res.data.data?.flashcards || []
-        state.flashcards = normalizeAiFlashcards(payload)
-        if (!state.flashcards.length) state.error = 'No flashcards were returned.'
-      } catch (err) {
-        state.error = 'Failed to generate flashcards. Please try again.'
-      } finally {
-        state.loadingFlashcards = false
+      if (!item.courseId) {
+        state.error = 'Missing course for this PDF.'
+        return
       }
+      await handleAiFlashcards({
+        request: () => CourseMaterialService.flashcards(item.courseId, item._id),
+        setLoading: (value) => { state.loadingFlashcards = value },
+        setFlashcards: (value) => { state.flashcards = value },
+        setError: (value) => { state.error = value }
+      })
     }
   }
 }

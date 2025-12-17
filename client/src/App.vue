@@ -84,7 +84,13 @@
         </li>
         <li v-if="user">
           <BaseButton variant="danger" outline size="sm" class="menu-logout" @click="logout">
-            Logout
+            <span class="menu-logout-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" role="img" focusable="false">
+                <path d="M12 3v9"></path>
+                <path d="M7.05 7.05a7 7 0 1 0 9.9 0"></path>
+              </svg>
+            </span>
+            <span class="menu-logout-text">Sign out</span>
           </BaseButton>
         </li>
       </ul>
@@ -301,7 +307,39 @@ body,
 
 .menu-logout {
   width: 100%;
+  justify-content: flex-start;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.75rem;
+  border-color: #f3c6c6;
+  color: #3f3f46;
+  background: #fff;
+  text-transform: none;
+}
+
+.menu-logout:hover {
+  background: #fff1f2;
+  border-color: #fda4af;
+  color: #3f3f46;
+}
+
+.menu-logout-icon {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  color: #e11d48;
+}
+
+.menu-logout-icon svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 @media (max-width: 992px) {

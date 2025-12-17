@@ -23,7 +23,7 @@
             <template v-if="isTeacher">
               <!-- Edit -->
               <BaseButton
-                :to="`/courses/${course.slug}/edit`"
+                :to="`/courses/${courseSlugValue}/edit`"
                 variant="primary"
                 outline
                 size="sm"
@@ -35,7 +35,7 @@
 
               <!-- Overwrite -->
               <BaseButton
-                :to="{ path: `/courses/${course.slug}/edit`, query: { mode: 'overwrite' } }"
+                :to="{ path: `/courses/${courseSlugValue}/edit`, query: { mode: 'overwrite' } }"
                 variant="primary"
                 outline
                 size="sm"
@@ -164,7 +164,7 @@
           <h5 class="mb-0">Quizzes</h5>
           <BaseButton
             v-if="isTeacher"
-            :to="{ name: 'CreateQuiz', params: { courseSlug: course.slug } }"
+            :to="{ name: 'CreateQuiz', params: { courseSlug: courseSlugValue } }"
             variant="primary"
             outline
             size="sm"
@@ -196,7 +196,7 @@
                 <!-- Edit quiz (teacher) -->
                 <BaseButton
                   v-if="isTeacher"
-                  :to="{ name: 'EditQuiz', params: { quizSlug: quiz.slug } }"
+                  :to="{ name: 'EditQuiz', params: { quizSlug: quizSlug(quiz) } }"
                   variant="secondary"
                   outline
                   size="sm"
@@ -209,7 +209,7 @@
                 <!-- Take quiz (student) -->
                 <BaseButton
                   v-else-if="!myParticipationByQuiz[quiz._id]"
-                  :to="{ name: 'TakeQuiz', params: { quizSlug: quiz.slug } }"
+                  :to="{ name: 'TakeQuiz', params: { quizSlug: quizSlug(quiz) } }"
                   variant="primary"
                   outline
                   size="sm"
@@ -860,13 +860,15 @@ import BaseButton from '@/components/BaseButton.vue'
 import AiQuizPanel from '@/components/AiQuizPanel.vue'
 import AiSummaryPanel from '@/components/AiSummaryPanel.vue'
 import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
-import { normalizeAiFlashcards, toggleFlashcard } from '@/utils/aiFlashcards'
-import { normalizeAiQuiz, selectQuizOption } from '@/utils/aiQuiz'
+import { handleAiFlashcards, handleAiQuiz, handleAiSummary } from '@/utils/aiHandlers'
+import { toggleFlashcard } from '@/utils/aiFlashcards'
+import { selectQuizOption } from '@/utils/aiQuiz'
+import { courseSlug, quizSlug } from '@/utils/slug'
 
 export default {
   name: 'CourseDashboard',
   components: { AiQuizPanel, AiSummaryPanel, BaseButton, FlashcardsPanel },
-  props: ['id'],
+  props: ['courseSlug'],
   data() {
     return {
       course: null,
@@ -957,6 +959,10 @@ export default {
     myParticipationByQuiz() {
       return this.myParticipations || {}
     },
+    courseSlugValue() {
+      if (!this.course) return ''
+      return courseSlug(this.course)
+    },
     filteredNotes() {
       if (!Array.isArray(this.notes) || !this.course?._id) return []
       return this.notes.filter(note => note.course?._id === this.course._id)
@@ -1039,6 +1045,44 @@ export default {
     }
   },
   methods: {
+    quizSlug(quiz) {
+      return quizSlug(quiz)
+    },
+    async resolveCourseBySlug(slug) {
+      if (!slug) return null
+      const user = this.currentUser
+      let courses = []
+
+      if (user?.role === 'teacher') {
+        try {
+          const res = await CourseService.getMine()
+          courses = res.data.data || res.data || []
+        } catch (err) {
+          courses = []
+        }
+      }
+
+      if (!courses.length && user?.role === 'student') {
+        try {
+          const res = await CourseService.getStudentEnrollments()
+          const enrollments = res.data.data || res.data || []
+          courses = enrollments.map(att => att.course).filter(Boolean)
+        } catch (err) {
+          courses = []
+        }
+      }
+
+      if (!courses.length) {
+        try {
+          const res = await CourseService.getAll({ limit: 1000 })
+          courses = res.data.data || res.data || []
+        } catch (err) {
+          courses = []
+        }
+      }
+
+      return courses.find(c => courseSlug(c) === slug) || null
+    },
     setTab(tab) {
       this.currentTab = tab
       if (tab !== 'students') {
@@ -1101,8 +1145,20 @@ export default {
     },
 
     async fetchCourse() {
-      const res = await CourseService.getById(this.$route.params.courseSlug)
-      this.course = res.data.data || res.data
+      const slug = this.$route.params.courseSlug
+      const resolved = await this.resolveCourseBySlug(slug)
+      if (!resolved || !resolved._id) {
+        this.notify('Error', 'Course not found')
+        return
+      }
+
+      try {
+        const res = await CourseService.getById(resolved._id)
+        this.course = res.data.data || res.data || resolved
+      } catch (err) {
+        this.course = resolved
+      }
+
       this.overviewDraft = this.course.overview || ''
       await this.fetchEnrolled()
       await this.fetchMaterials(this.course?._id)
@@ -1396,49 +1452,30 @@ export default {
     },
     async generateNoteSummary(note) {
       const state = this.ensureNoteState(note._id)
-      state.loadingSummary = true
-      state.summary = ''
-      state.error = ''
-      try {
-        const res = await Api.post(`/notes/${note._id}/summaries`)
-        state.summary = res.data.summary || res.data.data?.summary || 'No summary returned'
-      } catch (err) {
-        state.error = 'Failed to generate summary. Please try again.'
-      } finally {
-        state.loadingSummary = false
-      }
+      await handleAiSummary({
+        request: () => Api.post(`/notes/${note._id}/summaries`),
+        setLoading: (value) => { state.loadingSummary = value },
+        setSummary: (value) => { state.summary = value },
+        setError: (value) => { state.error = value }
+      })
     },
     async generateNoteQuiz(note) {
       const state = this.ensureNoteState(note._id)
-      state.loadingQuiz = true
-      state.quiz = []
-      state.error = ''
-      try {
-        const res = await Api.post(`/notes/${note._id}/aiquizzes`)
-        const rawQuiz = res.data.quiz || res.data.data?.quiz || []
-        state.quiz = normalizeAiQuiz(rawQuiz)
-        if (!state.quiz.length) state.error = 'No quiz questions were returned.'
-      } catch (err) {
-        state.error = 'Failed to generate quiz. Please try again.'
-      } finally {
-        state.loadingQuiz = false
-      }
+      await handleAiQuiz({
+        request: () => Api.post(`/notes/${note._id}/aiquizzes`),
+        setLoading: (value) => { state.loadingQuiz = value },
+        setQuiz: (value) => { state.quiz = value },
+        setError: (value) => { state.error = value }
+      })
     },
     async generateNoteFlashcards(note) {
       const state = this.ensureNoteState(note._id)
-      state.loadingFlashcards = true
-      state.flashcards = []
-      state.error = ''
-      try {
-        const res = await Api.post(`/notes/${note._id}/flashcards`)
-        const payload = res.data.flashcards || res.data.data?.flashcards || []
-        state.flashcards = normalizeAiFlashcards(payload)
-        if (!state.flashcards.length) state.error = 'No flashcards were returned.'
-      } catch (err) {
-        state.error = 'Failed to generate flashcards. Please try again.'
-      } finally {
-        state.loadingFlashcards = false
-      }
+      await handleAiFlashcards({
+        request: () => Api.post(`/notes/${note._id}/flashcards`),
+        setLoading: (value) => { state.loadingFlashcards = value },
+        setFlashcards: (value) => { state.flashcards = value },
+        setError: (value) => { state.error = value }
+      })
     },
     toggleMaterial(mat) {
       if (!mat || !mat._id) return
@@ -1474,49 +1511,30 @@ export default {
 
     async generateMaterialSummary(mat) {
       const state = this.ensureMaterialState(mat._id)
-      state.loadingSummary = true
-      state.summary = ''
-      state.error = ''
-      try {
-        const res = await CourseMaterialService.summarize(this.course._id, mat._id)
-        state.summary = res.data.summary || res.data.data?.summary || 'No summary returned'
-      } catch (err) {
-        state.error = 'Failed to generate summary. Please try again.'
-      } finally {
-        state.loadingSummary = false
-      }
+      await handleAiSummary({
+        request: () => CourseMaterialService.summarize(this.course._id, mat._id),
+        setLoading: (value) => { state.loadingSummary = value },
+        setSummary: (value) => { state.summary = value },
+        setError: (value) => { state.error = value }
+      })
     },
     async generateMaterialQuiz(mat) {
       const state = this.ensureMaterialState(mat._id)
-      state.loadingQuiz = true
-      state.quiz = []
-      state.error = ''
-      try {
-        const res = await CourseMaterialService.quiz(this.course._id, mat._id)
-        const rawQuiz = res.data.quiz || res.data.data?.quiz || []
-        state.quiz = normalizeAiQuiz(rawQuiz)
-        if (!state.quiz.length) state.error = 'No quiz questions were returned.'
-      } catch (err) {
-        state.error = 'Failed to generate quiz. Please try again.'
-      } finally {
-        state.loadingQuiz = false
-      }
+      await handleAiQuiz({
+        request: () => CourseMaterialService.quiz(this.course._id, mat._id),
+        setLoading: (value) => { state.loadingQuiz = value },
+        setQuiz: (value) => { state.quiz = value },
+        setError: (value) => { state.error = value }
+      })
     },
     async generateMaterialFlashcards(mat) {
       const state = this.ensureMaterialState(mat._id)
-      state.loadingFlashcards = true
-      state.flashcards = []
-      state.error = ''
-      try {
-        const res = await CourseMaterialService.flashcards(this.course._id, mat._id)
-        const payload = res.data.flashcards || res.data.data?.flashcards || []
-        state.flashcards = normalizeAiFlashcards(payload)
-        if (!state.flashcards.length) state.error = 'No flashcards were returned.'
-      } catch (err) {
-        state.error = 'Failed to generate flashcards. Please try again.'
-      } finally {
-        state.loadingFlashcards = false
-      }
+      await handleAiFlashcards({
+        request: () => CourseMaterialService.flashcards(this.course._id, mat._id),
+        setLoading: (value) => { state.loadingFlashcards = value },
+        setFlashcards: (value) => { state.flashcards = value },
+        setError: (value) => { state.error = value }
+      })
     },
     onFileChange(event) {
       const file = event?.target?.files?.[0]

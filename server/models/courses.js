@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const { slugify, ensureUniqueSlug } = require("../Utils/slugify");
 
 const courseSchema = new mongoose.Schema(
   {
@@ -19,27 +18,10 @@ const courseSchema = new mongoose.Schema(
     degree: {
       type: String,
       default: ""
-    },
-    slug: {
-      type: String,
-      unique: true,
-      index: true
     }
   },
   { timestamps: true }
 );
-
-courseSchema.pre("validate", async function (next) {
-  try {
-    if (!this.slug && this.name) {
-      const base = slugify(this.name);
-      await ensureUniqueSlug(this, base);
-    }
-    next();
-  } catch (err) {
-    next(err);
-  }
-});
 
 // Keep legacy "material" compatibility on responses
 courseSchema.methods.toJSON = function () {

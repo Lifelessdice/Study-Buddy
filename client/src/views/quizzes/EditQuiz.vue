@@ -82,6 +82,7 @@
 <script>
 import QuizService from '@/services/QuizService'
 import CourseService from '@/services/CourseService'
+import { courseSlug, quizSlug } from '@/utils/slug'
 
 export default {
   name: 'EditQuiz',
@@ -104,8 +105,14 @@ export default {
   },
   async mounted() {
     try {
-      const res = await QuizService.get(this.$route.params.quizSlug)
-      const quiz = res.data.data || res.data
+      const listRes = await QuizService.getAll()
+      const list = listRes.data.data || listRes.data || []
+      const found = list.find(q => quizSlug(q) === this.$route.params.quizSlug)
+      if (!found) {
+        throw new Error('Quiz not found')
+      }
+      const res = await QuizService.get(found._id)
+      const quiz = res.data.data || res.data || found
       this.quiz = quiz
       this.courseId = quiz.course
       this.form = {
@@ -125,7 +132,7 @@ export default {
         const courseRes = await CourseService.getById(this.courseId)
         const c = courseRes.data.data || courseRes.data
         this.courseName = c.name
-        this.courseSlug = c.slug || ''
+        this.courseSlug = courseSlug(c)
       } catch (err) {
         // non-fatal
       }

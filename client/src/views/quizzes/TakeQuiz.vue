@@ -73,6 +73,7 @@
 <script>
 import QuizService from '@/services/QuizService'
 import CourseService from '@/services/CourseService'
+import { courseSlug, quizSlug } from '@/utils/slug'
 import Api from '@/Api'
 
 export default {
@@ -99,15 +100,21 @@ export default {
   },
   async mounted() {
     try {
-      const res = await QuizService.get(this.$route.params.quizSlug)
-      const quiz = res.data.data || res.data
+      const listRes = await QuizService.getAll()
+      const list = listRes.data.data || listRes.data || []
+      const found = list.find(q => quizSlug(q) === this.$route.params.quizSlug)
+      if (!found) {
+        throw new Error('Quiz not found')
+      }
+      const res = await QuizService.get(found._id)
+      const quiz = res.data.data || res.data || found
       this.quiz = quiz
       this.answers = (quiz.questions || []).map(() => null)
 
       try {
         const courseRes = await CourseService.getById(quiz.course)
         const course = courseRes.data.data || courseRes.data
-        this.courseSlug = course.slug || ''
+        this.courseSlug = courseSlug(course)
       } catch (err) {
         // non-fatal
       }

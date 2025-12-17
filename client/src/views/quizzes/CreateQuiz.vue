@@ -81,6 +81,7 @@
 <script>
 import QuizService from '@/services/QuizService'
 import CourseService from '@/services/CourseService'
+import { courseSlug } from '@/utils/slug'
 
 export default {
   name: 'CreateQuiz',
@@ -101,11 +102,14 @@ export default {
   },
   async mounted() {
     try {
-      const res = await CourseService.getById(this.courseSlug)
-      const c = res.data.data || res.data
-      this.courseName = c.name
-      this.courseId = c._id
-      if (c.slug) this.courseSlug = c.slug
+      const res = await CourseService.getAll({ limit: 1000 })
+      const list = res.data.data || res.data || []
+      const found = list.find(c => courseSlug(c) === this.courseSlug)
+      if (found) {
+        this.courseName = found.name
+        this.courseId = found._id
+        this.courseSlug = courseSlug(found)
+      }
     } catch (err) {
       // non-fatal
     }
@@ -134,6 +138,10 @@ export default {
     async submit() {
       this.submitting = true
       try {
+        if (!this.courseId) {
+          alert('Course not found')
+          return
+        }
         const questions = this.form.questions
           .filter(q => q.text && q.text.trim())
           .map(q => {

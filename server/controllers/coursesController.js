@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const Course = require("../models/courses");
 const TeachingAssignment = require("../models/teachingAssignments");
-const { ensureDocSlug } = require("../Utils/slugify");
 
 function normalizeCourseBody(body) {
   // Allow legacy "material" field to map into new "overview"
@@ -74,14 +73,6 @@ function buildCoursesCollectionLinks(page, limit, total) {
   };
 }
 
-async function findCourseByParam(param) {
-  if (!param) return null;
-  if (mongoose.Types.ObjectId.isValid(param)) {
-    return Course.findById(param);
-  }
-  return Course.findOne({ slug: param });
-}
-
 // CREATE
 exports.createCourse = async (req, res, next) => {
   try {
@@ -140,17 +131,15 @@ exports.getCourses = async (req, res, next) => {
     // collect unique degrees in this result set
     const degreeSet = new Set();
 
-    const data = [];
-    for (const c of courses) {
-      await ensureDocSlug(c, c.name);
+    const data = courses.map((c) => {
       const obj = c.toJSON ? c.toJSON() : c;
       if (obj.degree) degreeSet.add(obj.degree);
 
-      data.push({
+      return {
         ...obj,
-        links: buildCourseLinks(c.slug || c._id)
-      });
-    }
+        links: buildCourseLinks(c._id)
+      };
+    });
 
     const totalPages = Math.max(Math.ceil(total / limit), 1);
 
@@ -187,10 +176,6 @@ exports.getMyCourses = async (req, res, next) => {
       .map(a => a.course)
       .filter(Boolean);
 
-    for (const c of courses) {
-      await ensureDocSlug(c, c.name);
-    }
-
     res.status(200).json({
       status: "success",
       results: courses.length,
@@ -206,7 +191,15 @@ exports.getCourseById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const course = await findCourseByParam(id);
+    // Invalid ObjectId → 400 CastError
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: "CastError",
+        message: "Invalid ID format"
+      });
+    }
+
+    const course = await Course.findById(id);
 
     if (!course) {
       return res.status(404).json({
@@ -215,9 +208,8 @@ exports.getCourseById = async (req, res, next) => {
       });
     }
 
-    await ensureDocSlug(course, course.name);
     const obj = course.toJSON ? course.toJSON() : course;
-    obj.links = buildCourseLinks(course.slug || course._id);
+    obj.links = buildCourseLinks(id);
 
     res.status(200).json({ status: "success", data: obj });
   } catch (err) {

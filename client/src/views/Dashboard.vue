@@ -65,6 +65,7 @@
 import CourseService from '@/services/CourseService'
 import QuizService from '@/services/QuizService'
 import QuizParticipationService from '@/services/QuizParticipationService'
+import { quizSlug } from '@/utils/slug'
 
 export default {
   data() {
@@ -128,6 +129,7 @@ export default {
           items.forEach(q => {
             allQuizzes.push({
               ...q,
+              slug: quizSlug(q),
               courseCode: course.code,
               courseName: course.name
             })

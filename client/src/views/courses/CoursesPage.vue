@@ -34,7 +34,7 @@
 
         <div class="row">
       <div v-for="course in paginatedCourses" :key="course._id" class="col-md-6 mb-3">
-        <router-link :to="`/courses/${course.slug}`" class="course-card-link">
+        <router-link :to="`/courses/${courseSlug(course)}`" class="course-card-link">
           <div class="card h-100 course-card">
             <div class="card-body">
               <h5 class="card-title">{{ course.name }} <small class="text-muted">({{ course.code }})</small></h5>
@@ -96,6 +96,7 @@
 
 <script>
 import CourseService from '@/services/CourseService'
+import { courseSlug } from '@/utils/slug'
 
 export default {
   name: 'CoursesPage',
@@ -133,6 +134,9 @@ export default {
   },
 
   methods: {
+    courseSlug(course) {
+      return courseSlug(course)
+    },
     async fetchCourses() {
       try {
         this.loading = true

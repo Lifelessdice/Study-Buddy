@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 
-const Note = require("../models/notes");
 const { buildAiQuizPayload } = require("../services/aiQuiz");
+const { findNoteOrThrow, requireNoteContent } = require("../services/noteAi");
 
 // ---------------------------------------------
 // POST /api/v1/notes/:id/aiquizzes
@@ -10,14 +10,8 @@ const { buildAiQuizPayload } = require("../services/aiQuiz");
 // ---------------------------------------------
 router.post("/:id/aiquizzes", async (req, res, next) => {
     try {
-        const note = await Note.findById(req.params.id);
-
-        if (!note) {
-            return res.status(404).json({
-                status: "fail",
-                message: "Note not found"
-            });
-        }
+        const note = await findNoteOrThrow(req.params.id);
+        requireNoteContent(note, "Note has no content to generate a quiz");
 
         const payload = await buildAiQuizPayload({
             text: note.content,

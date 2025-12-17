@@ -69,6 +69,37 @@ async function extractPdfText(material) {
   return (parsed.text || "").trim();
 }
 
+function createMaterialAiHandler(builder) {
+  return async (req, res, next) => {
+    try {
+      const { courseId, materialId } = req.params;
+      const course = await findCourseOr404(courseId, res);
+      if (!course) return;
+      const material = await findMaterialOr404(course, materialId, res);
+      if (!material) return;
+
+      const text = await extractPdfText(material);
+      const payload = await builder({
+        text,
+        data: {
+          materialId: material._id,
+          courseId: course._id,
+          topic: material.title
+        }
+      });
+      return res.status(200).json(payload);
+    } catch (err) {
+      if (err.statusCode) {
+        return res.status(err.statusCode).json({
+          status: "fail",
+          message: err.message
+        });
+      }
+      next(err);
+    }
+  };
+}
+
 // POST /api/v1/courses/:courseId/materials
 router.post("/:courseId/materials", protect, upload.single("file"), async (req, res, next) => {
   try {
@@ -164,96 +195,36 @@ router.delete("/:courseId/materials/:materialId", protect, async (req, res, next
 });
 
 // AI summary for PDF material
-router.post("/:courseId/materials/:materialId/summaries", async (req, res, next) => {
-  try {
-    const { courseId, materialId } = req.params;
-    const course = await findCourseOr404(courseId, res);
-    if (!course) return;
-    const material = await findMaterialOr404(course, materialId, res);
-    if (!material) return;
-
-    const text = await extractPdfText(material);
-    const payload = await buildAiSummaryPayload({
-      text,
-      data: {
-        materialId: material._id,
-        courseId: course._id,
-        topic: material.title
-      },
+router.post(
+  "/:courseId/materials/:materialId/summaries",
+  createMaterialAiHandler((params) =>
+    buildAiSummaryPayload({
+      ...params,
       emptyMessage: "PDF has no extractable text"
-    });
-    return res.status(200).json(payload);
-  } catch (err) {
-    if (err.statusCode) {
-      return res.status(err.statusCode).json({
-        status: "fail",
-        message: err.message
-      });
-    }
-    next(err);
-  }
-});
+    })
+  )
+);
 
 // AI quiz for PDF material
-router.post("/:courseId/materials/:materialId/aiquizzes", async (req, res, next) => {
-  try {
-    const { courseId, materialId } = req.params;
-    const course = await findCourseOr404(courseId, res);
-    if (!course) return;
-    const material = await findMaterialOr404(course, materialId, res);
-    if (!material) return;
-
-    const text = await extractPdfText(material);
-    const payload = await buildAiQuizPayload({
-      text,
-      data: {
-        materialId: material._id,
-        courseId: course._id,
-        topic: material.title
-      },
+router.post(
+  "/:courseId/materials/:materialId/aiquizzes",
+  createMaterialAiHandler((params) =>
+    buildAiQuizPayload({
+      ...params,
       emptyMessage: "PDF has no extractable text"
-    });
-    return res.status(200).json(payload);
-  } catch (err) {
-    if (err.statusCode) {
-      return res.status(err.statusCode).json({
-        status: "fail",
-        message: err.message
-      });
-    }
-    next(err);
-  }
-});
+    })
+  )
+);
 
 // AI flashcards for PDF material
-router.post("/:courseId/materials/:materialId/flashcards", async (req, res, next) => {
-  try {
-    const { courseId, materialId } = req.params;
-    const course = await findCourseOr404(courseId, res);
-    if (!course) return;
-    const material = await findMaterialOr404(course, materialId, res);
-    if (!material) return;
-
-    const text = await extractPdfText(material);
-    const payload = await buildAiFlashcardsPayload({
-      text,
-      data: {
-        materialId: material._id,
-        courseId: course._id,
-        topic: material.title
-      },
+router.post(
+  "/:courseId/materials/:materialId/flashcards",
+  createMaterialAiHandler((params) =>
+    buildAiFlashcardsPayload({
+      ...params,
       emptyMessage: "PDF has no extractable text"
-    });
-    return res.status(200).json(payload);
-  } catch (err) {
-    if (err.statusCode) {
-      return res.status(err.statusCode).json({
-        status: "fail",
-        message: err.message
-      });
-    }
-    next(err);
-  }
-});
+    })
+  )
+);
 
 module.exports = router;

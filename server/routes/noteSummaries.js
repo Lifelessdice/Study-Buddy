@@ -1,31 +1,15 @@
 var express = require("express");
 var router = express.Router();
 
-const Note = require("../models/notes");
 const { buildAiSummaryPayload } = require("../services/aiSummary");
+const { findNoteOrThrow, requireNoteContent } = require("../services/noteAi");
 
 async function handleSummarize(req, res) {
     try {
-        // 1. Validate ID
-        const noteId = req.params.id;
-        if (!noteId) {
-            return res.status(400).json({
-                success: false,
-                message: "Note ID missing in request parameters"
-            });
-        }
+        const note = await findNoteOrThrow(req.params.id);
+        requireNoteContent(note, "Note has no content to summarize");
 
-        // 2. Find note
-        const note = await Note.findById(noteId);
-
-        if (!note) {
-            return res.status(404).json({
-                success: false,
-                message: "Note not found"
-            });
-        }
-
-        // 4. Summarize the note content
+        // Summarize the note content
         const payload = await buildAiSummaryPayload({
             text: note.content,
             data: { noteId: note._id, topic: note.topic },
@@ -39,7 +23,7 @@ async function handleSummarize(req, res) {
             });
         }
 
-        // 5. Success response
+        // Success response
         return res.status(200).json(payload);
 
     } catch (error) {
