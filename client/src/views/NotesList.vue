@@ -36,7 +36,7 @@
               </BaseButton>
             </div>
 
-            <ul class="nav nav-tabs mb-3">
+            <ul class="nav nav-tabs mb-3 responsive-tabs">
               <li class="nav-item">
                 <a
                   class="nav-link"
@@ -71,82 +71,33 @@
             </div>
 
             <div v-show="aiState[item._id]?.activeTab === 'summary'">
-              <BaseButton
-                class="mb-2"
-                variant="primary"
+              <AiSummaryPanel
+                :summary="aiState[item._id]?.summary || ''"
                 :loading="aiState[item._id]?.loadingSummary"
-                @click.stop="generateMaterialSummary(item)"
-              >
-                Generate Summary
-              </BaseButton>
-              <div v-if="aiState[item._id]?.loadingSummary" class="text-center my-2">
-                <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Loading...</span>
-                </div>
-                <p>Generating summary, please wait...</p>
-              </div>
-              <div v-if="aiState[item._id]?.summary && !aiState[item._id]?.loadingSummary">{{ aiState[item._id].summary }}</div>
+                button-class="mb-2"
+                loading-class="text-center my-2"
+                @generate="generateMaterialSummary(item)"
+              />
             </div>
 
             <div v-show="aiState[item._id]?.activeTab === 'quiz'">
-              <BaseButton
-                class="mb-2"
-                variant="success"
+              <AiQuizPanel
+                :quiz="aiState[item._id]?.quiz || []"
                 :loading="aiState[item._id]?.loadingQuiz"
-                @click.stop="generateMaterialQuiz(item)"
-              >
-                Generate Quiz
-              </BaseButton>
-              <div v-if="aiState[item._id]?.loadingQuiz" class="text-center my-2">
-                <div class="spinner-border text-success" role="status">
-                  <span class="visually-hidden">Loading...</span>
-                </div>
-                <p>Generating quiz, please wait...</p>
-              </div>
-              <ul v-if="aiState[item._id]?.quiz?.length && !aiState[item._id]?.loadingQuiz" class="list-group">
-                <li v-for="(q, idx) in aiState[item._id].quiz" :key="idx" class="list-group-item">
-                  <strong>Q{{ idx + 1 }}: {{ q.question }}</strong>
-                  <ul class="list-group mt-2">
-                    <li v-for="(opt, i) in q.options" :key="i" class="list-group-item">
-                      {{ String.fromCharCode(65 + i) }}. {{ opt }}
-                    </li>
-                  </ul>
-                  <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
-                </li>
-              </ul>
+                button-class="mb-2"
+                loading-class="text-center my-2"
+                @generate="generateMaterialQuiz(item)"
+                @select="selectOption"
+              />
             </div>
 
             <div v-show="aiState[item._id]?.activeTab === 'flashcards'">
-              <BaseButton
-                class="mb-2"
-                variant="warning"
+              <FlashcardsPanel
+                :flashcards="aiState[item._id]?.flashcards || []"
                 :loading="aiState[item._id]?.loadingFlashcards"
-                @click.stop="generateMaterialFlashcards(item)"
-              >
-                Generate Flashcards
-              </BaseButton>
-              <div v-if="aiState[item._id]?.loadingFlashcards" class="text-center my-2">
-                <div class="spinner-border text-warning" role="status">
-                  <span class="visually-hidden">Loading...</span>
-                </div>
-                <p>Generating flashcards, please wait...</p>
-              </div>
-              <div v-if="aiState[item._id]?.flashcards?.length && !aiState[item._id]?.loadingFlashcards" class="flashcards-container">
-                <div
-                  class="flashcard"
-                  v-for="(fc, idx) in aiState[item._id].flashcards"
-                  :key="idx"
-                  :class="{ flipped: fc.flipped }"
-                  @click.stop="fc.flipped = !fc.flipped"
-                >
-                  <div class="front">
-                    Q: {{ fc.question }}
-                  </div>
-                  <div class="back">
-                    A: {{ fc.answer }}
-                  </div>
-                </div>
-              </div>
+                @generate="generateMaterialFlashcards(item)"
+                @toggle="toggleMaterialFlashcard(item, $event)"
+              />
             </div>
           </div>
         </div>
@@ -175,8 +126,17 @@
 import api from '../Api'
 import Api from '@/Api'
 import CourseMaterialService from '@/services/CourseMaterialService'
+import AiQuizPanel from '@/components/AiQuizPanel.vue'
+import AiSummaryPanel from '@/components/AiSummaryPanel.vue'
+import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
+import { handleAiFlashcards, handleAiQuiz, handleAiSummary } from '@/utils/aiHandlers'
+import { toggleFlashcard } from '@/utils/aiFlashcards'
+import { selectQuizOption } from '@/utils/aiQuiz'
+import { createAiState } from '@/utils/aiState'
+import { noteSlug } from '@/utils/slug'
 
 export default {
+  components: { AiQuizPanel, AiSummaryPanel, FlashcardsPanel },
   data() {
     return {
       notes: [],
@@ -212,6 +172,7 @@ export default {
     lectures() {
       const noteItems = (this.filteredNotes || []).map(n => ({
         _id: n._id,
+        slug: noteSlug(n),
         title: n.topic,
         description: '',
         createdAt: n.createdAt,
@@ -270,22 +231,20 @@ export default {
   methods: {
     ensureState(id) {
       if (this.aiState[id]) return this.aiState[id]
-      const fresh = {
-        summary: '',
-        quiz: [],
-        flashcards: [],
-        loadingSummary: false,
-        loadingQuiz: false,
-        loadingFlashcards: false,
-        error: '',
-        activeTab: 'summary'
-      }
+      const fresh = createAiState()
       this.aiState = { ...this.aiState, [id]: fresh }
       return fresh
+    },
+    selectOption(question, index) {
+      selectQuizOption(question, index)
     },
     setAiTab(id, tab) {
       const state = this.ensureState(id)
       state.activeTab = tab
+    },
+    toggleMaterialFlashcard(item, index) {
+      const state = this.ensureState(item._id)
+      toggleFlashcard(state.flashcards, index)
     },
     toggleMaterial(item) {
       const isSame = this.expandedMaterialId === item._id
@@ -295,7 +254,7 @@ export default {
       }
     },
     goToLecture(item) {
-      this.$router.push(`/notes/${item._id}`)
+      this.$router.push(`/notes/${item.slug}`)
     },
     formatDate(iso) {
       if (!iso) return ''
@@ -303,112 +262,43 @@ export default {
     },
     async generateMaterialSummary(item) {
       const state = this.ensureState(item._id)
-      state.loadingSummary = true
-      state.summary = ''
-      state.error = ''
-      try {
-        if (!item.courseId) {
-          state.error = 'Missing course for this PDF.'
-          return
-        }
-        const res = await CourseMaterialService.summarize(item.courseId, item._id)
-        state.summary = res.data.summary || res.data.data?.summary || 'No summary returned'
-      } catch (err) {
-        state.error = 'Failed to generate summary. Please try again.'
-      } finally {
-        state.loadingSummary = false
+      if (!item.courseId) {
+        state.error = 'Missing course for this PDF.'
+        return
       }
+      await handleAiSummary({
+        request: () => CourseMaterialService.summarize(item.courseId, item._id),
+        setLoading: (value) => { state.loadingSummary = value },
+        setSummary: (value) => { state.summary = value },
+        setError: (value) => { state.error = value }
+      })
     },
     async generateMaterialQuiz(item) {
       const state = this.ensureState(item._id)
-      state.loadingQuiz = true
-      state.quiz = []
-      state.error = ''
-      try {
-        if (!item.courseId) {
-          state.error = 'Missing course for this PDF.'
-          return
-        }
-        const res = await CourseMaterialService.quiz(item.courseId, item._id)
-        state.quiz = res.data.quiz || res.data.data?.quiz || []
-        if (!state.quiz.length) state.error = 'No quiz questions were returned.'
-      } catch (err) {
-        state.error = 'Failed to generate quiz. Please try again.'
-      } finally {
-        state.loadingQuiz = false
+      if (!item.courseId) {
+        state.error = 'Missing course for this PDF.'
+        return
       }
+      await handleAiQuiz({
+        request: () => CourseMaterialService.quiz(item.courseId, item._id),
+        setLoading: (value) => { state.loadingQuiz = value },
+        setQuiz: (value) => { state.quiz = value },
+        setError: (value) => { state.error = value }
+      })
     },
     async generateMaterialFlashcards(item) {
       const state = this.ensureState(item._id)
-      state.loadingFlashcards = true
-      state.flashcards = []
-      state.error = ''
-      try {
-        if (!item.courseId) {
-          state.error = 'Missing course for this PDF.'
-          return
-        }
-        const res = await CourseMaterialService.flashcards(item.courseId, item._id)
-        const payload = res.data.flashcards || res.data.data?.flashcards || []
-        state.flashcards = payload.map(fc => ({
-          ...fc,
-          flipped: false
-        }))
-        if (!state.flashcards.length) state.error = 'No flashcards were returned.'
-      } catch (err) {
-        state.error = 'Failed to generate flashcards. Please try again.'
-      } finally {
-        state.loadingFlashcards = false
+      if (!item.courseId) {
+        state.error = 'Missing course for this PDF.'
+        return
       }
+      await handleAiFlashcards({
+        request: () => CourseMaterialService.flashcards(item.courseId, item._id),
+        setLoading: (value) => { state.loadingFlashcards = value },
+        setFlashcards: (value) => { state.flashcards = value },
+        setError: (value) => { state.error = value }
+      })
     }
   }
 }
 </script>
-
-<style scoped>
-.flashcards-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.flashcard {
-  width: 200px;
-  height: 120px;
-  perspective: 1000px;
-  cursor: pointer;
-  position: relative;
-  transform-style: preserve-3d;
-}
-
-.flashcard .front,
-.flashcard .back {
-  width: 100%;
-  height: 100%;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  backface-visibility: hidden;
-  transition: transform 0.6s;
-  position: absolute;
-}
-
-.flashcard .back {
-  background: #f8f9fa;
-  transform: rotateY(180deg);
-}
-
-.flashcard.flipped .front {
-  transform: rotateY(180deg);
-}
-
-.flashcard.flipped .back {
-  transform: rotateY(0deg);
-}
-</style>

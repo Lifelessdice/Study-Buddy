@@ -23,7 +23,7 @@
             <template v-if="isTeacher">
               <!-- Edit -->
               <BaseButton
-                :to="`/courses/${course._id}/edit`"
+                :to="`/courses/${courseSlugValue}/edit`"
                 variant="primary"
                 outline
                 size="sm"
@@ -35,7 +35,7 @@
 
               <!-- Overwrite -->
               <BaseButton
-                :to="{ path: `/courses/${course._id}/edit`, query: { mode: 'overwrite' } }"
+                :to="{ path: `/courses/${courseSlugValue}/edit`, query: { mode: 'overwrite' } }"
                 variant="primary"
                 outline
                 size="sm"
@@ -160,53 +160,11 @@
 
     <div v-if="currentTab === 'quizzes'" class="card mb-3">
       <div class="card-body">
-        <div class="row g-3 align-items-center mb-3">
-          <div class="col-md-9">
-            <div class="d-flex flex-wrap gap-3 small fw-semibold text-muted">
-              <div class="analytics-pill">
-                <span class="label">Quizzes</span>
-                <span class="value">{{ quizzes.length }}</span>
-              </div>
-              <div class="analytics-pill">
-                <span class="label">Total Questions</span>
-                <span class="value">{{ totalQuizQuestions }}</span>
-              </div>
-              <div class="analytics-pill" v-if="!isTeacher">
-                <span class="label">Completed</span>
-                <span class="value">{{ myCompletedQuizzes }} / {{ quizzes.length || 0 }}</span>
-              </div>
-              <div class="analytics-pill" v-if="hasQuizQuestions">
-                <span class="label">Avg Questions</span>
-                <span class="value">{{ avgQuestionsPerQuiz }}</span>
-              </div>
-              <div class="analytics-pill" v-if="hasMyScores">
-                <span class="label">Avg Score</span>
-                <span class="value">{{ avgMyScore }}%</span>
-              </div>
-              <div class="analytics-pill" v-if="hasMyScores">
-                <span class="label">Best Score</span>
-                <span class="value">{{ bestMyScore }}%</span>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3" v-if="!isTeacher">
-            <div class="completion-meter">
-              <div class="d-flex justify-content-between small text-muted mb-1">
-                <span>Completion</span>
-                <span>{{ completionRate }}%</span>
-              </div>
-              <div class="meter-track">
-                <div class="meter-fill" :style="{ width: completionRate + '%' }"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h5 class="mb-0">Quizzes</h5>
           <BaseButton
             v-if="isTeacher"
-            :to="{ name: 'CreateQuiz', params: { id: course._id } }"
+            :to="{ name: 'CreateQuiz', params: { courseSlug: courseSlugValue } }"
             variant="primary"
             outline
             size="sm"
@@ -238,7 +196,7 @@
                 <!-- Edit quiz (teacher) -->
                 <BaseButton
                   v-if="isTeacher"
-                  :to="{ name: 'EditQuiz', params: { quizId: quiz._id } }"
+                  :to="{ name: 'EditQuiz', params: { quizSlug: quizSlug(quiz) } }"
                   variant="secondary"
                   outline
                   size="sm"
@@ -251,7 +209,7 @@
                 <!-- Take quiz (student) -->
                 <BaseButton
                   v-else-if="!myParticipationByQuiz[quiz._id]"
-                  :to="{ name: 'TakeQuiz', params: { quizId: quiz._id } }"
+                  :to="{ name: 'TakeQuiz', params: { quizSlug: quizSlug(quiz) } }"
                   variant="primary"
                   outline
                   size="sm"
@@ -322,7 +280,7 @@
         <div v-if="filteredEnrolled.length === 0" class="alert alert-info">No students are enrolled yet.</div>
 
         <div v-else class="table-responsive">
-          <table class="table table-sm align-middle">
+          <table class="table table-sm align-middle table-responsive-stack">
             <thead class="table-light">
               <tr>
                 <th>#</th>
@@ -333,10 +291,10 @@
             </thead>
             <tbody>
               <tr v-for="(att, idx) in filteredEnrolled" :key="att._id">
-                <td>{{ idx + 1 }}</td>
-                <td>{{ att.student?.name || 'Unknown' }}</td>
-                <td>{{ att.student?.email }}</td>
-                <td class="text-end">
+                <td data-label="#">{{ idx + 1 }}</td>
+                <td data-label="Name">{{ att.student?.name || 'Unknown' }}</td>
+                <td data-label="Email">{{ att.student?.email }}</td>
+                <td class="text-end" data-label="Actions">
                   <BaseButton
                     v-if="isTeacher"
                     variant="danger"
@@ -476,29 +434,109 @@
                   </BaseButton>
                 </div>
               </div>
-              <div class="d-flex justify-content-between align-items-start list-group-item">
-                <div class="lecture-text">
-                  <h6 class="mb-1">{{ note.topic }}</h6>
-                  <div class="small text-muted">Created: {{ formatDate(note.createdAt) }}</div>
-                  <p class="mb-0">{{ note.content }}</p>
+              <div
+                v-else
+                class="list-group-item list-group-item-action text-start w-100"
+                role="button"
+                tabindex="0"
+                @click="toggleNote(note)"
+                @keydown.enter.prevent="toggleNote(note)"
+                @keydown.space.prevent="toggleNote(note)"
+              >
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <strong>{{ note.topic }}</strong>
+                    <div class="small text-muted">Created: {{ formatDate(note.createdAt) }}</div>
+                    <div class="small text-muted">Text</div>
+                  </div>
+                  <div v-if="isTeacher" class="d-flex gap-2 ms-3 flex-wrap">
+                    <BaseButton
+                      size="sm"
+                      variant="secondary"
+                      outline
+                      @click.stop="editNote(note)"
+                    >
+                      Edit
+                    </BaseButton>
+                    <BaseButton
+                      size="sm"
+                      variant="danger"
+                      outline
+                      @click.stop="promptDeleteNote(note)"
+                    >
+                      Delete
+                    </BaseButton>
+                  </div>
                 </div>
-                <div v-if="isTeacher" class="d-flex gap-2 ms-3">
-                  <BaseButton
-                    size="sm"
-                    variant="secondary"
-                    outline
-                    @click.stop="editNote(note)"
-                  >
-                    Edit
-                  </BaseButton>
-                  <BaseButton
-                    size="sm"
-                    variant="danger"
-                    outline
-                    @click.stop="promptDeleteNote(note)"
-                  >
-                    Delete
-                  </BaseButton>
+
+                <div v-if="expandedNoteId === note._id" class="mt-3 p-3 border rounded bg-light-subtle">
+                  <div class="lecture-text mb-3">
+                    <p class="mb-0">{{ note.content }}</p>
+                  </div>
+
+                  <ul class="nav nav-tabs mb-3 responsive-tabs">
+                    <li class="nav-item">
+                      <a
+                        class="nav-link"
+                        :class="{ active: noteAi[note._id]?.activeTab === 'summary' }"
+                        @click.stop.prevent="setNoteTab(note._id, 'summary')"
+                      >
+                        Summary
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a
+                        class="nav-link"
+                        :class="{ active: noteAi[note._id]?.activeTab === 'quiz' }"
+                        @click.stop.prevent="setNoteTab(note._id, 'quiz')"
+                      >
+                        Quiz
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a
+                        class="nav-link"
+                        :class="{ active: noteAi[note._id]?.activeTab === 'flashcards' }"
+                        @click.stop.prevent="setNoteTab(note._id, 'flashcards')"
+                      >
+                        Flashcards
+                      </a>
+                    </li>
+                  </ul>
+
+                  <div v-if="noteAi[note._id]?.error" class="alert alert-warning mb-3">
+                    {{ noteAi[note._id].error }}
+                  </div>
+
+                  <div v-show="noteAi[note._id]?.activeTab === 'summary'">
+                    <AiSummaryPanel
+                      :summary="noteAi[note._id]?.summary || ''"
+                      :loading="noteAi[note._id]?.loadingSummary"
+                      button-class="mb-2"
+                      loading-class="text-center my-2"
+                      @generate="generateNoteSummary(note)"
+                    />
+                  </div>
+
+                  <div v-show="noteAi[note._id]?.activeTab === 'quiz'">
+                    <AiQuizPanel
+                      :quiz="noteAi[note._id]?.quiz || []"
+                      :loading="noteAi[note._id]?.loadingQuiz"
+                      button-class="mb-2"
+                      loading-class="text-center my-2"
+                      @generate="generateNoteQuiz(note)"
+                      @select="selectOption"
+                    />
+                  </div>
+
+                  <div v-show="noteAi[note._id]?.activeTab === 'flashcards'">
+                    <FlashcardsPanel
+                      :flashcards="noteAi[note._id]?.flashcards || []"
+                      :loading="noteAi[note._id]?.loadingFlashcards"
+                      @generate="generateNoteFlashcards(note)"
+                      @toggle="toggleNoteFlashcard(note, $event)"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -607,7 +645,7 @@
                   </BaseButton>
                 </div>
 
-                <ul class="nav nav-tabs mb-3">
+                <ul class="nav nav-tabs mb-3 responsive-tabs">
                   <li class="nav-item">
                     <a
                       class="nav-link"
@@ -642,88 +680,33 @@
                 </div>
 
                 <div v-show="materialAi[mat._id]?.activeTab === 'summary'">
-                  <BaseButton
-                    class="mb-2"
-                    variant="primary"
+                  <AiSummaryPanel
+                    :summary="materialAi[mat._id]?.summary || ''"
                     :loading="materialAi[mat._id]?.loadingSummary"
-                    :disabled="materialAi[mat._id]?.loadingSummary"
-                    @click.stop="generateMaterialSummary(mat)"
-                  >
-                    Generate Summary
-                  </BaseButton>
-                  <div v-if="materialAi[mat._id]?.loadingSummary" class="text-center my-2">
-                    <div class="spinner-border text-primary" role="status">
-                      <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p>Generating summary, please wait...</p>
-                  </div>
-                  <div v-if="materialAi[mat._id]?.summary && !materialAi[mat._id]?.loadingSummary">
-                    {{ materialAi[mat._id].summary }}
-                  </div>
+                    button-class="mb-2"
+                    loading-class="text-center my-2"
+                    @generate="generateMaterialSummary(mat)"
+                  />
                 </div>
 
                 <div v-show="materialAi[mat._id]?.activeTab === 'quiz'">
-                  <BaseButton
-                    class="mb-2"
-                    variant="success"
+                  <AiQuizPanel
+                    :quiz="materialAi[mat._id]?.quiz || []"
                     :loading="materialAi[mat._id]?.loadingQuiz"
-                    :disabled="materialAi[mat._id]?.loadingQuiz"
-                    @click.stop="generateMaterialQuiz(mat)"
-                  >
-                    Generate Quiz
-                  </BaseButton>
-                  <div v-if="materialAi[mat._id]?.loadingQuiz" class="text-center my-2">
-                    <div class="spinner-border text-success" role="status">
-                      <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p>Generating quiz, please wait...</p>
-                  </div>
-                  <ul v-if="materialAi[mat._id]?.quiz?.length && !materialAi[mat._id]?.loadingQuiz" class="list-group">
-                    <li v-for="(q, idx) in materialAi[mat._id].quiz" :key="idx" class="list-group-item">
-                      <strong>Q{{ idx + 1 }}: {{ q.question }}</strong>
-                      <ul class="list-group mt-2">
-                        <li v-for="(opt, i) in q.options" :key="i" class="list-group-item">
-                          {{ String.fromCharCode(65 + i) }}. {{ opt }}
-                        </li>
-                      </ul>
-                      <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
-                    </li>
-                  </ul>
+                    button-class="mb-2"
+                    loading-class="text-center my-2"
+                    @generate="generateMaterialQuiz(mat)"
+                    @select="selectOption"
+                  />
                 </div>
 
                 <div v-show="materialAi[mat._id]?.activeTab === 'flashcards'">
-                  <BaseButton
-                    class="mb-2"
-                    variant="warning"
+                  <FlashcardsPanel
+                    :flashcards="materialAi[mat._id]?.flashcards || []"
                     :loading="materialAi[mat._id]?.loadingFlashcards"
-                    :disabled="materialAi[mat._id]?.loadingFlashcards"
-                    @click.stop="generateMaterialFlashcards(mat)"
-                  >
-                    <span v-if="materialAi[mat._id]?.loadingFlashcards">Generating...</span>
-                    <span v-else>Generate Flashcards</span>
-                  </BaseButton>
-                  <div v-if="materialAi[mat._id]?.loadingFlashcards" class="text-center my-2">
-                    <div class="spinner-border text-warning" role="status">
-                      <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p>Generating flashcards, please wait...</p>
-                  </div>
-                  <div v-if="materialAi[mat._id]?.flashcards?.length && !materialAi[mat._id]?.loadingFlashcards" class="flashcards-container">
-                    <div
-                      class="flashcard"
-                      v-for="(fc, idx) in materialAi[mat._id].flashcards"
-                      :key="idx"
-                      :class="{ flipped: fc.flipped }"
-                      @click.stop="fc.flipped = !fc.flipped"
-                    >
-                      <div class="front">
-                        Q: {{ fc.question }}
-                      </div>
-                      <div class="back">
-                        A: {{ fc.answer }}
-                      </div>
-                    </div>
-                  </div>
+                    @generate="generateMaterialFlashcards(mat)"
+                    @toggle="toggleMaterialFlashcard(mat, $event)"
+                  />
                 </div>
               </div>
             </div>
@@ -828,7 +811,7 @@
             </div>
           </div>
           <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0">
+            <table class="table table-sm align-middle mb-0 table-responsive-stack">
               <thead class="table-light">
                 <tr>
                   <th>#</th>
@@ -840,11 +823,11 @@
               </thead>
               <tbody>
                 <tr v-for="(att, idx) in attempts" :key="att._id">
-                  <td>{{ idx + 1 }}</td>
-                  <td>{{ att.student?.name || 'Unknown' }}</td>
-                  <td>{{ att.student?.email || 'Unknown' }}</td>
-                  <td>{{ att.score ?? 'N/A' }}%</td>
-                  <td>{{ formatDate(att.createdAt) }}</td>
+                  <td data-label="#">{{ idx + 1 }}</td>
+                  <td data-label="Name">{{ att.student?.name || 'Unknown' }}</td>
+                  <td data-label="Email">{{ att.student?.email || 'Unknown' }}</td>
+                  <td data-label="Score">{{ att.score ?? 'N/A' }}%</td>
+                  <td data-label="Submitted">{{ formatDate(att.createdAt) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -874,11 +857,19 @@ import QuizService from '@/services/QuizService'
 import QuizParticipationService from '@/services/QuizParticipationService'
 import CourseMaterialService from '@/services/CourseMaterialService'
 import BaseButton from '@/components/BaseButton.vue'
+import AiQuizPanel from '@/components/AiQuizPanel.vue'
+import AiSummaryPanel from '@/components/AiSummaryPanel.vue'
+import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
+import { handleAiFlashcards, handleAiQuiz, handleAiSummary } from '@/utils/aiHandlers'
+import { toggleFlashcard } from '@/utils/aiFlashcards'
+import { selectQuizOption } from '@/utils/aiQuiz'
+import { createAiState } from '@/utils/aiState'
+import { courseSlug, quizSlug } from '@/utils/slug'
 
 export default {
   name: 'CourseDashboard',
-  components: { BaseButton },
-  props: ['id'],
+  components: { AiQuizPanel, AiSummaryPanel, BaseButton, FlashcardsPanel },
+  props: ['courseSlug'],
   data() {
     return {
       course: null,
@@ -922,6 +913,8 @@ export default {
       savingEditNote: false,
       showDeleteNoteConfirm: false,
       noteToDelete: null,
+      noteAi: {},
+      expandedNoteId: null,
       // materials
       materials: [],
       loadingMaterials: false,
@@ -966,6 +959,10 @@ export default {
     },
     myParticipationByQuiz() {
       return this.myParticipations || {}
+    },
+    courseSlugValue() {
+      if (!this.course) return ''
+      return courseSlug(this.course)
     },
     filteredNotes() {
       if (!Array.isArray(this.notes) || !this.course?._id) return []
@@ -1049,6 +1046,44 @@ export default {
     }
   },
   methods: {
+    quizSlug(quiz) {
+      return quizSlug(quiz)
+    },
+    async resolveCourseBySlug(slug) {
+      if (!slug) return null
+      const user = this.currentUser
+      let courses = []
+
+      if (user?.role === 'teacher') {
+        try {
+          const res = await CourseService.getMine()
+          courses = res.data.data || res.data || []
+        } catch (err) {
+          courses = []
+        }
+      }
+
+      if (!courses.length && user?.role === 'student') {
+        try {
+          const res = await CourseService.getStudentEnrollments()
+          const enrollments = res.data.data || res.data || []
+          courses = enrollments.map(att => att.course).filter(Boolean)
+        } catch (err) {
+          courses = []
+        }
+      }
+
+      if (!courses.length) {
+        try {
+          const res = await CourseService.getAll({ limit: 1000 })
+          courses = res.data.data || res.data || []
+        } catch (err) {
+          courses = []
+        }
+      }
+
+      return courses.find(c => courseSlug(c) === slug) || null
+    },
     setTab(tab) {
       this.currentTab = tab
       if (tab !== 'students') {
@@ -1066,7 +1101,7 @@ export default {
       }
       if (tab === 'notes') {
         this.fetchNotes()
-        this.fetchMaterials(this.$route.params.id)
+        this.fetchMaterials(this.course?._id)
       }
     },
     notify(title, message) {
@@ -1111,8 +1146,20 @@ export default {
     },
 
     async fetchCourse() {
-      const res = await CourseService.getById(this.$route.params.id)
-      this.course = res.data.data || res.data
+      const slug = this.$route.params.courseSlug
+      const resolved = await this.resolveCourseBySlug(slug)
+      if (!resolved || !resolved._id) {
+        this.notify('Error', 'Course not found')
+        return
+      }
+
+      try {
+        const res = await CourseService.getById(resolved._id)
+        this.course = res.data.data || res.data || resolved
+      } catch (err) {
+        this.course = resolved
+      }
+
       this.overviewDraft = this.course.overview || ''
       await this.fetchEnrolled()
       await this.fetchMaterials(this.course?._id)
@@ -1122,7 +1169,8 @@ export default {
     },
     async fetchEnrolled() {
       try {
-        const res = await CourseService.getStudents(this.$route.params.id)
+        if (!this.course?._id) return
+        const res = await CourseService.getStudents(this.course._id)
         this.enrolled = res.data.data || res.data
       } catch (err) {
         console.error(err)
@@ -1179,6 +1227,9 @@ export default {
     formatDate(d) {
       if (!d) return '-'
       return new Date(d).toLocaleString()
+    },
+    selectOption(question, index) {
+      selectQuizOption(question, index)
     },
     async removeCourse() {
       this.showDeleteCourseConfirm = true
@@ -1369,72 +1420,104 @@ export default {
         this.loadingMaterials = false
       }
     },
+    toggleNote(note) {
+      if (!note || !note._id) return
+      const isSame = this.expandedNoteId === note._id
+      this.expandedNoteId = isSame ? null : note._id
+      if (!isSame) {
+        this.ensureNoteState(note._id)
+      }
+    },
+    ensureNoteState(id) {
+      if (!this.noteAi[id]) {
+        this.noteAi[id] = createAiState()
+      }
+      return this.noteAi[id]
+    },
+    setNoteTab(id, tab) {
+      const state = this.ensureNoteState(id)
+      state.activeTab = tab
+    },
+    toggleNoteFlashcard(note, index) {
+      const state = this.ensureNoteState(note._id)
+      toggleFlashcard(state.flashcards, index)
+    },
+    async generateNoteSummary(note) {
+      const state = this.ensureNoteState(note._id)
+      await handleAiSummary({
+        request: () => Api.post(`/notes/${note._id}/summaries`),
+        setLoading: (value) => { state.loadingSummary = value },
+        setSummary: (value) => { state.summary = value },
+        setError: (value) => { state.error = value }
+      })
+    },
+    async generateNoteQuiz(note) {
+      const state = this.ensureNoteState(note._id)
+      await handleAiQuiz({
+        request: () => Api.post(`/notes/${note._id}/aiquizzes`),
+        setLoading: (value) => { state.loadingQuiz = value },
+        setQuiz: (value) => { state.quiz = value },
+        setError: (value) => { state.error = value }
+      })
+    },
+    async generateNoteFlashcards(note) {
+      const state = this.ensureNoteState(note._id)
+      await handleAiFlashcards({
+        request: () => Api.post(`/notes/${note._id}/flashcards`),
+        setLoading: (value) => { state.loadingFlashcards = value },
+        setFlashcards: (value) => { state.flashcards = value },
+        setError: (value) => { state.error = value }
+      })
+    },
     toggleMaterial(mat) {
       if (!mat || !mat._id) return
-      this.expandedMaterialId = this.expandedMaterialId === mat._id ? null : mat._id
+      const isSame = this.expandedMaterialId === mat._id
+      this.expandedMaterialId = isSame ? null : mat._id
+      if (!isSame) {
+        this.ensureMaterialState(mat._id)
+      }
     },
     ensureMaterialState(id) {
       if (!this.materialAi[id]) {
-        this.materialAi[id] = {
-          summary: '',
-          quiz: [],
-          flashcards: [],
-          loadingSummary: false,
-          loadingQuiz: false,
-          loadingFlashcards: false,
-          error: ''
-        }
+        this.materialAi[id] = createAiState()
       }
       return this.materialAi[id]
+    },
+    setMaterialTab(id, tab) {
+      const state = this.ensureMaterialState(id)
+      state.activeTab = tab
+    },
+    toggleMaterialFlashcard(mat, index) {
+      const state = this.ensureMaterialState(mat._id)
+      toggleFlashcard(state.flashcards, index)
     },
 
     async generateMaterialSummary(mat) {
       const state = this.ensureMaterialState(mat._id)
-      state.loadingSummary = true
-      state.summary = ''
-      state.error = ''
-      try {
-        const res = await CourseMaterialService.summarize(this.course._id, mat._id)
-        state.summary = res.data.summary || res.data.data?.summary || 'No summary returned'
-      } catch (err) {
-        state.error = 'Failed to generate summary. Please try again.'
-      } finally {
-        state.loadingSummary = false
-      }
+      await handleAiSummary({
+        request: () => CourseMaterialService.summarize(this.course._id, mat._id),
+        setLoading: (value) => { state.loadingSummary = value },
+        setSummary: (value) => { state.summary = value },
+        setError: (value) => { state.error = value }
+      })
     },
     async generateMaterialQuiz(mat) {
       const state = this.ensureMaterialState(mat._id)
-      state.loadingQuiz = true
-      state.quiz = []
-      state.error = ''
-      try {
-        const res = await CourseMaterialService.quiz(this.course._id, mat._id)
-        state.quiz = res.data.quiz || res.data.data?.quiz || []
-        if (!state.quiz.length) state.error = 'No quiz questions were returned.'
-      } catch (err) {
-        state.error = 'Failed to generate quiz. Please try again.'
-      } finally {
-        state.loadingQuiz = false
-      }
+      await handleAiQuiz({
+        request: () => CourseMaterialService.quiz(this.course._id, mat._id),
+        setLoading: (value) => { state.loadingQuiz = value },
+        setQuiz: (value) => { state.quiz = value },
+        setError: (value) => { state.error = value }
+      })
     },
     async generateMaterialFlashcards(mat) {
       const state = this.ensureMaterialState(mat._id)
-      state.loadingFlashcards = true
-      state.flashcards = []
-      state.error = ''
-      try {
-        const res = await CourseMaterialService.flashcards(this.course._id, mat._id)
-        const payload = res.data.flashcards || res.data.data?.flashcards || []
-        state.flashcards = payload.map(fc => ({
-          ...fc,
-          flipped: false
-        }))
-        if (!state.flashcards.length) state.error = 'No flashcards were returned.'
-      } catch (err) {
-        state.error = 'Failed to generate flashcards. Please try again.'
-      } finally {
-        state.loadingFlashcards = false
-      }
+      await handleAiFlashcards({
+        request: () => CourseMaterialService.flashcards(this.course._id, mat._id),
+        setLoading: (value) => { state.loadingFlashcards = value },
+        setFlashcards: (value) => { state.flashcards = value },
+        setError: (value) => { state.error = value }
+      })
     },
     onFileChange(event) {
       const file = event?.target?.files?.[0]
@@ -1720,52 +1803,6 @@ export default {
   text-align: left;
   white-space: pre-line;
   line-height: 1.5;
-}
-
-.flashcards-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.flashcard {
-  width: 200px;
-  height: 120px;
-  perspective: 1000px;
-  cursor: pointer;
-  position: relative;
-  transform-style: preserve-3d;
-}
-
-.flashcard .front,
-.flashcard .back {
-  width: 100%;
-  height: 100%;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  backface-visibility: hidden;
-  transition: transform 0.6s;
-  position: absolute;
-}
-
-.flashcard .back {
-  background: #f8f9fa;
-  transform: rotateY(180deg);
-}
-
-.flashcard.flipped .front {
-  transform: rotateY(180deg);
-}
-
-.flashcard.flipped .back {
-  transform: rotateY(0deg);
 }
 
 .add-student-header {

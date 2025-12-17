@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 
-const Note = require("../models/notes");
-const { generateFlashcards } = require("../config/openAIconfig");
+const { buildAiFlashcardsPayload } = require("../services/aiFlashcards");
+const { findNoteOrThrow, requireNoteContent } = require("../services/noteAi");
 
 // ---------------------------------------------
 // POST /api/v1/notes/:id/flashcards
@@ -10,40 +10,32 @@ const { generateFlashcards } = require("../config/openAIconfig");
 // ---------------------------------------------
 router.post("/:id/flashcards", async (req, res, next) => {
     try {
-        const note = await Note.findById(req.params.id);
+        const note = await findNoteOrThrow(req.params.id);
+        requireNoteContent(note, "Note has no content to generate flashcards");
 
-        if (!note) {
-            return res.status(404).json({
-                status: "fail",
-                message: "Note not found"
-            });
-        }
-
-        if (!note.content) {
-            return res.status(400).json({
-                status: "fail",
-                message: "Note has no content to generate flashcards"
-            });
-        }
-
-        const flashcards = await generateFlashcards(note.content);
-
-        return res.status(200).json({
-            status: "success",
+        const payload = await buildAiFlashcardsPayload({
+            text: note.content,
             data: {
                 noteId: note._id,
-                topic: note.topic,
-                flashcards
+                topic: note.topic
             },
-            flashcards
+            emptyMessage: "Note has no content to generate flashcards"
         });
+        return res.status(200).json(payload);
 
     } catch (err) {
-        console.error("Error generating flashcards:", err);
-        return res.status(500).json({
-            status: "error",
-            message: "Internal server error",
-            error: err.message
+        const statusCode = err.statusCode || 500;
+        if (statusCode === 500) {
+            console.error("Error generating flashcards:", err);
+            return res.status(500).json({
+                status: "error",
+                message: "Internal server error",
+                error: err.message
+            });
+        }
+        return res.status(statusCode).json({
+            status: "fail",
+            message: err.message
         });
     }
 });

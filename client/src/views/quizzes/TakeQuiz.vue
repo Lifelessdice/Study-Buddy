@@ -11,7 +11,7 @@
           </div>
         </div>
         <BaseButton
-          :to="{ name: 'CourseDashboard', params: { id: quiz.course }, query: { tab: 'quizzes' } }"
+          :to="{ name: 'CourseDashboard', params: { courseSlug: courseSlug }, query: { tab: 'quizzes' } }"
           variant="secondary"
           outline
           size="sm"
@@ -52,7 +52,7 @@
         </div>
       </div>
 
-      <div class="d-flex justify-content-end gap-2 mt-3">
+      <div class="d-flex justify-content-end gap-2 mt-3 quiz-actions">
         <BaseButton variant="secondary" outline :disabled="submitting" @click="cancel">
           Cancel
         </BaseButton>
@@ -72,15 +72,18 @@
 
 <script>
 import QuizService from '@/services/QuizService'
+import CourseService from '@/services/CourseService'
+import { courseSlug, quizSlug } from '@/utils/slug'
 import Api from '@/Api'
 
 export default {
   name: 'TakeQuiz',
-  props: ['quizId'],
+  props: ['quizSlug'],
   data() {
     return {
       quiz: {},
       answers: [],
+      courseSlug: '',
       submitting: false,
       loaded: false
     }
@@ -97,10 +100,24 @@ export default {
   },
   async mounted() {
     try {
-      const res = await QuizService.get(this.$route.params.quizId)
-      const quiz = res.data.data || res.data
+      const listRes = await QuizService.getAll()
+      const list = listRes.data.data || listRes.data || []
+      const found = list.find(q => quizSlug(q) === this.$route.params.quizSlug)
+      if (!found) {
+        throw new Error('Quiz not found')
+      }
+      const res = await QuizService.get(found._id)
+      const quiz = res.data.data || res.data || found
       this.quiz = quiz
       this.answers = (quiz.questions || []).map(() => null)
+
+      try {
+        const courseRes = await CourseService.getById(quiz.course)
+        const course = courseRes.data.data || courseRes.data
+        this.courseSlug = courseSlug(course)
+      } catch (err) {
+        // non-fatal
+      }
 
       this.loaded = true
     } catch (err) {
@@ -110,7 +127,7 @@ export default {
   },
   methods: {
     cancel() {
-      this.$router.push({ name: 'CourseDashboard', params: { id: this.quiz.course }, query: { tab: 'quizzes' } })
+      this.$router.push({ name: 'CourseDashboard', params: { courseSlug: this.courseSlug }, query: { tab: 'quizzes' } })
     },
     async submit() {
       if (!this.user || !this.user._id) {
@@ -134,7 +151,7 @@ export default {
         })
 
         alert(`Quiz submitted! Score: ${score}%`)
-        this.$router.push({ name: 'CourseDashboard', params: { id: this.quiz.course }, query: { tab: 'quizzes' } })
+        this.$router.push({ name: 'CourseDashboard', params: { courseSlug: this.courseSlug }, query: { tab: 'quizzes' } })
       } catch (err) {
         console.error(err)
         alert('Failed to submit quiz')
@@ -149,5 +166,20 @@ export default {
 <style scoped>
 .list-group-item {
   cursor: pointer;
+}
+
+.quiz-actions {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 576px) {
+  .quiz-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .quiz-actions .btn {
+    width: 100%;
+  }
 }
 </style>

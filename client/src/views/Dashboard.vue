@@ -47,7 +47,7 @@
               <div class="small text-muted mb-1">Due: {{ item.dueLabel }}</div>
             </div>
             <BaseButton
-              :to="{ name: 'TakeQuiz', params: { quizId: item._id } }"
+              :to="{ name: 'TakeQuiz', params: { quizSlug: item.slug } }"
               variant="primary"
               size="sm"
             >
@@ -65,6 +65,7 @@
 import CourseService from '@/services/CourseService'
 import QuizService from '@/services/QuizService'
 import QuizParticipationService from '@/services/QuizParticipationService'
+import { quizSlug } from '@/utils/slug'
 
 export default {
   data() {
@@ -128,6 +129,7 @@ export default {
           items.forEach(q => {
             allQuizzes.push({
               ...q,
+              slug: quizSlug(q),
               courseCode: course.code,
               courseName: course.name
             })

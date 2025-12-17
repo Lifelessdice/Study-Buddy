@@ -7,7 +7,9 @@ const Course = require("../models/courses");
 const CourseMaterial = require("../models/courseMaterials");
 const upload = require("../Utils/upload");
 const protect = require("../middleware/protect");
-const { summarizeText, generateQuiz, generateFlashcards } = require("../config/openAIconfig");
+const { buildAiQuizPayload } = require("../services/aiQuiz");
+const { buildAiSummaryPayload } = require("../services/aiSummary");
+const { buildAiFlashcardsPayload } = require("../services/aiFlashcards");
 
 const router = express.Router();
 
@@ -65,6 +67,37 @@ async function extractPdfText(material) {
   const buffer = await fs.promises.readFile(fileOnDisk);
   const parsed = await pdfParse(buffer);
   return (parsed.text || "").trim();
+}
+
+function createMaterialAiHandler(builder) {
+  return async (req, res, next) => {
+    try {
+      const { courseId, materialId } = req.params;
+      const course = await findCourseOr404(courseId, res);
+      if (!course) return;
+      const material = await findMaterialOr404(course, materialId, res);
+      if (!material) return;
+
+      const text = await extractPdfText(material);
+      const payload = await builder({
+        text,
+        data: {
+          materialId: material._id,
+          courseId: course._id,
+          topic: material.title
+        }
+      });
+      return res.status(200).json(payload);
+    } catch (err) {
+      if (err.statusCode) {
+        return res.status(err.statusCode).json({
+          status: "fail",
+          message: err.message
+        });
+      }
+      next(err);
+    }
+  };
 }
 
 // POST /api/v1/courses/:courseId/materials
@@ -162,87 +195,36 @@ router.delete("/:courseId/materials/:materialId", protect, async (req, res, next
 });
 
 // AI summary for PDF material
-router.post("/:courseId/materials/:materialId/summaries", async (req, res, next) => {
-  try {
-    const { courseId, materialId } = req.params;
-    const course = await findCourseOr404(courseId, res);
-    if (!course) return;
-    const material = await findMaterialOr404(course, materialId, res);
-    if (!material) return;
-
-    const text = await extractPdfText(material);
-    if (!text) {
-      return res.status(400).json({
-        status: "fail",
-        message: "PDF has no extractable text"
-      });
-    }
-
-    const summary = await summarizeText(text);
-    return res.status(200).json({
-      status: "success",
-      data: { materialId: material._id, courseId: course._id, summary },
-      summary
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+router.post(
+  "/:courseId/materials/:materialId/summaries",
+  createMaterialAiHandler((params) =>
+    buildAiSummaryPayload({
+      ...params,
+      emptyMessage: "PDF has no extractable text"
+    })
+  )
+);
 
 // AI quiz for PDF material
-router.post("/:courseId/materials/:materialId/aiquizzes", async (req, res, next) => {
-  try {
-    const { courseId, materialId } = req.params;
-    const course = await findCourseOr404(courseId, res);
-    if (!course) return;
-    const material = await findMaterialOr404(course, materialId, res);
-    if (!material) return;
-
-    const text = await extractPdfText(material);
-    if (!text) {
-      return res.status(400).json({
-        status: "fail",
-        message: "PDF has no extractable text"
-      });
-    }
-
-    const quiz = await generateQuiz(text);
-    return res.status(200).json({
-      status: "success",
-      data: { materialId: material._id, courseId: course._id, quiz },
-      quiz
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+router.post(
+  "/:courseId/materials/:materialId/aiquizzes",
+  createMaterialAiHandler((params) =>
+    buildAiQuizPayload({
+      ...params,
+      emptyMessage: "PDF has no extractable text"
+    })
+  )
+);
 
 // AI flashcards for PDF material
-router.post("/:courseId/materials/:materialId/flashcards", async (req, res, next) => {
-  try {
-    const { courseId, materialId } = req.params;
-    const course = await findCourseOr404(courseId, res);
-    if (!course) return;
-    const material = await findMaterialOr404(course, materialId, res);
-    if (!material) return;
-
-    const text = await extractPdfText(material);
-    if (!text) {
-      return res.status(400).json({
-        status: "fail",
-        message: "PDF has no extractable text"
-      });
-    }
-
-    const flashcards = await generateFlashcards(text);
-    return res.status(200).json({
-      status: "success",
-      data: { materialId: material._id, courseId: course._id, flashcards },
-      flashcards
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+router.post(
+  "/:courseId/materials/:materialId/flashcards",
+  createMaterialAiHandler((params) =>
+    buildAiFlashcardsPayload({
+      ...params,
+      emptyMessage: "PDF has no extractable text"
+    })
+  )
+);
 
 module.exports = router;

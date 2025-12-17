@@ -68,7 +68,7 @@
           {{ submitting ? 'Saving...' : 'Save Changes' }}
         </BaseButton>
         <BaseButton
-          :to="{ name: 'CourseDashboard', params: { id: courseId }, query: { tab: 'quizzes' } }"
+          :to="{ name: 'CourseDashboard', params: { courseSlug: courseSlug }, query: { tab: 'quizzes' } }"
           variant="link"
         >
           Cancel
@@ -82,14 +82,16 @@
 <script>
 import QuizService from '@/services/QuizService'
 import CourseService from '@/services/CourseService'
+import { courseSlug, quizSlug } from '@/utils/slug'
 
 export default {
   name: 'EditQuiz',
-  props: ['quizId'],
+  props: ['quizSlug'],
   data() {
     return {
       quiz: null,
       courseId: null,
+      courseSlug: '',
       courseName: '',
       loaded: false,
       submitting: false,
@@ -103,8 +105,14 @@ export default {
   },
   async mounted() {
     try {
-      const res = await QuizService.get(this.$route.params.quizId)
-      const quiz = res.data.data || res.data
+      const listRes = await QuizService.getAll()
+      const list = listRes.data.data || listRes.data || []
+      const found = list.find(q => quizSlug(q) === this.$route.params.quizSlug)
+      if (!found) {
+        throw new Error('Quiz not found')
+      }
+      const res = await QuizService.get(found._id)
+      const quiz = res.data.data || res.data || found
       this.quiz = quiz
       this.courseId = quiz.course
       this.form = {
@@ -124,6 +132,7 @@ export default {
         const courseRes = await CourseService.getById(this.courseId)
         const c = courseRes.data.data || courseRes.data
         this.courseName = c.name
+        this.courseSlug = courseSlug(c)
       } catch (err) {
         // non-fatal
       }
@@ -174,7 +183,7 @@ export default {
           questions
         }
         await QuizService.update(this.quiz._id, payload)
-        this.$router.push({ name: 'CourseDashboard', params: { id: this.courseId }, query: { tab: 'quizzes' } })
+        this.$router.push({ name: 'CourseDashboard', params: { courseSlug: this.courseSlug }, query: { tab: 'quizzes' } })
       } catch (err) {
         console.error(err)
         alert('Failed to save quiz')

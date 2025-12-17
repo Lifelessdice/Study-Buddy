@@ -17,6 +17,7 @@ import StudentResults from './views/quizzes/StudentResults.vue'
 import CourseSignupPage from './views/courses/CourseSignupPage.vue'
 import NotesList from './views/NotesList.vue'
 import NoteDetail from './views/NoteDetail.vue'
+import Profile from './views/Profile.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -36,7 +37,7 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/courses/:id',
+    path: '/courses/:courseSlug',
     name: 'CourseDashboard',
     component: CourseDashboard,
     props: true,
@@ -69,28 +70,28 @@ const routes = [
     meta: { requiresAuth: true, requiresTeacher: true }
   },
   {
-    path: '/courses/:id/edit',
+    path: '/courses/:courseSlug/edit',
     name: 'EditCourse',
     component: EditCourse,
     props: true,
     meta: { requiresAuth: true, requiresTeacher: true }
   },
   {
-    path: '/courses/:id/quizzes/create',
+    path: '/courses/:courseSlug/quizzes/create',
     name: 'CreateQuiz',
     component: CreateQuiz,
     props: true,
     meta: { requiresAuth: true, requiresTeacher: true }
   },
   {
-    path: '/quizzes/:quizId/edit',
+    path: '/quizzes/:quizSlug/edit',
     name: 'EditQuiz',
     component: EditQuiz,
     props: true,
     meta: { requiresAuth: true, requiresTeacher: true }
   },
   {
-    path: '/quizzes/:quizId/take',
+    path: '/quizzes/:quizSlug/take',
     name: 'TakeQuiz',
     component: TakeQuiz,
     props: true,
@@ -109,10 +110,16 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/notes/:id',
+    path: '/notes/:noteSlug',
     name: 'NoteDetail',
     component: NoteDetail,
     props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: Profile,
     meta: { requiresAuth: true }
   }
 

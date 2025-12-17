@@ -46,10 +46,11 @@
 
 <script>
 import CourseService from '@/services/CourseService'
+import { courseSlug } from '@/utils/slug'
 
 export default {
   name: 'EditCourse',
-  props: ['id'],
+  props: ['courseSlug'],
   data() {
     return {
       form: {
@@ -58,17 +59,25 @@ export default {
         overview: '',
         degree: ''
       },
+      courseId: '',
       loaded: false,
       submitting: false
     }
   },
   async mounted() {
     try {
-      const courseId = this.$route.params.id
-      const res = await CourseService.getById(courseId)
-      const c = res.data.data || res.data
-      this.form.name = c.name
-      this.form.code = c.code
+      const courseSlugParam = this.$route.params.courseSlug
+      const listRes = await CourseService.getAll({ limit: 1000 })
+      const list = listRes.data.data || listRes.data || []
+      const found = list.find(c => courseSlug(c) === courseSlugParam)
+      if (!found) {
+        throw new Error('Course not found')
+      }
+      const res = await CourseService.getById(found._id)
+      const c = res.data.data || res.data || found
+      this.courseId = c._id || found._id
+      this.form.name = c.name || found.name
+      this.form.code = c.code || found.code
       this.form.overview = c.overview || ''
       this.form.degree = c.degree || ''
       this.loaded = true
@@ -81,11 +90,10 @@ export default {
     async submit() {
       try {
         this.submitting = true
-        const courseId = this.$route.params.id
         if (this.isOverwrite) {
-          await CourseService.replace(courseId, this.form)
+          await CourseService.replace(this.courseId, this.form)
         } else {
-          await CourseService.update(courseId, this.form)
+          await CourseService.update(this.courseId, this.form)
         }
         this.$router.push({ name: 'Courses' })
       } catch (err) {
