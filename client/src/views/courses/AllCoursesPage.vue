@@ -85,7 +85,7 @@
     </div>
 
     <div class="row">
-      <div v-for="course in paginatedCourses" :key="course._id" class="col-md-6 mb-3">
+      <div v-for="course in courses" :key="course._id" class="col-md-6 mb-3">
         <div class="card h-100">
           <div class="card-body">
             <h5 class="card-title">
@@ -191,7 +191,7 @@ export default {
       enrollingId: null,
       enrollError: null,
 
-      apilinks: null
+      apiLinks: null
     }
   },
   computed: {
@@ -216,11 +216,6 @@ export default {
           (c.code || '').toLowerCase().includes(term)
         )
         .slice(0, 5)
-    },
-    paginatedCourses() {
-      const start = (this.currentPage - 1) * this.pageSize
-      const end = start + this.pageSize
-      return this.courses.slice(start, end)
     }
   },
 

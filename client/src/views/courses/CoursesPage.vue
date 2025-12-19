@@ -100,64 +100,72 @@ import { courseSlug } from '@/utils/slug'
 
 export default {
   name: 'CoursesPage',
-  data() {
-    return {
-      courses: [],
-      loading: false,
-      error: null,
+    data() {
+      return {
+        courses: [],
+        loading: false,
+        error: null,
 
-      // 🔽 pagination state for when we call getAll()
-      currentPage: 1,
-      pageSize: 5,
-      totalPages: 1,
-      total: 0
-    }
-  },
-  computed: {
-    isTeacher() {
-      const u = localStorage.getItem('user')
-      if (!u) return false
-      const user = JSON.parse(u)
-      return user.role === 'teacher'
-    },
-    isStudent() {
-      const u = localStorage.getItem('user')
-      if (!u) return false
-      const user = JSON.parse(u)
-      return user.role === 'student'
-    },
-    paginatedCourses() {
-      const start = (this.currentPage - 1) * this.pageSize
-      const end = start + this.pageSize
-      return this.courses.slice(start, end)
-    }
-  },
+        // 🔽 pagination state for when we call getAll()
+        currentPage: 1,
+        pageSize: 5,
+        totalPages: 1,
+        total: 0,
 
-  methods: {
-    courseSlug(course) {
-      return courseSlug(course)
+        // true = backend is doing pagination (getAll)
+        // false = frontend is doing pagination (getMine / enrollments)
+        usesBackendPagination: false
+      }
     },
-    async fetchCourses() {
-      try {
-        this.loading = true
-        this.error = null
+    computed: {
+      isTeacher() {
+        const u = localStorage.getItem('user')
+        if (!u) return false
+        const user = JSON.parse(u)
+        return user.role === 'teacher'
+      },
+      isStudent() {
+        const u = localStorage.getItem('user')
+        if (!u) return false
+        const user = JSON.parse(u)
+        return user.role === 'student'
+      },
+    },
 
-        let res
+    methods: {
+      courseSlug(course) {
+        return courseSlug(course)
+      },
+      async fetchCourses() {
+        try {
+          this.loading = true
+          this.error = null
+
+          let res
 
         if (this.isTeacher) {
           try {
             // teachers: first try only their courses
             res = await CourseService.getMine()
-            const data = res.data.data || res.data || []
-            this.courses = data
 
-            // 🔽 update pagination based on courses list
+            // handle weird statuses or empty body (e.g. 304)
+            const raw = res.data
+            const mineData = (raw && raw.data) || raw || []
+
+            if (!Array.isArray(mineData) || mineData.length === 0) {
+              // behave as if it failed → go to catch and fall back to /courses
+              throw new Error(`No data from /courses/mine (status ${res.status})`)
+            }
+
+            this.courses = mineData
+
+            // 🔽 frontend pagination for teacher
             this.total = this.courses.length
             this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
 
             return
           } catch (err) {
-            // If teacher fetch fails (e.g., not assigned yet), fall back to all
+            // If teacher fetch fails or is empty, fall back to all (backend pagination)
             const params = {
               page: this.currentPage,
               limit: this.pageSize
@@ -165,34 +173,48 @@ export default {
             res = await CourseService.getAll(params)
           }
         } else if (this.isStudent) {
-          // students: show courses they are enrolled in (from attendances)
-          const enrollments = await CourseService.getStudentEnrollments()
-          const data = enrollments.data.data || enrollments.data || []
-          this.courses = data.map(att => att.course).filter(Boolean)
+            // students: show courses they are enrolled in (from attendances)
+            const enrollments = await CourseService.getStudentEnrollments()
+            const data = enrollments.data.data || enrollments.data || []
+            this.courses = data.map(att => att.course).filter(Boolean)
 
-          // 🔽 update pagination based on courses list
-          this.total = this.courses.length
-          this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
+            // 🔽 frontend pagination for student
+            this.total = this.courses.length
+            this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
+            this.usesBackendPagination = false
 
-          return
-        } else {
-          // anonymous / admin: show all with pagination
-          const params = {
-            page: this.currentPage,
-            limit: this.pageSize
+            return
+          } else {
+            // anonymous / admin: show all with backend pagination
+            const params = {
+              page: this.currentPage,
+              limit: this.pageSize
+            }
+            res = await CourseService.getAll(params)
+            // we’ll mark backend pagination below
           }
-          res = await CourseService.getAll(params)
-        }
 
-        const data = res.data
+          const data = res.data
 
-        this.courses = data.data || data // sometimes API uses data.data or data
+          this.courses = data.data || data // sometimes API uses data.data or data
 
-        // 🔽 update pagination based on what we actually have
-        this.total = this.courses.length
-        this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
-      } catch (err) {
-        this.error = err
+          // 🔽 use backend pagination numbers if available
+          if (typeof data.total === 'number') {
+            this.total = data.total
+          } else {
+            this.total = this.courses.length
+          }
+
+          if (typeof data.totalPages === 'number') {
+            this.totalPages = data.totalPages
+          } else {
+            this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
+          }
+
+          // we're using backend pagination here
+          this.usesBackendPagination = true
+        } catch (err) {
+          this.error = err
         console.error(err)
       } finally {
         this.loading = false
