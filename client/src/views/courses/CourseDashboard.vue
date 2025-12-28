@@ -1,105 +1,18 @@
 <template>
   <div class="container mt-4" v-if="course">
-    <div class="hero card mb-3">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-          <div>
-            <p class="text-uppercase small text-muted mb-1">Course</p>
-            <h2 class="mb-1">{{ course.name }}</h2>
-            <div class="text-muted fw-bold">{{ course.code }}</div>
-          </div>
-          <div class="d-flex gap-2 flex-wrap justify-content-end">
-            <BaseButton
-              to="/courses"
-              variant="secondary"
-              outline
-              size="sm"
-            >
-              <span class="btn-text btn-text-long">Back</span>
-              <span class="btn-text btn-text-short">Back</span>
-              <span class="btn-icon">⬅️</span>
-            </BaseButton>
+    <CourseHero
+  :course="course"
+  :is-teacher="isTeacher"
+  :course-slug="courseSlugValue"
+  :my-attendance="myAttendance"
+  @delete-course="showDeleteCourseConfirm = true"
+  @leave-course="showLeaveConfirm = true"
+    />
 
-            <template v-if="isTeacher">
-              <!-- Edit -->
-              <BaseButton
-                :to="`/courses/${courseSlugValue}/edit`"
-                variant="primary"
-                outline
-                size="sm"
-              >
-                <span class="btn-text btn-text-long">Edit</span>
-                <span class="btn-text btn-text-short">Edit</span>
-                <span class="btn-icon">✏️</span>
-              </BaseButton>
-
-              <!-- Overwrite -->
-              <BaseButton
-                :to="{ path: `/courses/${courseSlugValue}/edit`, query: { mode: 'overwrite' } }"
-                variant="primary"
-                outline
-                size="sm"
-              >
-                <span class="btn-text btn-text-long">Overwrite</span>
-                <span class="btn-text btn-text-short">Overwrite</span>
-                <span class="btn-icon">♻️</span>
-              </BaseButton>
-
-              <!-- Delete -->
-              <BaseButton
-                variant="danger"
-                outline
-                size="sm"
-                @click="removeCourse"
-              >
-                <span class="btn-text btn-text-long">Delete</span>
-                <span class="btn-text btn-text-short">Delete</span>
-                <span class="btn-icon">🗑️</span>
-              </BaseButton>
-            </template>
-
-            <template v-else>
-              <!-- Leave course -->
-              <BaseButton
-                v-if="myAttendance"
-                variant="danger"
-                outline
-                size="sm"
-                @click="showLeaveConfirm = true"
-              >
-                <span class="btn-text btn-text-long">Leave Course</span>
-                <span class="btn-text btn-text-short">Leave</span>
-                <span class="btn-icon">🚪</span>
-              </BaseButton>
-            </template>
-          </div>
-        </div>
-        <hr>
-        <div class="row gy-2 small text-muted">
-          <div class="col-md-6">
-            <strong>Degree:</strong> {{ course.degree || '-' }}
-          </div>
-          <div class="col-md-6 text-md-end">
-            <strong>Teacher:</strong> {{ courseTeacher || '-' }}
-          </div>
-          <div class="col-md-6">
-            <strong>Created:</strong> {{ formatDate(course.createdAt) }}
-          </div>
-          <div class="col-md-6 text-md-end">
-            <strong>Last Updated:</strong> {{ formatDate(course.updatedAt) }}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="nav-tabs-custom mb-3">
-      <div class="d-flex align-items-center gap-3 flex-wrap">
-        <span class="tab" :class="{ active: currentTab === 'overview' }" @click="setTab('overview')">Overview</span>
-        <span class="tab" :class="{ active: currentTab === 'notes' }" @click="setTab('notes')">Lectures</span>
-        <span class="tab" :class="{ active: currentTab === 'quizzes' }" @click="setTab('quizzes')">Quizzes</span>
-        <span class="tab" :class="{ active: currentTab === 'students' }" @click="setTab('students')">Students</span>
-      </div>
-    </div>
+    <CourseTabs
+  :current-tab="currentTab"
+  @change="setTab"
+    />
 
     <div v-if="currentTab === 'overview'">
       <div class="card mb-3">
@@ -865,10 +778,12 @@ import { toggleFlashcard } from '@/utils/aiFlashcards'
 import { selectQuizOption } from '@/utils/aiQuiz'
 import { createAiState } from '@/utils/aiState'
 import { courseSlug, quizSlug } from '@/utils/slug'
+import CourseHero from './components/CourseHero.vue'
+import CourseTabs from './components/CourseTabs.vue'
 
 export default {
   name: 'CourseDashboard',
-  components: { AiQuizPanel, AiSummaryPanel, BaseButton, FlashcardsPanel },
+  components: { AiQuizPanel, AiSummaryPanel, BaseButton, FlashcardsPanel, CourseHero, CourseTabs },
   props: ['courseSlug'],
   data() {
     return {
