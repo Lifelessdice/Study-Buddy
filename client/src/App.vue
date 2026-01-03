@@ -2,50 +2,51 @@
   <div id="app" class="app-shell">
     <!-- NAVBAR / UPPER THING -->
     <nav class="navbar navbar-light bg-light px-3 mb-3 app-header">
-      <button
-        class="menu-toggle"
-        type="button"
-        :aria-expanded="isMenuOpen ? 'true' : 'false'"
-        aria-controls="app-menu"
-        aria-label="Toggle menu"
-        @click="toggleMenu"
-      >
-        <span class="menu-bar"></span>
-        <span class="menu-bar"></span>
-        <span class="menu-bar"></span>
-      </button>
-      <router-link class="navbar-brand app-brand" to="/">
-        StudyBuddy
-      </router-link>
-      <div class="navbar-nav flex-row flex-wrap me-auto ms-3 app-nav">
-        <li class="nav-item me-2" v-if="!user">
-          <router-link class="nav-link" to="/login">Login</router-link>
-        </li>
-        <li class="nav-item me-2" v-if="!user">
-          <router-link class="nav-link" to="/signup">Sign Up</router-link>
-        </li>
-        <li class="nav-item me-2" v-if="user">
-          <router-link class="nav-link" to="/dashboard">Dashboard</router-link>
-        </li>
-        <li class="nav-item me-2" v-if="user && (user.role === 'teacher' || user.role === 'student')">
-          <router-link class="nav-link" to="/courses">
-            {{ user.role === 'teacher' ? 'Courses' : 'My Courses' }}
-          </router-link>
-        </li>
-        <li class="nav-item me-2" v-if="user && user.role === 'student'">
-          <router-link class="nav-link" to="/results">Results</router-link>
-        </li>
-        <li class="nav-item me-2" v-if="user && user.role === 'student'">
-          <router-link class="nav-link" to="/notes">Lectures</router-link>
-        </li>
-      </div>
-      <div class="d-flex align-items-center ms-auto user-actions" v-if="user">
-        <router-link class="me-2 small text-muted user-info user-profile-link" to="/profile">
-          {{ displayName }}
+      <div class="app-left">
+        <button
+          class="menu-toggle"
+          type="button"
+          :aria-expanded="isMenuOpen ? 'true' : 'false'"
+          aria-controls="app-menu"
+          aria-label="Toggle menu"
+          @click="toggleMenu"
+        >
+          <span class="menu-bar"></span>
+          <span class="menu-bar"></span>
+          <span class="menu-bar"></span>
+        </button>
+        <router-link class="navbar-brand app-brand" to="/">
+          <img class="app-logo" :src="logoUrl" alt="StudyBuddy logo" />
+          <span class="app-brand-text">StudyBuddy</span>
         </router-link>
-        <BaseButton variant="danger" outline size="sm" class="logout-btn" @click="logout">
-          Logout
-        </BaseButton>
+      </div>
+      <div class="app-center">
+        <div class="navbar-nav flex-row flex-wrap app-nav">
+          <li class="nav-item me-2" v-if="user">
+            <router-link class="nav-link" to="/dashboard">Dashboard</router-link>
+          </li>
+          <li class="nav-item me-2" v-if="user && (user.role === 'teacher' || user.role === 'student')">
+            <router-link class="nav-link" to="/courses">
+              {{ user.role === 'teacher' ? 'Courses' : 'My Courses' }}
+            </router-link>
+          </li>
+          <li class="nav-item me-2" v-if="user && user.role === 'student'">
+            <router-link class="nav-link" to="/results">Results</router-link>
+          </li>
+          <li class="nav-item me-2" v-if="user && user.role === 'student'">
+            <router-link class="nav-link" to="/notes">Lectures</router-link>
+          </li>
+        </div>
+      </div>
+      <div class="app-right">
+        <div class="d-flex align-items-center user-actions" v-if="user">
+          <router-link class="me-2 small text-muted user-info user-profile-link" to="/profile">
+            {{ displayName }}
+          </router-link>
+          <BaseButton variant="danger" outline size="sm" class="logout-btn" @click="logout">
+            Logout
+          </BaseButton>
+        </div>
       </div>
     </nav>
 
@@ -64,12 +65,6 @@
         </router-link>
       </div>
       <ul class="menu-list">
-        <li v-if="!user">
-          <router-link class="menu-link" to="/login" @click="closeMenu">Login</router-link>
-        </li>
-        <li v-if="!user">
-          <router-link class="menu-link" to="/signup" @click="closeMenu">Sign Up</router-link>
-        </li>
         <li v-if="user">
           <router-link class="menu-link" to="/dashboard" @click="closeMenu">Dashboard</router-link>
         </li>
@@ -108,12 +103,15 @@
 </template>
 
 <script>
+import logoUrl from './assets/studybuddy-logo.png'
+
 export default {
   name: 'AppShell',
   data() {
     return {
       user: null,
-      isMenuOpen: false
+      isMenuOpen: false,
+      logoUrl
     }
   },
   created() {
@@ -187,7 +185,7 @@ body,
   z-index: 1030;     /* above cards etc. */
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 1.5rem;
 }
 
 .menu-toggle {
@@ -199,7 +197,6 @@ body,
   flex-direction: column;
   gap: 0.25rem;
   cursor: pointer;
-  margin-right: 0.75rem;
 }
 
 .menu-toggle:focus {
@@ -404,6 +401,48 @@ body {
 .user-actions {
   flex-wrap: nowrap;
   white-space: nowrap;
+}
+
+.app-nav {
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.app-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1 1 0;
+}
+
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 700;
+}
+
+.app-logo {
+  width: 36px;
+  height: 36px;
+  display: block;
+  object-fit: contain;
+}
+
+.app-brand-text {
+  letter-spacing: 0.01em;
+}
+
+.app-center {
+  display: flex;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.app-right {
+  display: flex;
+  justify-content: flex-end;
+  flex: 1 1 0;
 }
 
 .user-profile-link {

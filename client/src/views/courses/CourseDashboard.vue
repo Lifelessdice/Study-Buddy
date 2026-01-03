@@ -399,7 +399,15 @@
             >
               {{ savingNote ? 'Saving...' : 'Save Lecture' }}
             </BaseButton>
-            <BaseButton variant="link" size="sm" @click="showCreateNote = false">Discard</BaseButton>
+            <BaseButton
+              variant="secondary"
+              outline
+              size="sm"
+              type="button"
+              @click="showCreateNote = false"
+            >
+              Discard
+            </BaseButton>
           </div>
         </div>
 
