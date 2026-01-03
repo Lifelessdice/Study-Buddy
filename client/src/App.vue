@@ -18,12 +18,6 @@
         StudyBuddy
       </router-link>
       <div class="navbar-nav flex-row flex-wrap me-auto ms-3 app-nav">
-        <li class="nav-item me-2" v-if="!user">
-          <router-link class="nav-link" to="/login">Login</router-link>
-        </li>
-        <li class="nav-item me-2" v-if="!user">
-          <router-link class="nav-link" to="/signup">Sign Up</router-link>
-        </li>
         <li class="nav-item me-2" v-if="user">
           <router-link class="nav-link" to="/dashboard">Dashboard</router-link>
         </li>
@@ -64,12 +58,6 @@
         </router-link>
       </div>
       <ul class="menu-list">
-        <li v-if="!user">
-          <router-link class="menu-link" to="/login" @click="closeMenu">Login</router-link>
-        </li>
-        <li v-if="!user">
-          <router-link class="menu-link" to="/signup" @click="closeMenu">Sign Up</router-link>
-        </li>
         <li v-if="user">
           <router-link class="menu-link" to="/dashboard" @click="closeMenu">Dashboard</router-link>
         </li>
