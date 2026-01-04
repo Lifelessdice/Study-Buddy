@@ -46,6 +46,24 @@ app.use(cors());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ---------------------------------------------
+//  HTTP METHOD OVERRIDE (MS1 Extended)
+//  Supports POST with ?_method=PATCH|PUT|DELETE
+//  or X-HTTP-Method-Override header.
+// ---------------------------------------------
+app.use((req, res, next) => {
+    if (req.method === 'POST') {
+        const override = req.get('X-HTTP-Method-Override') || req.query._method;
+        if (override) {
+            const method = String(override).toUpperCase();
+            if (['PATCH', 'PUT', 'DELETE'].includes(method)) {
+                req.method = method;
+            }
+        }
+    }
+    next();
+});
+
+// ---------------------------------------------
 //  HEALTH CHECK (Required for CI)
 // ---------------------------------------------
 app.get("/api/v1/health", systemController.healthCheck);

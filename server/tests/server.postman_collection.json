@@ -669,6 +669,59 @@
           "response": []
         },
         {
+          "name": "Method Override (PATCH)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Method override PATCH -> 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Method override PATCH -> name updated\", function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.status).to.eql(\"success\");",
+                  "  pm.expect(jsonData.data).to.have.property(\"name\");",
+                  "  pm.expect(jsonData.data.name).to.eql(\"Override Name\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Override Name\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}?_method=PATCH",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ],
+              "query": [
+                {
+                  "key": "_method",
+                  "value": "PATCH"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Overwrite User",
           "event": [
             {
