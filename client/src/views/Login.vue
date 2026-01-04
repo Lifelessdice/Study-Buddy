@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import api from '../Api'
+import Api from '@/Api'
 
 export default {
   data() {
@@ -38,7 +38,7 @@ export default {
   methods: {
     async login() {
       try {
-        const res = await api.post('/auth/login', {
+        const res = await Api.post('/auth/login', {
           email: this.email,
           password: this.password
         })

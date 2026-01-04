@@ -7,7 +7,7 @@
           <h3 class="mb-1">{{ quiz.title }}</h3>
           <div class="text-muted small">
             Questions: {{ quiz.questions?.length || 0 }}
-            <span v-if="quiz.timeLimit">• Time: {{ quiz.timeLimit }} min</span>
+            <span v-if="quiz.timeLimit">Time: {{ quiz.timeLimit }} min</span>
           </div>
         </div>
         <BaseButton

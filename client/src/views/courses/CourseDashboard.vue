@@ -17,7 +17,7 @@
             >
               <span class="btn-text btn-text-long">Back</span>
               <span class="btn-text btn-text-short">Back</span>
-              <span class="btn-icon">⬅️</span>
+              <span class="btn-icon">&lt;</span>
             </BaseButton>
 
             <template v-if="isTeacher">
@@ -30,7 +30,7 @@
               >
                 <span class="btn-text btn-text-long">Edit</span>
                 <span class="btn-text btn-text-short">Edit</span>
-                <span class="btn-icon">✏️</span>
+                <span class="btn-icon">E</span>
               </BaseButton>
 
               <!-- Overwrite -->
@@ -42,7 +42,7 @@
               >
                 <span class="btn-text btn-text-long">Overwrite</span>
                 <span class="btn-text btn-text-short">Overwrite</span>
-                <span class="btn-icon">♻️</span>
+                <span class="btn-icon">O</span>
               </BaseButton>
 
               <!-- Delete -->
@@ -54,7 +54,7 @@
               >
                 <span class="btn-text btn-text-long">Delete</span>
                 <span class="btn-text btn-text-short">Delete</span>
-                <span class="btn-icon">🗑️</span>
+                <span class="btn-icon">Del</span>
               </BaseButton>
             </template>
 
@@ -69,7 +69,7 @@
               >
                 <span class="btn-text btn-text-long">Leave Course</span>
                 <span class="btn-text btn-text-short">Leave</span>
-                <span class="btn-icon">🚪</span>
+                <span class="btn-icon">Lv</span>
               </BaseButton>
             </template>
           </div>
@@ -123,7 +123,7 @@
                 {{ overviewEditing ? 'Cancel' : 'Edit' }}
               </span>
               <span class="btn-icon">
-                {{ overviewEditing ? '❌' : '✏️' }}
+                {{ overviewEditing ? 'X' : 'E' }}
               </span>
             </BaseButton>
           </div>
@@ -189,7 +189,7 @@
                 </div>
                 <div class="small text-muted">Created: {{ formatDate(quiz.createdAt) }}</div>
                 <div v-if="!isTeacher && myParticipationByQuiz[quiz._id]" class="small text-success">
-                  Score: {{ myParticipationByQuiz[quiz._id].score ?? 'N/A' }}%
+                  Score: {{ myParticipationByQuiz[quiz._id].score Rpt 'N/A' }}%
                 </div>
               </div>
               <div class="d-flex gap-2">
@@ -203,7 +203,7 @@
                 >
                   <span class="btn-text btn-text-long">Edit</span>
                   <span class="btn-text btn-text-short">Edit</span>
-                  <span class="btn-icon">✏️</span>
+                  <span class="btn-icon">E</span>
                 </BaseButton>
 
                 <!-- Take quiz (student) -->
@@ -216,7 +216,7 @@
                 >
                   <span class="btn-text btn-text-long">Take Quiz</span>
                   <span class="btn-text btn-text-short">Take</span>
-                  <span class="btn-icon">📝</span>
+                  <span class="btn-icon">T</span>
                 </BaseButton>
 
                 <!-- View attempts (teacher) -->
@@ -229,7 +229,7 @@
                 >
                   <span class="btn-text btn-text-long">View Attempts</span>
                   <span class="btn-text btn-text-short">Attempts</span>
-                  <span class="btn-icon">📊</span>
+                  <span class="btn-icon">Rpt</span>
                 </BaseButton>
 
                 <!-- Delete quiz (teacher) -->
@@ -242,7 +242,7 @@
                 >
                   <span class="btn-text btn-text-long">Delete</span>
                   <span class="btn-text btn-text-short">Delete</span>
-                  <span class="btn-icon">🗑️</span>
+                  <span class="btn-icon">Del</span>
                 </BaseButton>
               </div>
             </div>
@@ -292,8 +292,8 @@
             <tbody>
               <tr v-for="(att, idx) in filteredEnrolled" :key="att._id">
                 <td data-label="#">{{ idx + 1 }}</td>
-                <td data-label="Name">{{ att.student?.name || 'Unknown' }}</td>
-                <td data-label="Email">{{ att.student?.email }}</td>
+                <td data-label="Name">{{ att.studentX.name || 'Unknown' }}</td>
+                <td data-label="Email">{{ att.studentX.email }}</td>
                 <td class="text-end" data-label="Actions">
                   <BaseButton
                     v-if="isTeacher"
@@ -486,7 +486,7 @@
                     <li class="nav-item">
                       <a
                         class="nav-link"
-                        :class="{ active: noteAi[note._id]?.activeTab === 'summary' }"
+                        :class="{ active: noteAi[note._id]X.activeTab === 'summary' }"
                         @click.stop.prevent="setNoteTab(note._id, 'summary')"
                       >
                         Summary
@@ -495,7 +495,7 @@
                     <li class="nav-item">
                       <a
                         class="nav-link"
-                        :class="{ active: noteAi[note._id]?.activeTab === 'quiz' }"
+                        :class="{ active: noteAi[note._id]X.activeTab === 'quiz' }"
                         @click.stop.prevent="setNoteTab(note._id, 'quiz')"
                       >
                         Quiz
@@ -504,7 +504,7 @@
                     <li class="nav-item">
                       <a
                         class="nav-link"
-                        :class="{ active: noteAi[note._id]?.activeTab === 'flashcards' }"
+                        :class="{ active: noteAi[note._id]X.activeTab === 'flashcards' }"
                         @click.stop.prevent="setNoteTab(note._id, 'flashcards')"
                       >
                         Flashcards
@@ -512,24 +512,24 @@
                     </li>
                   </ul>
 
-                  <div v-if="noteAi[note._id]?.error" class="alert alert-warning mb-3">
+                  <div v-if="noteAi[note._id]X.error" class="alert alert-warning mb-3">
                     {{ noteAi[note._id].error }}
                   </div>
 
-                  <div v-show="noteAi[note._id]?.activeTab === 'summary'">
+                  <div v-show="noteAi[note._id]X.activeTab === 'summary'">
                     <AiSummaryPanel
-                      :summary="noteAi[note._id]?.summary || ''"
-                      :loading="noteAi[note._id]?.loadingSummary"
+                      :summary="noteAi[note._id]X.summary || ''"
+                      :loading="noteAi[note._id]X.loadingSummary"
                       button-class="mb-2"
                       loading-class="text-center my-2"
                       @generate="generateNoteSummary(note)"
                     />
                   </div>
 
-                  <div v-show="noteAi[note._id]?.activeTab === 'quiz'">
+                  <div v-show="noteAi[note._id]X.activeTab === 'quiz'">
                     <AiQuizPanel
-                      :quiz="noteAi[note._id]?.quiz || []"
-                      :loading="noteAi[note._id]?.loadingQuiz"
+                      :quiz="noteAi[note._id]X.quiz || []"
+                      :loading="noteAi[note._id]X.loadingQuiz"
                       button-class="mb-2"
                       loading-class="text-center my-2"
                       @generate="generateNoteQuiz(note)"
@@ -537,10 +537,10 @@
                     />
                   </div>
 
-                  <div v-show="noteAi[note._id]?.activeTab === 'flashcards'">
+                  <div v-show="noteAi[note._id]X.activeTab === 'flashcards'">
                     <FlashcardsPanel
-                      :flashcards="noteAi[note._id]?.flashcards || []"
-                      :loading="noteAi[note._id]?.loadingFlashcards"
+                      :flashcards="noteAi[note._id]X.flashcards || []"
+                      :loading="noteAi[note._id]X.loadingFlashcards"
                       @generate="generateNoteFlashcards(note)"
                       @toggle="toggleNoteFlashcard(note, $event)"
                     />
@@ -620,7 +620,7 @@
               <div class="d-flex justify-content-between align-items-start">
                 <div>
                   <strong>{{ mat.title || mat.originalName }}</strong>
-                  <div class="small text-muted">PDF • {{ prettySize(mat.size) }}</div>
+                  <div class="small text-muted">PDF - {{ prettySize(mat.size) }}</div>
                   <div v-if="mat.description" class="small text-muted">{{ mat.description }}</div>
                 </div>
                 <div class="d-flex align-items-center gap-2 ms-2">
@@ -657,7 +657,7 @@
                   <li class="nav-item">
                     <a
                       class="nav-link"
-                      :class="{ active: materialAi[mat._id]?.activeTab === 'summary' }"
+                      :class="{ active: materialAi[mat._id]X.activeTab === 'summary' }"
                       @click.stop.prevent="setMaterialTab(mat._id, 'summary')"
                     >
                       Summary
@@ -666,7 +666,7 @@
                   <li class="nav-item">
                     <a
                       class="nav-link"
-                      :class="{ active: materialAi[mat._id]?.activeTab === 'quiz' }"
+                      :class="{ active: materialAi[mat._id]X.activeTab === 'quiz' }"
                       @click.stop.prevent="setMaterialTab(mat._id, 'quiz')"
                     >
                       Quiz
@@ -675,7 +675,7 @@
                   <li class="nav-item">
                     <a
                       class="nav-link"
-                      :class="{ active: materialAi[mat._id]?.activeTab === 'flashcards' }"
+                      :class="{ active: materialAi[mat._id]X.activeTab === 'flashcards' }"
                       @click.stop.prevent="setMaterialTab(mat._id, 'flashcards')"
                     >
                       Flashcards
@@ -683,24 +683,24 @@
                   </li>
                 </ul>
 
-                <div v-if="materialAi[mat._id]?.error" class="alert alert-warning mb-3">
+                <div v-if="materialAi[mat._id]X.error" class="alert alert-warning mb-3">
                   {{ materialAi[mat._id].error }}
                 </div>
 
-                <div v-show="materialAi[mat._id]?.activeTab === 'summary'">
+                <div v-show="materialAi[mat._id]X.activeTab === 'summary'">
                   <AiSummaryPanel
-                    :summary="materialAi[mat._id]?.summary || ''"
-                    :loading="materialAi[mat._id]?.loadingSummary"
+                    :summary="materialAi[mat._id]X.summary || ''"
+                    :loading="materialAi[mat._id]X.loadingSummary"
                     button-class="mb-2"
                     loading-class="text-center my-2"
                     @generate="generateMaterialSummary(mat)"
                   />
                 </div>
 
-                <div v-show="materialAi[mat._id]?.activeTab === 'quiz'">
+                <div v-show="materialAi[mat._id]X.activeTab === 'quiz'">
                   <AiQuizPanel
-                    :quiz="materialAi[mat._id]?.quiz || []"
-                    :loading="materialAi[mat._id]?.loadingQuiz"
+                    :quiz="materialAi[mat._id]X.quiz || []"
+                    :loading="materialAi[mat._id]X.loadingQuiz"
                     button-class="mb-2"
                     loading-class="text-center my-2"
                     @generate="generateMaterialQuiz(mat)"
@@ -708,10 +708,10 @@
                   />
                 </div>
 
-                <div v-show="materialAi[mat._id]?.activeTab === 'flashcards'">
+                <div v-show="materialAi[mat._id]X.activeTab === 'flashcards'">
                   <FlashcardsPanel
-                    :flashcards="materialAi[mat._id]?.flashcards || []"
-                    :loading="materialAi[mat._id]?.loadingFlashcards"
+                    :flashcards="materialAi[mat._id]X.flashcards || []"
+                    :loading="materialAi[mat._id]X.loadingFlashcards"
                     @generate="generateMaterialFlashcards(mat)"
                     @toggle="toggleMaterialFlashcard(mat, $event)"
                   />
@@ -726,7 +726,7 @@
     <div v-if="showDeleteMaterialConfirm" class="overlay">
       <div class="overlay-card">
         <h5 class="text-danger">Delete Material</h5>
-        <p class="mb-3">Are you sure you want to delete "{{ materialToDelete?.title || materialToDelete?.originalName }}"?</p>
+        <p class="mb-3">Are you sure you want to delete "{{ materialToDeleteX.title || materialToDeleteX.originalName }}"X</p>
         <div class="d-flex justify-content-end gap-2">
           <BaseButton variant="secondary" outline @click="cancelDeleteMaterial">Cancel</BaseButton>
           <BaseButton variant="danger" @click="deleteMaterialConfirmed">Delete</BaseButton>
@@ -737,7 +737,7 @@
     <div v-if="showDeleteNoteConfirm" class="overlay">
   <div class="overlay-card">
     <h5 class="text-danger">Delete Lecture</h5>
-    <p class="mb-3">Are you sure you want to delete "{{ noteToDelete?.topic }}"?</p>
+    <p class="mb-3">Are you sure you want to delete "{{ noteToDeleteX.topic }}"X</p>
     <div class="d-flex justify-content-end gap-2">
           <BaseButton variant="secondary" outline @click="cancelDeleteNote">Cancel</BaseButton>
           <BaseButton variant="danger" @click="deleteNoteConfirmed">Delete</BaseButton>
@@ -758,7 +758,7 @@
     <div v-if="showDeleteCourseConfirm" class="overlay">
       <div class="overlay-card">
         <h5 class="text-danger">Delete Course</h5>
-        <p class="mb-3">This will permanently delete "{{ course.name }}". Continue?</p>
+        <p class="mb-3">This will permanently delete "{{ course.name }}". ContinueX</p>
         <div class="d-flex justify-content-end gap-2">
           <BaseButton variant="secondary" outline @click="cancelDeleteCourse">Cancel</BaseButton>
           <BaseButton variant="danger" @click="confirmDeleteCourse">Delete</BaseButton>
@@ -769,7 +769,7 @@
     <div v-if="showRemoveStudentConfirm" class="overlay">
       <div class="overlay-card">
         <h5 class="text-danger">Remove Student</h5>
-        <p class="mb-3">Remove this student from the course?</p>
+        <p class="mb-3">Remove this student from the courseX</p>
         <div class="d-flex justify-content-end gap-2">
           <BaseButton variant="secondary" outline @click="cancelRemoveStudent">Cancel</BaseButton>
           <BaseButton variant="danger" @click="confirmRemoveStudent">Remove</BaseButton>
@@ -780,7 +780,7 @@
     <div v-if="showDeleteConfirm" class="overlay">
       <div class="overlay-card">
         <h5 class="text-danger">Delete Quiz</h5>
-        <p class="mb-3">Are you sure you want to delete "{{ quizToDelete?.title }}"?</p>
+        <p class="mb-3">Are you sure you want to delete "{{ quizToDeleteX.title }}"X</p>
         <div class="d-flex justify-content-end gap-2">
           <BaseButton variant="secondary" outline @click="cancelDeleteQuiz">Cancel</BaseButton>
           <BaseButton variant="danger" @click="deleteQuizConfirmed">Delete</BaseButton>
@@ -832,9 +832,9 @@
               <tbody>
                 <tr v-for="(att, idx) in attempts" :key="att._id">
                   <td data-label="#">{{ idx + 1 }}</td>
-                  <td data-label="Name">{{ att.student?.name || 'Unknown' }}</td>
-                  <td data-label="Email">{{ att.student?.email || 'Unknown' }}</td>
-                  <td data-label="Score">{{ att.score ?? 'N/A' }}%</td>
+                  <td data-label="Name">{{ att.studentX.name || 'Unknown' }}</td>
+                  <td data-label="Email">{{ att.studentX.email || 'Unknown' }}</td>
+                  <td data-label="Score">{{ att.score Rpt 'N/A' }}%</td>
                   <td data-label="Submitted">{{ formatDate(att.createdAt) }}</td>
                 </tr>
               </tbody>
@@ -847,7 +847,7 @@
     <div v-if="showLeaveConfirm" class="overlay">
       <div class="overlay-card">
         <h5 class="text-danger">Leave Course</h5>
-        <p class="mb-3">Are you sure you want to leave "{{ course.name }}"?</p>
+        <p class="mb-3">Are you sure you want to leave "{{ course.name }}"X</p>
         <div class="d-flex justify-content-end gap-2">
           <BaseButton variant="secondary" outline @click="showLeaveConfirm = false">Cancel</BaseButton>
           <BaseButton variant="danger" @click="leaveCourse">Leave</BaseButton>
@@ -952,18 +952,18 @@ export default {
       const term = this.studentSearch.trim().toLowerCase()
       if (!term) return this.enrolled
       return this.enrolled.filter(att => {
-        const name = (att.student?.name || '').toLowerCase()
-        const email = (att.student?.email || '').toLowerCase()
+        const name = (att.studentX.name || '').toLowerCase()
+        const email = (att.studentX.email || '').toLowerCase()
         return name.includes(term) || email.includes(term)
       })
     },
     isTeacher() {
       const user = this.currentUser
-      return user?.role === 'teacher'
+      return userX.role === 'teacher'
     },
     myAttendance() {
       if (!this.currentUser || !Array.isArray(this.enrolled)) return null
-      return this.enrolled.find(att => att.student?._id === this.currentUser._id) || null
+      return this.enrolled.find(att => att.studentX._id === this.currentUser._id) || null
     },
     myParticipationByQuiz() {
       return this.myParticipations || {}
@@ -973,8 +973,8 @@ export default {
       return courseSlug(this.course)
     },
     filteredNotes() {
-      if (!Array.isArray(this.notes) || !this.course?._id) return []
-      return this.notes.filter(note => note.course?._id === this.course._id)
+      if (!Array.isArray(this.notes) || !this.courseX._id) return []
+      return this.notes.filter(note => note.courseX._id === this.course._id)
     },
     attemptsWithScore() {
       // normalize scores (numbers + numeric strings)
@@ -1062,7 +1062,7 @@ export default {
       const user = this.currentUser
       let courses = []
 
-      if (user?.role === 'teacher') {
+      if (userX.role === 'teacher') {
         try {
           const res = await CourseService.getMine()
           courses = res.data.data || res.data || []
@@ -1071,7 +1071,7 @@ export default {
         }
       }
 
-      if (!courses.length && user?.role === 'student') {
+      if (!courses.length && userX.role === 'student') {
         try {
           const res = await CourseService.getStudentEnrollments()
           const enrollments = res.data.data || res.data || []
@@ -1109,7 +1109,7 @@ export default {
       }
       if (tab === 'notes') {
         this.fetchNotes()
-        this.fetchMaterials(this.course?._id)
+        this.fetchMaterials(this.courseX._id)
       }
     },
     notify(title, message) {
@@ -1170,14 +1170,14 @@ export default {
 
       this.overviewDraft = this.course.overview || ''
       await this.fetchEnrolled()
-      await this.fetchMaterials(this.course?._id)
+      await this.fetchMaterials(this.courseX._id)
       if (this.currentTab === 'quizzes') {
         await this.fetchQuizzes()
       }
     },
     async fetchEnrolled() {
       try {
-        if (!this.course?._id) return
+        if (!this.courseX._id) return
         const res = await CourseService.getStudents(this.course._id)
         this.enrolled = res.data.data || res.data
       } catch (err) {
@@ -1192,14 +1192,14 @@ export default {
       this.quizError = null
       try {
         const res = await QuizService.getAll({ course: this.course._id, t: Date.now() })
-        const payload = res?.data
+        const payload = resX.data
         const list = (payload && (payload.data || payload)) || []
         if (res.status === 200 || res.status === 201) {
           this.quizzes = Array.isArray(list) ? list : []
         } else if (res.status === 304) {
           // keep existing
         } else {
-          this.quizError = payload?.message || 'Failed to load quizzes.'
+          this.quizError = payloadX.message || 'Failed to load quizzes.'
           this.quizzes = []
         }
         if (!this.isTeacher) {
@@ -1207,7 +1207,7 @@ export default {
         }
       } catch (err) {
         console.error('fetchQuizzes error', err)
-        this.quizError = err?.response?.data?.message || 'Failed to load quizzes.'
+        this.quizError = errX.responseX.dataX.message || 'Failed to load quizzes.'
         this.quizzes = []
       } finally {
         this.loadingQuizzes = false
@@ -1269,7 +1269,7 @@ export default {
         const res = await Api.get('/users', { params })
         const list = res.data.data || res.data || []
         const enrolledIds = new Set(
-          (this.enrolled || []).map(att => att?.student?._id || att.student).filter(Boolean)
+          (this.enrolled || []).map(att => attX.studentX._id || att.student).filter(Boolean)
         )
         this.searchResults = (Array.isArray(list) ? list : []).filter(s => !enrolledIds.has(s._id))
       } catch (err) {
@@ -1280,7 +1280,7 @@ export default {
       }
     },
     isAlreadyEnrolled(studentId) {
-      return (this.enrolled || []).some(att => (att.student?._id || att.student) === studentId)
+      return (this.enrolled || []).some(att => (att.studentX._id || att.student) === studentId)
     },
     async addStudentFromResult(student) {
       if (!student || !student._id) return
@@ -1296,7 +1296,7 @@ export default {
         this.closeAddOverlay()
       } catch (err) {
         console.error(err)
-        this.addStudentError = err?.response?.data?.message || 'Failed to add student.'
+        this.addStudentError = errX.responseX.dataX.message || 'Failed to add student.'
       } finally {
         this.addingStudentId = ''
       }
@@ -1528,7 +1528,7 @@ export default {
       })
     },
     onFileChange(event) {
-      const file = event?.target?.files?.[0]
+      const file = eventX.targetX.filesX.[0]
       if (!file) return
       if (file.type !== 'application/pdf') {
         this.uploadError = 'Only PDF files are allowed'
@@ -1564,7 +1564,7 @@ export default {
           this.$refs.materialFile.value = ''
         }
       } catch (err) {
-        this.uploadError = err?.response?.data?.message || 'Failed to upload material'
+        this.uploadError = errX.responseX.dataX.message || 'Failed to upload material'
       } finally {
         this.uploading = false
       }
@@ -1600,7 +1600,7 @@ export default {
     },
     materialUrl(pathStr) {
       if (!pathStr) return ''
-      const base = Api.defaults?.baseURL || ''
+      const base = Api.defaultsX.baseURL || ''
       const uploadBase = base.replace(/\/api\/v1$/, '') || base
       return `${uploadBase}${pathStr}`
     },

@@ -61,7 +61,7 @@
 </template>
 
 <script>
-import api from '../Api'
+import Api from '@/Api'
 import AiQuizPanel from '@/components/AiQuizPanel.vue'
 import AiSummaryPanel from '@/components/AiSummaryPanel.vue'
 import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
@@ -88,7 +88,7 @@ export default {
   },
   async created() {
     try {
-      const listRes = await api.get('/notes')
+      const listRes = await Api.get('/notes')
       const notes = listRes.data.data || listRes.data || []
       const found = notes.find(n => noteSlug(n) === this.noteSlug)
       if (!found) {
@@ -97,7 +97,7 @@ export default {
       }
       this.noteId = found._id
       try {
-        const detailRes = await api.get(`/notes/${found._id}`)
+        const detailRes = await Api.get(`/notes/${found._id}`)
         this.note = detailRes.data.data || found
       } catch (err) {
         this.note = found
@@ -115,7 +115,7 @@ export default {
     
     async generateSummary() {
       await handleAiSummary({
-        request: () => api.post(`/notes/${this.noteId}/summaries`),
+        request: () => Api.post(`/notes/${this.noteId}/summaries`),
         setLoading: (value) => { this.loadingSummary = value },
         setSummary: (value) => { this.summary = value },
         setError: (value) => { this.aiError = value }
@@ -123,7 +123,7 @@ export default {
     },
     async generateQuiz() {
       await handleAiQuiz({
-        request: () => api.post(`/notes/${this.noteId}/aiquizzes`),
+        request: () => Api.post(`/notes/${this.noteId}/aiquizzes`),
         setLoading: (value) => { this.loadingQuiz = value },
         setQuiz: (value) => { this.quiz = value },
         setError: (value) => { this.aiError = value }
@@ -135,7 +135,7 @@ export default {
     },
     async generateFlashcards() {
       await handleAiFlashcards({
-        request: () => api.post(`/notes/${this.noteId}/flashcards`),
+        request: () => Api.post(`/notes/${this.noteId}/flashcards`),
         setLoading: (value) => { this.loadingFlashcards = value },
         setFlashcards: (value) => { this.flashcards = value },
         setError: (value) => { this.aiError = value }

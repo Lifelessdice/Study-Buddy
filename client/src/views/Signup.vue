@@ -40,7 +40,7 @@
 </template>
 
 <script>
-import api from '../Api'
+import Api from '@/Api'
 
 export default {
   data() {
@@ -54,7 +54,7 @@ export default {
   methods: {
     async signup() {
       try {
-        await api.post('/auth/register', {
+        await Api.post('/auth/register', {
           name: this.name,
           email: this.email,
           role: this.role,

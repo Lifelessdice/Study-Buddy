@@ -143,13 +143,13 @@ export default {
     }
   },
   computed: {
-  displayName() {
-    if (!this.user) return ''
-    const name = this.user.name || this.user.email?.split('@')[0] || 'User'
-    const roleIcon = this.user.role === 'teacher' ? '👩‍🏫' : '🎓'
-    return `${name} ${roleIcon}`
+    displayName() {
+      if (!this.user) return ''
+      const name = this.user.name || this.user.email?.split('@')[0] || 'User'
+      const roleLabel = this.user.role === 'teacher' ? '(Teacher)' : '(Student)'
+      return `${name} ${roleLabel}`
+    }
   }
-} 
 }
 </script>
 

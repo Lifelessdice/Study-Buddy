@@ -6,7 +6,7 @@
         <BaseButton to="/courses" variant="secondary" outline>
           <span class="btn-text btn-text-long">Back to My Courses</span>
           <span class="btn-text btn-text-short">My Courses</span>
-          <span class="btn-icon">📚</span>
+          <span class="btn-icon">C</span>
         </BaseButton>
 
         <BaseButton
@@ -17,7 +17,7 @@
         >
           <span class="btn-text btn-text-long">Delete All Courses</span>
           <span class="btn-text btn-text-short">Delete</span>
-          <span class="btn-icon">🗑️</span>
+          <span class="btn-icon">Del</span>
         </BaseButton>
       </div>
     </div>
@@ -130,7 +130,7 @@
           @click="prevPage"
           :disabled="currentPage === 1"
         >
-          <span class="page-icon">⬅️</span>
+          <span class="page-icon">&lt;</span>
         </BaseButton>
 
         <BaseButton
@@ -140,7 +140,7 @@
           @click="nextPage"
           :disabled="currentPage === totalPages"
         >
-          <span class="page-icon">➡️</span>
+          <span class="page-icon">&gt;</span>
         </BaseButton>
       </div>
 
@@ -191,7 +191,7 @@ export default {
       enrollingId: null,
       enrollError: null,
 
-      apilinks: null
+      apiLinks: null
     }
   },
   computed: {

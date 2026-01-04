@@ -10,7 +10,7 @@
         >
           <span class="btn-text btn-text-long">+ Create Course</span>
           <span class="btn-text btn-text-short">Add Course</span>
-          <span class="btn-icon">➕</span>
+          <span class="btn-icon">+</span>
         </BaseButton>
 
         <BaseButton
@@ -20,7 +20,7 @@
         >
           <span class="btn-text btn-text-long">See All Courses</span>
           <span class="btn-text btn-text-short">All Courses</span>
-          <span class="btn-icon">📚</span>
+          <span class="btn-icon">C</span>
         </BaseButton>
       </div>
 
@@ -47,7 +47,7 @@
       </div>
     </div>
 
-    <!-- 🔽 PASTE THIS BLOCK HERE -->
+    <!-- PASTE THIS BLOCK HERE -->
     <div v-if="!loading" class="d-flex justify-content-between align-items-center mt-3 pagination-bar">
       <div class="d-flex align-items-center gap-2 page-actions">
         <BaseButton
@@ -57,7 +57,7 @@
           @click="prevPage"
           :disabled="currentPage === 1"
         >
-          <span class="page-icon">⬅️</span>
+          <span class="page-icon">&lt;</span>
         </BaseButton>
 
         <BaseButton
@@ -67,7 +67,7 @@
           @click="nextPage"
           :disabled="currentPage === totalPages"
         >
-          <span class="page-icon">➡️</span>
+          <span class="page-icon">&gt;</span>
         </BaseButton>
       </div>
 
@@ -89,7 +89,7 @@
         </select>
       </div>
     </div>
-    <!-- 🔼 END PAGINATION BLOCK -->
+    <!-- END PAGINATION BLOCK -->
 
   </div>
 </template>
@@ -106,7 +106,7 @@ export default {
       loading: false,
       error: null,
 
-      // 🔽 pagination state for when we call getAll()
+      // Pagination state for when we call getAll()
       currentPage: 1,
       pageSize: 5,
       totalPages: 1,
@@ -151,7 +151,7 @@ export default {
             const data = res.data.data || res.data || []
             this.courses = data
 
-            // 🔽 update pagination based on courses list
+            // Update pagination based on courses list
             this.total = this.courses.length
             this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
 
@@ -170,7 +170,7 @@ export default {
           const data = enrollments.data.data || enrollments.data || []
           this.courses = data.map(att => att.course).filter(Boolean)
 
-          // 🔽 update pagination based on courses list
+          // Update pagination based on courses list
           this.total = this.courses.length
           this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
 
@@ -188,7 +188,7 @@ export default {
 
         this.courses = data.data || data // sometimes API uses data.data or data
 
-        // 🔽 update pagination based on what we actually have
+        // Update pagination based on what we actually have
         this.total = this.courses.length
         this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
       } catch (err) {
@@ -204,7 +204,7 @@ export default {
       return new Date(d).toLocaleString()
     },
 
-    // 🔽 pagination actions (only used when getAll() is being used)
+    // Pagination actions (only used when getAll() is being used)
     nextPage() {
       if (this.currentPage < this.totalPages) {
         this.currentPage++
