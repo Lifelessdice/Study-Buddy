@@ -62,6 +62,7 @@
 
 <script>
 import Api from '@/Api'
+import { notifyError } from '@/utils/notify'
 import AiQuizPanel from '@/components/AiQuizPanel.vue'
 import AiSummaryPanel from '@/components/AiSummaryPanel.vue'
 import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
@@ -92,7 +93,7 @@ export default {
       const notes = listRes.data.data || listRes.data || []
       const found = notes.find(n => noteSlug(n) === this.noteSlug)
       if (!found) {
-        alert('Note not found')
+        notifyError('Note not found')
         return
       }
       this.noteId = found._id
@@ -103,7 +104,7 @@ export default {
         this.note = found
       }
     } catch (err) {
-      alert('Failed to load note')
+      notifyError('Failed to load note')
     }
   },
   methods: {

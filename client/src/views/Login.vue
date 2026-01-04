@@ -27,6 +27,7 @@
 
 <script>
 import Api from '@/Api'
+import { notifyError, notifySuccess } from '@/utils/notify'
 
 export default {
   data() {
@@ -48,9 +49,10 @@ export default {
         localStorage.setItem('token', token)
         localStorage.setItem('user', JSON.stringify(user))
 
+        notifySuccess('Welcome back!')
         this.$router.push('/dashboard')
       } catch (err) {
-        alert(err.response?.data?.message || 'Login error')
+        notifyError(err.response?.data?.message || 'Login error')
       }
     }
   }

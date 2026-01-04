@@ -99,14 +99,17 @@
     <main class="app-main">
       <router-view />
     </main>
+    <ToastHost />
   </div>
 </template>
 
 <script>
 import logoUrl from './assets/studybuddy-logo.png'
+import ToastHost from '@/components/ToastHost.vue'
 
 export default {
   name: 'AppShell',
+  components: { ToastHost },
   data() {
     return {
       user: null,
@@ -517,6 +520,32 @@ body {
 
   .table-responsive-stack tbody td:last-child {
     padding-bottom: 0;
+  }
+}
+
+/* Responsive button text/icon helpers */
+.btn-text-short,
+.btn-icon {
+  display: none;
+}
+
+@media (max-width: 576px) {
+  .btn-text-long {
+    display: none;
+  }
+
+  .btn-text-short {
+    display: inline;
+  }
+}
+
+@media (max-width: 360px) {
+  .btn-text-short {
+    display: none;
+  }
+
+  .btn-icon {
+    display: inline;
   }
 }
 

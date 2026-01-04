@@ -41,6 +41,7 @@
 
 <script>
 import Api from '@/Api'
+import { notifyError, notifySuccess } from '@/utils/notify'
 
 export default {
   data() {
@@ -61,10 +62,10 @@ export default {
           password: this.password
         })
 
-        alert('Account created! You can now log in.')
+        notifySuccess('Account created! You can now log in.')
         this.$router.push('/login')
       } catch (err) {
-        alert(err.response?.data?.message || 'Error creating user')
+        notifyError(err.response?.data?.message || 'Error creating user')
       }
     }
   }

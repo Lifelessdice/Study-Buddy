@@ -75,6 +75,7 @@ import QuizService from '@/services/QuizService'
 import CourseService from '@/services/CourseService'
 import { courseSlug, quizSlug } from '@/utils/slug'
 import Api from '@/Api'
+import { notifyError, notifySuccess } from '@/utils/notify'
 
 export default {
   name: 'TakeQuiz',
@@ -121,7 +122,7 @@ export default {
 
       this.loaded = true
     } catch (err) {
-      alert('Failed to load quiz')
+      notifyError('Failed to load quiz')
       this.$router.push({ name: 'Courses' })
     }
   },
@@ -131,7 +132,7 @@ export default {
     },
     async submit() {
       if (!this.user || !this.user._id) {
-        alert('You must be logged in')
+        notifyError('You must be logged in')
         return
       }
       this.submitting = true
@@ -150,11 +151,11 @@ export default {
           score
         })
 
-        alert(`Quiz submitted! Score: ${score}%`)
+        notifySuccess(`Quiz submitted! Score: ${score}%`)
         this.$router.push({ name: 'CourseDashboard', params: { courseSlug: this.courseSlug }, query: { tab: 'quizzes' } })
       } catch (err) {
         console.error(err)
-        alert('Failed to submit quiz')
+        notifyError('Failed to submit quiz')
       } finally {
         this.submitting = false
       }

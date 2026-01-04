@@ -124,6 +124,7 @@
 
 <script>
 import Api from '@/Api'
+import { notifyError } from '@/utils/notify'
 import CourseMaterialService from '@/services/CourseMaterialService'
 import AiQuizPanel from '@/components/AiQuizPanel.vue'
 import AiSummaryPanel from '@/components/AiSummaryPanel.vue'
@@ -218,7 +219,7 @@ export default {
       }
     } catch (err) {
       console.error(err)
-      alert('Failed to load lectures')
+      notifyError('Failed to load lectures')
     }
   },
 

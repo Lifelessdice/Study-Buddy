@@ -26,6 +26,7 @@
 
 <script>
 import CourseService from '@/services/CourseService'
+import { notifyError } from '@/utils/notify'
 
 export default {
   name: 'DeleteAllCourses',
@@ -42,7 +43,7 @@ export default {
         await CourseService.removeAll()
         this.$router.push({ name: 'Courses' })
       } catch (err) {
-        alert('Failed to delete all courses')
+        notifyError('Failed to delete all courses')
       } finally {
         this.deleting = false
       }
