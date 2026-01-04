@@ -13,8 +13,16 @@
         "exec": [
           "// Ensure Authorization header is attached when auth_token is present",
           "const token = pm.environment.get(\"auth_token\");",
-          "if (token) {",
+          "const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+          "if (token && !hasAuthHeader) {",
           "  pm.request.headers.upsert({ key: \"Authorization\", value: `Bearer ${token}` });",
+          "}",
+          "",
+          "// Derive API root (http://host:port/api) from baseUrl",
+          "const baseUrl = pm.environment.get(\"baseUrl\");",
+          "if (baseUrl && !pm.environment.get(\"apiRoot\")) {",
+          "  const apiRoot = baseUrl.replace(/\\/api\\/v1\\/?$/, \"\").concat(\"/api\");",
+          "  pm.environment.set(\"apiRoot\", apiRoot);",
           "}"
         ],
         "type": "text/javascript",
@@ -34,6 +42,81 @@
     ]
   },
   "item": [
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Health: status 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Health: ok\", function () {",
+                  "  pm.expect(body.status).to.eql(\"ok\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "API Root",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"API root: status 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"API root: welcome message\", function () {",
+                  "  pm.expect(body).to.have.property(\"message\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiRoot}}",
+              "host": [
+                "{{apiRoot}}"
+              ],
+              "path": []
+            }
+          },
+          "response": []
+        }
+      ]
+    },
     {
       "name": "Auth",
       "item": [
@@ -150,6 +233,121 @@
             "body": {
               "mode": "raw",
               "raw": "{\r\n  \"email\": \"{{auth_email}}\",\r\n  \"password\": \"{{auth_password}}\"\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register Teacher User",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if (!pm.environment.get(\"teacher_email\")) {",
+                  "  const ts = Date.now();",
+                  "  pm.environment.set(\"teacher_email\", \"teacher-test-user-\" + ts + \"@example.com\");",
+                  "}",
+                  "pm.environment.set(\"teacher_password\", \"password123\");"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Register teacher: status 200 or 201\", function () {",
+                  "  pm.expect([200,201]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.environment.set(\"teacher_user_id\", body.data.user._id);",
+                  "pm.environment.set(\"teacher_token\", body.token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Teacher Test User\",\n  \"email\": \"{{teacher_email}}\",\n  \"password\": \"{{teacher_password}}\",\n  \"role\": \"teacher\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Teacher User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login teacher: status 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.environment.set(\"teacher_token\", body.token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{teacher_email}}\",\n  \"password\": \"{{teacher_password}}\"\n}\n",
               "options": {
                 "raw": {
                   "language": "json"
@@ -983,6 +1181,53 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Get My Courses (Forbidden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Get my courses (student) -> 403\", function () {",
+                  "  pm.response.to.have.status(403);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Get my courses (student) -> forbidden message\", function () {",
+                  "  pm.expect(body.status).to.eql(\"fail\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/courses/mine",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "mine"
+              ]
+            }
+          },
+          "response": [],
+          "auth": {
+            "type": "bearer",
+            "bearer": [
+              {
+                "key": "token",
+                "value": "{{teacher_token}}",
+                "type": "string"
+              }
+            ]
+          }
         },
         {
           "name": "List Courses",
@@ -2973,7 +3218,7 @@
           "response": []
         },
         {
-          "name": "Specific Quit for Creator",
+          "name": "Specific Quiz for Creator",
           "event": [
             {
               "listen": "test",
@@ -3539,6 +3784,101 @@
           "response": []
         },
         {
+          "name": "Create My Attendance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Create my attendance: status 201\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.environment.set(\"myAttendanceId\", body.data._id);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student\": \"{{auth_user_id}}\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{courseId}}/attendances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{courseId}}",
+                "attendances"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Attendances",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Get my attendances: status 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Get my attendances: includes created attendance\", function () {",
+                  "  const id = pm.environment.get(\"myAttendanceId\");",
+                  "  const exists = body.data.some(a => a._id === id);",
+                  "  pm.expect(exists).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses/attendances/mine",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "attendances",
+                "mine"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Create course attendances",
           "event": [
             {
@@ -3727,7 +4067,7 @@
           "response": []
         },
         {
-          "name": "Create Teaching Assignmnet",
+          "name": "Create Teaching Assignment",
           "event": [
             {
               "listen": "test",
@@ -3859,7 +4199,7 @@
           "response": []
         },
         {
-          "name": "Get Single Teaching Attendance",
+          "name": "Get Single Teaching Assignment",
           "event": [
             {
               "listen": "test",
@@ -4062,28 +4402,190 @@
       "item": []
     },
     {
-      "name": "New Request",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{auth_token}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/notes/{{noteId}}/summarize",
-          "host": [
-            "{{baseUrl}}"
+      "name": "CourseMaterials",
+      "item": [
+        {
+          "name": "Create Course for Materials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Create materials course: status 201\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.environment.set(\"materialCourseId\", body.data._id);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
           ],
-          "path": [
-            "notes",
-            "{{noteId}}",
-            "summarize"
-          ]
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Materials Course\",\n  \"code\": \"MAT-101\",\n  \"material\": \"Canvas\",\n  \"degree\": \"BSc\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Course Material",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Create material: status 201\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Create material: success and id\", function () {",
+                  "  pm.expect(body.status).to.eql(\"success\");",
+                  "  pm.expect(body.data).to.have.property(\"_id\");",
+                  "});",
+                  "pm.environment.set(\"materialId\", body.data._id);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Test Material",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Postman upload",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "uploads/materials/01b---Why-HCI_-1-1764877377374-185372.pdf"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{materialCourseId}}/materials",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{materialCourseId}}",
+                "materials"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Course Materials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"List materials: status 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"List materials: has data array\", function () {",
+                  "  pm.expect(body.data).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"List materials: includes created material\", function () {",
+                  "  const id = pm.environment.get(\"materialId\");",
+                  "  const exists = body.data.some(m => m._id === id);",
+                  "  pm.expect(exists).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{materialCourseId}}/materials",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{materialCourseId}}",
+                "materials"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Course Material",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Delete material: status 204\", function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{materialCourseId}}/materials/{{materialId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{materialCourseId}}",
+                "materials",
+                "{{materialId}}"
+              ]
+            }
+          },
+          "response": []
         }
-      },
-      "response": []
+      ]
     }
   ]
 }

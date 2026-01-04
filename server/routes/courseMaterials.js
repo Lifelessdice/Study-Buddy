@@ -1,6 +1,6 @@
 const express = require("express");
 const courseMaterialsController = require("../controllers/courseMaterialsController");
-const upload = require("../Utils/upload");
+const upload = require("../utils/upload");
 const protect = require("../middleware/protect");
 
 const router = express.Router();
