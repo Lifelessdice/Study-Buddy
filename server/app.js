@@ -24,6 +24,7 @@ var noteAIquizRoutes = require('./routes/noteAIquizzes');
 var noteFlashcardsRoutes = require('./routes/noteFlashcards');
 var authRoutes = require('./routes/auth');
 var courseMaterialRoutes = require('./routes/courseMaterials');
+var systemController = require('./controllers/systemController');
 
 
 
@@ -50,16 +51,12 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // ---------------------------------------------
 //  HEALTH CHECK (Required for CI)
 // ---------------------------------------------
-app.get("/api/v1/health", (req, res) => {
-    res.json({ status: "ok" });
-});
+app.get("/api/v1/health", systemController.healthCheck);
 
 // ---------------------------------------------
 //  ROOT TEMPLATE ENDPOINT (Required by template)
 // ---------------------------------------------
-app.get('/api', function(req, res) {
-    res.json({ 'message': 'Welcome to StudyBuddy API v1' });
-});
+app.get('/api', systemController.apiRoot);
 
 // ---------------------------------------------
 //  USER ROUTES 
