@@ -1,45 +1,42 @@
 // ---------------------------------------------
 //  ORIGINAL TEMPLATE IMPORTS
 // ---------------------------------------------
-var express = require('express');
-var mongoose = require('mongoose');
-var morgan = require('morgan');
-var path = require('path');
-var cors = require('cors');
-var history = require('connect-history-api-fallback');
+const express = require('express');
+const morgan = require('morgan');
+const path = require('path');
+const cors = require('cors');
 
 // ---------------------------------------------
 //  ROUTES
 // ---------------------------------------------
-var userRoutes = require('./routes/users');   
-var courseRoutes = require('./routes/courses');
-var noteRoutes = require('./routes/notes');
-var quizRoutes = require('./routes/quizzes');
-var quizCreatorRoutes = require('./routes/quizCreators');
-var quizParticipationRoutes = require('./routes/quizParticipations');
-var courseAttendancesRoutes = require('./routes/courseAttendances');
-var teachingAssignmentRoutes = require('./routes/teachingAssignments');
-var noteSummariesRoutes = require('./routes/noteSummaries');
-var noteAIquizRoutes = require('./routes/noteAIquizzes');
-var noteFlashcardsRoutes = require('./routes/noteFlashcards');
-var authRoutes = require('./routes/auth');
-var courseMaterialRoutes = require('./routes/courseMaterials');
-var systemController = require('./controllers/systemController');
+const userRoutes = require('./routes/users');
+const courseRoutes = require('./routes/courses');
+const noteRoutes = require('./routes/notes');
+const quizRoutes = require('./routes/quizzes');
+const quizCreatorRoutes = require('./routes/quizCreators');
+const quizParticipationRoutes = require('./routes/quizParticipations');
+const courseAttendancesRoutes = require('./routes/courseAttendances');
+const teachingAssignmentRoutes = require('./routes/teachingAssignments');
+const noteSummariesRoutes = require('./routes/noteSummaries');
+const noteAIquizRoutes = require('./routes/noteAIquizzes');
+const noteFlashcardsRoutes = require('./routes/noteFlashcards');
+const authRoutes = require('./routes/auth');
+const courseMaterialRoutes = require('./routes/courseMaterials');
+const systemController = require('./controllers/systemController');
 
 
 
 // ---------------------------------------------
 //  ENV + CONFIG
 // ---------------------------------------------
-var mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/animalDevelopmentDB';
-var port = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
 //Versioned API prefix
-var API_PREFIX = '/api/v1';
+const API_PREFIX = '/api/v1';
 // ---------------------------------------------
 //  APP INIT
 // ---------------------------------------------
-var app = express();
+const app = express();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
