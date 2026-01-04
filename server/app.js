@@ -18,7 +18,7 @@ const quizParticipationRoutes = require('./routes/quizParticipations');
 const courseAttendancesRoutes = require('./routes/courseAttendances');
 const teachingAssignmentRoutes = require('./routes/teachingAssignments');
 const noteSummariesRoutes = require('./routes/noteSummaries');
-const noteAiQuizRoutes = require('./routes/noteAiQuizzes');
+const noteAIquizRoutes = require('./routes/noteAIquizzes');
 const noteFlashcardsRoutes = require('./routes/noteFlashcards');
 const authRoutes = require('./routes/auth');
 const courseMaterialRoutes = require('./routes/courseMaterials');
@@ -71,7 +71,7 @@ app.use(API_PREFIX + "/courses", courseAttendancesRoutes);
 app.use(API_PREFIX + "/courses", teachingAssignmentRoutes);
 app.use(API_PREFIX + "/courses", courseMaterialRoutes);
 app.use(API_PREFIX + "/notes", noteSummariesRoutes);
-app.use(API_PREFIX + "/notes", noteAiQuizRoutes);
+app.use(API_PREFIX + "/notes", noteAIquizRoutes);
 app.use(API_PREFIX + "/notes", noteFlashcardsRoutes);
 
 
