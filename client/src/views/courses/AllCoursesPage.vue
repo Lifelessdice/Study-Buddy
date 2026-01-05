@@ -11,9 +11,9 @@
 
         <BaseButton
           v-if="isTeacher"
-          to="/courses/delete-all"
           variant="danger"
           outline
+          @click="showDeleteAllConfirm = true"
         >
           <span class="btn-text btn-text-long">Delete All Courses</span>
           <span class="btn-text btn-text-short">Delete</span>
@@ -159,11 +159,30 @@
         </select>
       </div>
     </div>
+
+    <div v-if="showDeleteAllConfirm" class="overlay">
+      <div class="overlay-card overlay-card--danger">
+        <h5 class="text-danger">Delete All Courses</h5>
+        <p class="mb-3">This will remove all courses. This cannot be undone.</p>
+        <div class="d-flex gap-2 justify-content-end">
+          <BaseButton variant="primary" outline @click="showDeleteAllConfirm = false">Cancel</BaseButton>
+          <BaseButton
+            variant="danger"
+            :loading="deletingAll"
+            :disabled="deletingAll"
+            @click="deleteAllCourses"
+          >
+            {{ deletingAll ? 'Deleting...' : 'Yes, delete all' }}
+          </BaseButton>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import CourseService from '@/services/CourseService'
+import { notifyError, notifySuccess } from '@/utils/notify'
 
 export default {
   name: 'AllCoursesPage',
@@ -188,7 +207,9 @@ export default {
       enrollingId: null,
       enrollError: null,
 
-      apiLinks: null
+      apiLinks: null,
+      showDeleteAllConfirm: false,
+      deletingAll: false
     }
   },
   computed: {
@@ -338,6 +359,25 @@ export default {
         this.enrollError = 'Enrollment failed. Please try again.'
       } finally {
         this.enrollingId = null
+      }
+    },
+
+    async deleteAllCourses() {
+      if (this.deletingAll) return
+      this.deletingAll = true
+      try {
+        await CourseService.removeAll()
+        this.courses = []
+        this.total = 0
+        this.totalPages = 1
+        this.currentPage = 1
+        this.showDeleteAllConfirm = false
+        notifySuccess('All courses deleted')
+      } catch (err) {
+        console.error(err)
+        notifyError('Failed to delete all courses')
+      } finally {
+        this.deletingAll = false
       }
     },
 
