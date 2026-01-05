@@ -101,13 +101,10 @@
               v-if="isStudent"
               class="mt-3 d-flex justify-content-between align-items-center"
             >
-              <span v-if="isEnrolled(course)" class="badge bg-success">Enrolled</span>
-              <span v-else class="text-muted">Not enrolled</span>
-
               <BaseButton
                 size="sm"
-                :variant="isEnrolled(course) ? 'secondary' : 'primary'"
-                :outline="isEnrolled(course)"
+                :variant="isEnrolled(course) ? 'success' : 'primary'"
+                :outline="false"
                 :disabled="enrollingId === course._id || isEnrolled(course)"
                 @click="handleSignup(course)"
               >
@@ -368,6 +365,7 @@ export default {
   },
   mounted() {
     this.fetchCourses()
+    this.fetchEnrollments()
   }
 }
 </script>
@@ -380,34 +378,6 @@ export default {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   background: #fff;
   border: 1px solid #dee2e6;
-}
-
-/* Buttons: text / icon switching */
-.btn-text-short,
-.btn-icon {
-  display: none;
-}
-
-/* Tablet & small desktop */
-@media (max-width: 576px) {
-  .btn-text-long {
-    display: none;
-  }
-
-  .btn-text-short {
-    display: inline;
-  }
-}
-
-/* Small phones (320px) */
-@media (max-width: 360px) {
-  .btn-text-short {
-    display: none;
-  }
-
-  .btn-icon {
-    display: inline;
-  }
 }
 
 @media (max-width: 480px) {

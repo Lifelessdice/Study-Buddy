@@ -246,34 +246,6 @@ export default {
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
 }
 
-/* Default: desktop */
-.btn-text-short,
-.btn-icon {
-  display: none;
-}
-
-/* Small tablets / phones */
-@media (max-width: 576px) {
-  .btn-text-long {
-    display: none;
-  }
-
-  .btn-text-short {
-    display: inline;
-  }
-}
-
-/* Small phones (320px) */
-@media (max-width: 360px) {
-  .btn-text-short {
-    display: none;
-  }
-
-  .btn-icon {
-    display: inline;
-  }
-}
-
 .pagination-bar {
   flex-wrap: wrap;
   gap: 1rem;

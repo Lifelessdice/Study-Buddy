@@ -57,7 +57,14 @@
 
         <div v-else class="list-group">
           <div v-for="mat in materials" :key="mat._id" class="list-group-item">
-            <div class="d-flex justify-content-between align-items-start">
+            <div
+              class="d-flex justify-content-between align-items-start"
+              role="button"
+              tabindex="0"
+              @click="$emit('toggle-material', mat)"
+              @keydown.enter.prevent="$emit('toggle-material', mat)"
+              @keydown.space.prevent="$emit('toggle-material', mat)"
+            >
               <div>
                 <div class="fw-semibold">{{ mat.title || mat.originalName }}</div>
                 <div class="small text-muted">
@@ -69,15 +76,7 @@
                   <a :href="materialUrl(mat.filePath)" target="_blank" rel="noopener">Open PDF</a>
                 </div>
               </div>
-              <div class="d-flex gap-2">
-                <BaseButton
-                  size="sm"
-                  variant="secondary"
-                  outline
-                  @click="$emit('toggle-material', mat)"
-                >
-                  {{ expandedMaterialId === mat._id ? 'Hide' : 'AI Tools' }}
-                </BaseButton>
+              <div class="d-flex gap-2" @click.stop>
                 <BaseButton
                   v-if="isTeacher"
                   size="sm"

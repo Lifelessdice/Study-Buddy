@@ -1101,39 +1101,6 @@ export default {
   overflow-y: auto;
   z-index: 2000;
 }
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: flex-start;    /* start near top for short screens */
-  justify-content: center;
-  padding: 1rem;
-  z-index: 3000;
-  overflow-y: auto;           /* scroll if content is too tall */
-}
-
-.overlay-card {
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  max-width: 640px;
-  width: 100%;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  max-height: 100%;
-  overflow-y: auto;           /* card can scroll internally */
-}
-
-.overlay-card.wide {
-  max-width: 720px;
-}
-
-@media (min-height: 700px) {
-  .overlay {
-    align-items: center;      /* center when we have enough height */
-    padding: 2rem;
-  }
-}
 .lecture-text {
   text-align: left;
   white-space: pre-line;
@@ -1154,28 +1121,4 @@ export default {
   min-width: 220px;
 }
 
-.btn-text-short,
-.btn-icon {
-  display: none;
-}
-
-@media (max-width: 576px) {
-  .btn-text-long {
-    display: none;
-  }
-
-  .btn-text-short {
-    display: inline;
-  }
-}
-
-@media (max-width: 360px) {
-  .btn-text-short {
-    display: none;
-  }
-
-  .btn-icon {
-    display: inline;
-  }
-}
 </style>

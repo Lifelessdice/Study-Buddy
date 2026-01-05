@@ -518,8 +518,48 @@ body {
     padding-right: 0.75rem;
   }
 
-  .table-responsive-stack tbody td:last-child {
-    padding-bottom: 0;
+.table-responsive-stack tbody td:last-child {
+  padding-bottom: 0;
+}
+}
+
+/* Global overlays (modals) */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 3000;
+  overflow-y: auto;
+}
+
+.overlay-card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 640px;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.overlay-card.wide {
+  max-width: 720px;
+}
+
+.overlay-card--danger {
+  border: 1px solid #fecaca;
+  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.18);
+}
+
+@media (min-height: 700px) {
+  .overlay {
+    align-items: center;
+    padding: 2rem;
   }
 }
 

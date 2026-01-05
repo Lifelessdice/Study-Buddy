@@ -1,6 +1,6 @@
 <template>
   <div v-if="showDeleteMaterialConfirm" class="overlay">
-    <div class="overlay-card">
+    <div class="overlay-card overlay-card--danger">
       <h5 class="text-danger">Delete Material</h5>
       <p class="mb-3">Are you sure you want to delete "{{ materialTitle }}"</p>
       <div class="d-flex justify-content-end gap-2">
@@ -11,7 +11,7 @@
   </div>
 
   <div v-if="showDeleteNoteConfirm" class="overlay">
-    <div class="overlay-card">
+    <div class="overlay-card overlay-card--danger">
       <h5 class="text-danger">Delete Lecture</h5>
       <p class="mb-3">Are you sure you want to delete "{{ noteTitle }}"</p>
       <div class="d-flex justify-content-end gap-2">
@@ -32,7 +32,7 @@
   </div>
 
   <div v-if="showDeleteCourseConfirm" class="overlay">
-    <div class="overlay-card">
+    <div class="overlay-card overlay-card--danger">
       <h5 class="text-danger">Delete Course</h5>
       <p class="mb-3">This will permanently delete "{{ courseName }}". Continue.</p>
       <div class="d-flex justify-content-end gap-2">
@@ -43,7 +43,7 @@
   </div>
 
   <div v-if="showRemoveStudentConfirm" class="overlay">
-    <div class="overlay-card">
+    <div class="overlay-card overlay-card--danger">
       <h5 class="text-danger">Remove Student</h5>
       <p class="mb-3">Remove this student from the course.</p>
       <div class="d-flex justify-content-end gap-2">
@@ -54,7 +54,7 @@
   </div>
 
   <div v-if="showDeleteQuizConfirm" class="overlay">
-    <div class="overlay-card">
+    <div class="overlay-card overlay-card--danger">
       <h5 class="text-danger">Delete Quiz</h5>
       <p class="mb-3">Are you sure you want to delete "{{ quizTitle }}"</p>
       <div class="d-flex justify-content-end gap-2">
@@ -65,7 +65,7 @@
   </div>
 
   <div v-if="showLeaveConfirm" class="overlay">
-    <div class="overlay-card">
+    <div class="overlay-card overlay-card--danger">
       <h5 class="text-danger">Leave Course</h5>
       <p class="mb-3">Leave this course?</p>
       <div class="d-flex justify-content-end gap-2">
