@@ -69,7 +69,7 @@
         </BaseButton>
         <BaseButton
           :to="{ name: 'CourseDashboard', params: { courseSlug: courseSlug }, query: { tab: 'quizzes' } }"
-          variant="secondary"
+          variant="primary"
           outline
         >
           Cancel

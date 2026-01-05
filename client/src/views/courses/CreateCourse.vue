@@ -33,7 +33,7 @@
           {{ submitting ? 'Creating...' : 'Create Course' }}
         </BaseButton>
 
-        <BaseButton to="/courses" variant="link" class="ms-2">Cancel</BaseButton>
+        <BaseButton to="/courses" variant="primary" outline class="ms-2">Cancel</BaseButton>
       </form>
     </div>
   </div>

@@ -34,7 +34,7 @@
           >
             {{ submitting ? 'Saving...' : submitLabel }}
           </BaseButton>
-          <BaseButton to="/courses" variant="link" class="ms-2">Cancel</BaseButton>
+          <BaseButton to="/courses" variant="primary" outline class="ms-2">Cancel</BaseButton>
         </div>
 
       </form>

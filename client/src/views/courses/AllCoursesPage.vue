@@ -85,7 +85,7 @@
     </div>
 
     <div class="row">
-      <div v-for="course in paginatedCourses" :key="course._id" class="col-md-6 mb-3">
+      <div v-for="course in courses" :key="course._id" class="col-md-6 mb-3">
         <div class="card h-100">
           <div class="card-body">
             <h5 class="card-title">
@@ -214,11 +214,6 @@ export default {
         )
         .slice(0, 5)
     },
-    paginatedCourses() {
-      const start = (this.currentPage - 1) * this.pageSize
-      const end = start + this.pageSize
-      return this.courses.slice(start, end)
-    }
   },
 
   methods: {
@@ -253,6 +248,9 @@ export default {
         this.apiLinks = data.links || null
 
         // use backend pagination numbers
+        if (typeof data.page === 'number') {
+          this.currentPage = data.page
+        }
         if (typeof data.total === 'number') {
           this.total = data.total
         } else {
