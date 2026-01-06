@@ -218,9 +218,7 @@ export default {
         .slice(0, 5)
     },
     paginatedCourses() {
-      const start = (this.currentPage - 1) * this.pageSize
-      const end = start + this.pageSize
-      return this.courses.slice(start, end)
+      return this.courses
     }
   },
 
