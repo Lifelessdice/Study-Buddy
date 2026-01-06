@@ -184,7 +184,6 @@ import Api from '@/Api'
 import QuizService from '@/services/QuizService'
 import QuizParticipationService from '@/services/QuizParticipationService'
 import CourseMaterialService from '@/services/CourseMaterialService'
-import BaseButton from '@/components/BaseButton.vue'
 import CourseHeader from '@/components/courses/CourseHeader.vue'
 import CourseOverview from '@/components/courses/CourseOverview.vue'
 import CourseQuizzes from '@/components/courses/CourseQuizzes.vue'
@@ -201,7 +200,6 @@ import { courseSlug, quizSlug } from '@/utils/slug'
 export default {
   name: 'CourseDashboard',
   components: {
-    BaseButton,
     CourseHeader,
     CourseOverview,
     CourseQuizzes,

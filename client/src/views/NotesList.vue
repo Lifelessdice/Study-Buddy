@@ -3,9 +3,10 @@
     <h2 class="mb-4">Your Lectures</h2>
 
     <div class="list-group shadow-sm">
-      <template v-for="item in lectures" :key="item._id">
+      <template v-for="item in lectures">
         <div
           v-if="item.type === 'pdf'"
+          :key="item._id"
           class="list-group-item list-group-item-action text-start w-100"
           role="button"
           tabindex="0"
@@ -104,6 +105,7 @@
 
         <div
           v-else
+          :key="item._id"
           class="list-group-item list-group-item-action text-start"
           role="button"
           tabindex="0"

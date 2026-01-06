@@ -233,7 +233,7 @@ export default {
           (c.code || '').toLowerCase().includes(term)
         )
         .slice(0, 5)
-    },
+    }
   },
 
   methods: {

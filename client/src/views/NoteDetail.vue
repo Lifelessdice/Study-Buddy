@@ -113,7 +113,6 @@ export default {
       selectQuizOption(question, index)
     },
 
-    
     async generateSummary() {
       await handleAiSummary({
         request: () => Api.post(`/notes/${this.noteId}/summaries`),
