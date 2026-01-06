@@ -5,6 +5,7 @@ const express = require('express');
 const morgan = require('morgan');
 const path = require('path');
 const cors = require('cors');
+const fs = require('fs');
 
 // ---------------------------------------------
 //  ROUTES
@@ -91,6 +92,20 @@ app.use(API_PREFIX + "/courses", courseMaterialRoutes);
 app.use(API_PREFIX + "/notes", noteSummariesRoutes);
 app.use(API_PREFIX + "/notes", noteAIquizRoutes);
 app.use(API_PREFIX + "/notes", noteFlashcardsRoutes);
+
+// ---------------------------------------------
+//  STATIC FRONTEND (production build)
+// ---------------------------------------------
+const clientDistPath = path.join(__dirname, '..', 'client', 'dist');
+if (fs.existsSync(clientDistPath)) {
+    app.use(express.static(clientDistPath));
+    app.get('*', (req, res, next) => {
+        if (req.path.startsWith('/api')) {
+            return next();
+        }
+        res.sendFile(path.join(clientDistPath, 'index.html'));
+    });
+}
 
 
 
