@@ -83,6 +83,7 @@
 import QuizService from '@/services/QuizService'
 import CourseService from '@/services/CourseService'
 import { courseSlug } from '@/utils/slug'
+import { notifyError } from '@/utils/notify'
 
 export default {
   name: 'CreateQuiz',
@@ -140,7 +141,7 @@ export default {
       this.submitting = true
       try {
         if (!this.courseId) {
-          alert('Course not found')
+          notifyError('Course not found')
           return
         }
         const questions = this.form.questions
@@ -163,7 +164,7 @@ export default {
         this.$router.push({ name: 'CourseDashboard', params: { courseSlug: this.courseSlug }, query: { tab: 'quizzes' } })
       } catch (err) {
         console.error(err)
-        alert('Failed to create quiz')
+        notifyError('Failed to create quiz')
       } finally {
         this.submitting = false
       }

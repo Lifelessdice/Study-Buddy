@@ -34,7 +34,7 @@
           >
             {{ submitting ? 'Saving...' : submitLabel }}
           </BaseButton>
-          <BaseButton to="/courses" variant="link" class="ms-2">Cancel</BaseButton>
+          <BaseButton to="/courses" variant="primary" outline class="ms-2">Cancel</BaseButton>
         </div>
 
       </form>
@@ -47,6 +47,7 @@
 <script>
 import CourseService from '@/services/CourseService'
 import { courseSlug } from '@/utils/slug'
+import { notifyError } from '@/utils/notify'
 
 export default {
   name: 'EditCourse',
@@ -82,7 +83,7 @@ export default {
       this.form.degree = c.degree || ''
       this.loaded = true
     } catch (err) {
-      alert('Failed to load course')
+      notifyError('Failed to load course')
       this.$router.push({ name: 'Courses' })
     }
   },
@@ -97,7 +98,7 @@ export default {
         }
         this.$router.push({ name: 'Courses' })
       } catch (err) {
-        alert('Failed to save changes')
+        notifyError('Failed to save changes')
       } finally {
         this.submitting = false
       }

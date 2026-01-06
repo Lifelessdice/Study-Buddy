@@ -7,7 +7,7 @@
           <h3 class="mb-1">{{ quiz.title }}</h3>
           <div class="text-muted small">
             Questions: {{ quiz.questions?.length || 0 }}
-            <span v-if="quiz.timeLimit">• Time: {{ quiz.timeLimit }} min</span>
+            <span v-if="quiz.timeLimit">Time: {{ quiz.timeLimit }} min</span>
           </div>
         </div>
         <BaseButton
@@ -75,6 +75,7 @@ import QuizService from '@/services/QuizService'
 import CourseService from '@/services/CourseService'
 import { courseSlug, quizSlug } from '@/utils/slug'
 import Api from '@/Api'
+import { notifyError, notifySuccess } from '@/utils/notify'
 
 export default {
   name: 'TakeQuiz',
@@ -121,7 +122,7 @@ export default {
 
       this.loaded = true
     } catch (err) {
-      alert('Failed to load quiz')
+      notifyError('Failed to load quiz')
       this.$router.push({ name: 'Courses' })
     }
   },
@@ -131,12 +132,11 @@ export default {
     },
     async submit() {
       if (!this.user || !this.user._id) {
-        alert('You must be logged in')
+        notifyError('You must be logged in')
         return
       }
       this.submitting = true
       try {
-        // Simple score calculation client-side
         let correct = 0
         this.quiz.questions.forEach((q, idx) => {
           if (this.answers[idx] === q.correctAnswerIndex) correct++
@@ -150,11 +150,11 @@ export default {
           score
         })
 
-        alert(`Quiz submitted! Score: ${score}%`)
+        notifySuccess(`Quiz submitted! Score: ${score}%`)
         this.$router.push({ name: 'CourseDashboard', params: { courseSlug: this.courseSlug }, query: { tab: 'quizzes' } })
       } catch (err) {
         console.error(err)
-        alert('Failed to submit quiz')
+        notifyError('Failed to submit quiz')
       } finally {
         this.submitting = false
       }

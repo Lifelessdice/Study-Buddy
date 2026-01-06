@@ -44,10 +44,6 @@ exports.createUser = async (req, res, next) => {
     ensureRequiredFields(req.body);
     ensureNonEmptyIfPresent(req.body, 'name', 'Name cannot be blank');
 
-    if (req.body.password) {
-      req.body.password = await bcrypt.hash(req.body.password, 12);
-    }
-
     const user = await User.create(req.body);
     const safeUser = user.toObject();
     delete safeUser.password;
@@ -187,6 +183,10 @@ exports.putUser = async (req, res, next) => {
     // Step 3: Required fields check
     ensureRequiredFields(req.body);
     ensureNonEmptyIfPresent(req.body, 'name', 'Name cannot be blank');
+
+    if (req.body.password) {
+      req.body.password = await bcrypt.hash(req.body.password, 12);
+    }
 
     // Step 4: Overwrite with validation
     const updated = await User.findByIdAndUpdate(id, req.body, {

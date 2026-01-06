@@ -33,7 +33,7 @@
           {{ submitting ? 'Creating...' : 'Create Course' }}
         </BaseButton>
 
-        <BaseButton to="/courses" variant="link" class="ms-2">Cancel</BaseButton>
+        <BaseButton to="/courses" variant="primary" outline class="ms-2">Cancel</BaseButton>
       </form>
     </div>
   </div>
@@ -41,6 +41,7 @@
 
 <script>
 import CourseService from '@/services/CourseService'
+import { notifyError } from '@/utils/notify'
 
 export default {
   name: 'CreateCourse',
@@ -79,7 +80,7 @@ export default {
         this.$router.push({ name: 'Courses' })
       } catch (err) {
         const msg = err.response?.data?.message || 'Failed to create course'
-        alert(msg)
+        notifyError(msg)
       } finally {
         this.submitting = false
       }
