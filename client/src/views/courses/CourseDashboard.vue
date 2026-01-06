@@ -42,6 +42,7 @@
         :is-teacher="isTeacher"
         :course-slug="courseSlugValue"
         :my-participation-by-quiz="myParticipationByQuiz"
+        :error="quizError"
         :quiz-slug="quizSlug"
         :format-date="formatDate"
         @view-attempts="viewAttempts"
@@ -228,7 +229,7 @@ export default {
       studentSearch: '',
       quizzes: [],
       loadingQuizzes: false,
-      quizError: null,
+      quizError: '',
       showDeleteConfirm: false,
       quizToDelete: null,
       showLeaveConfirm: false,
@@ -246,7 +247,6 @@ export default {
       showCreateNote: false,
       newNoteTopic: '',
       newNoteContent: '',
-      newNoteCourse: '',
       editingNoteId: null,
       editNoteTopic: '',
       editNoteContent: '',
@@ -518,7 +518,7 @@ export default {
         return
       }
       this.loadingQuizzes = true
-      this.quizError = null
+      this.quizError = ''
       try {
         const res = await QuizService.getAll({ course: this.course._id, t: Date.now() })
         const payload = res?.data

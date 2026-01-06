@@ -16,6 +16,9 @@
 
       <div v-if="loading" class="text-muted">Loading quizzes...</div>
       <div v-else>
+        <div v-if="error" class="alert alert-warning">
+          {{ error }}
+        </div>
         <div v-if="!quizzes.length" class="alert alert-info">
           No quizzes have been created for this course yet.
           <span v-if="isTeacher">Click "Create Quiz" to add one.</span>
@@ -96,6 +99,7 @@ export default {
     quizzes: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
     isTeacher: { type: Boolean, default: false },
+    error: { type: String, default: '' },
     courseSlug: { type: String, default: '' },
     myParticipationByQuiz: { type: Object, default: () => ({}) },
     quizSlug: { type: Function, required: true },

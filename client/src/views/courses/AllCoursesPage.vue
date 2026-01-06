@@ -207,7 +207,6 @@ export default {
       enrollingId: null,
       enrollError: null,
 
-      apiLinks: null,
       showDeleteAllConfirm: false,
       deletingAll: false
     }
@@ -264,9 +263,6 @@ export default {
         if (data && Array.isArray(data.degrees)) {
           this.degreeOptions = data.degrees
         }
-
-        // store HATEOAS collection links (self/next/prev/...)
-        this.apiLinks = data.links || null
 
         // use backend pagination numbers
         if (typeof data.page === 'number') {

@@ -137,7 +137,6 @@ export default {
       }
       this.submitting = true
       try {
-        // Simple score calculation client-side
         let correct = 0
         this.quiz.questions.forEach((q, idx) => {
           if (this.answers[idx] === q.correctAnswerIndex) correct++
