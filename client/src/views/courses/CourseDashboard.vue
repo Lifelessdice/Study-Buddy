@@ -1,3 +1,23 @@
+<!--
+  CourseDashboard.vue
+
+  This is the main dashboard page for a single course.
+  It acts as a container component that:
+  - fetches all course-related data 
+  - manages (current tab, loading states, modals)
+  - delegates rendering and interaction between child components:
+    - CourseHeader
+    - CourseOverview
+    - CourseQuizzes
+    - CourseStudents
+    - CourseNotes
+    - CourseMaterials
+    - CourseModals
+
+  Child components are mostly presentational,
+  while this file handles data flow and API communication.
+-->
+
 <template>
   <div class="container mt-4" v-if="course">
     <CourseHeader
@@ -11,6 +31,11 @@
       @request-delete-course="removeCourse"
       @request-leave-course="showLeaveConfirm = true"
     />
+    <!--
+      Tab navigation for the course dashboard.
+      currentTab controls which section is visible.
+      Switching tabs may also trigger data fetching (quizzes, notes, materials).
+    -->
 
     <div class="nav-tabs-custom mb-3">
       <div class="d-flex align-items-center gap-3 flex-wrap">
@@ -20,7 +45,11 @@
         <span class="tab" :class="{ active: currentTab === 'students' }" @click="setTab('students')">Students</span>
       </div>
     </div>
-
+      <!--
+        OVERVIEW TAB
+        Displays and optionally allows editing of the course overview.
+        Editing is restricted to teachers.
+      -->
     <div v-if="currentTab === 'overview'">
       <CourseOverview
         :is-teacher="isTeacher"
@@ -108,7 +137,17 @@
         @update:editNoteTopic="editNoteTopic = $event"
         @update:editNoteContent="editNoteContent = $event"
       />
+        <!--
+          NOTES & MATERIALS TAB
 
+          This section handles:
+          - Lectures (notes written by teachers)
+          - Uploaded course materials (PDFs)
+          - AI-generated summaries, quizzes, and flashcards
+
+          AI-related state is tracked per note/material using IDs
+          to avoid mixing UI state between items.
+        -->
       <CourseMaterials
         :is-teacher="isTeacher"
         :materials="materials"
@@ -179,12 +218,14 @@
 </template>
 
 <script>
+  // Services handle API communication (backend calls)
 import CourseService from '@/services/CourseService'
 import Api from '@/Api'
 import QuizService from '@/services/QuizService'
 import QuizParticipationService from '@/services/QuizParticipationService'
 import CourseMaterialService from '@/services/CourseMaterialService'
 import BaseButton from '@/components/BaseButton.vue'
+// UI components used to render different sections of the dashboard
 import CourseHeader from '@/components/courses/CourseHeader.vue'
 import CourseOverview from '@/components/courses/CourseOverview.vue'
 import CourseQuizzes from '@/components/courses/CourseQuizzes.vue'
@@ -192,6 +233,7 @@ import CourseStudents from '@/components/courses/CourseStudents.vue'
 import CourseNotes from '@/components/courses/CourseNotes.vue'
 import CourseMaterials from '@/components/courses/CourseMaterials.vue'
 import CourseModals from '@/components/courses/CourseModals.vue'
+// Utility helpers for AI features and shared logic
 import { handleAiFlashcards, handleAiQuiz, handleAiSummary } from '@/utils/aiHandlers'
 import { toggleFlashcard } from '@/utils/aiFlashcards'
 import { selectQuizOption } from '@/utils/aiQuiz'
@@ -213,11 +255,17 @@ export default {
   props: ['courseSlug'],
   data() {
     return {
+       /*
+      Page-level reactive state.
+      This component holds all data needed by child components and modals,
+      including loading flags, form inputs, expanded items, and confirmation dialogs.
+    */
       course: null,
       addStudentSearch: '',
       searchResults: [],
       addingStudentId: '',
       studentsLoading: false,
+      // ---- Students----
       enrolled: [],
       showAddOverlay: false,
       searchDebounce: null,
@@ -227,6 +275,7 @@ export default {
       savingOverview: false,
       currentTab: 'overview',
       studentSearch: '',
+      // ---- Quizzes ----
       quizzes: [],
       loadingQuizzes: false,
       quizError: '',
@@ -241,6 +290,7 @@ export default {
       showDeleteCourseConfirm: false,
       showRemoveStudentConfirm: false,
       studentToRemove: null,
+      // ---- Notes (lectures) ----
       notes: [],
       loadingNotes: false,
       savingNote: false,
@@ -255,7 +305,7 @@ export default {
       noteToDelete: null,
       noteAi: {},
       expandedNoteId: null,
-      // materials
+      // ---- Materials ----
       materials: [],
       loadingMaterials: false,
       materialAi: {},
@@ -272,6 +322,13 @@ export default {
     }
   },
   computed: {
+     /*
+    Computed properties derive state from raw data.
+    They are used to:
+    - filter lists
+    - calculate statistics
+    - determine permissions (teacher vs student)
+      */
     currentUser() {
       const u = localStorage.getItem('user')
       return u ? JSON.parse(u) : null
@@ -290,6 +347,7 @@ export default {
         return name.includes(term) || email.includes(term)
       })
     },
+    // Determine whether the current user is a teacher
     isTeacher() {
       const user = this.currentUser
       return user?.role === 'teacher'
@@ -387,9 +445,24 @@ export default {
     }
   },
   methods: {
+      /*
+    Methods are grouped by responsibility:
+    - Course loading & resolution
+    - Tab navigation
+    - Student management
+    - Quiz handling
+    - Notes & materials CRUD
+    - AI-powered actions
+    - UI helpers (formatting, modals)
+      */
     quizSlug(quiz) {
       return quizSlug(quiz)
     },
+    // Resolves a course object based on the URL slug.
+    // The lookup strategy depends on the user role:
+    // - teachers: own courses
+    // - students: enrolled courses
+    // - fallback: all courses
     async resolveCourseBySlug(slug) {
       if (!slug) return null
       const user = this.currentUser
@@ -481,7 +554,10 @@ export default {
       this.addStudentError = ''
       this.addingStudentId = ''
     },
-
+    
+    // Main entry point for loading course data.
+    // Resolves the course, fetches full details,
+    // and then loads dependent data.
     async fetchCourse() {
       const slug = this.$route.params.courseSlug
       const resolved = await this.resolveCourseBySlug(slug)
@@ -779,6 +855,8 @@ export default {
       const state = this.ensureNoteState(note._id)
       toggleFlashcard(state.flashcards, index)
     },
+    // Generates an AI summary for a lecture note.
+    // Uses shared handler utilities to standardize loading/error handling.
     async generateNoteSummary(note) {
       const state = this.ensureNoteState(note._id)
       await handleAiSummary({
@@ -1045,7 +1123,7 @@ export default {
       }
     }
   },
-
+  // Attach global keyboard listeners and load initial course data
   async mounted() {
     document.addEventListener('keydown', this.handleEsc)
     if (this.$route.query.tab) {
@@ -1053,7 +1131,8 @@ export default {
     }
     await this.fetchCourse()
   },
-
+  
+  // Clean up global listeners when leaving the page
   beforeUnmount() {
     document.removeEventListener('keydown', this.handleEsc)
   }
