@@ -1,3 +1,16 @@
+/*
+  Slug utilities
+
+  This file provides helper functions to generate URL-safe,
+  human-readable identifiers ("slugs") for different entities
+  such as courses, notes, and quizzes.
+
+  Slugs are derived from titles/names combined with timestamps
+  to ensure readability while minimizing collisions.
+*/
+
+// Converts a string into a URL-safe slug.
+// Example: "Intro to AI!" -> "intro-to-ai"
 export function slugify(value) {
   return String(value || '')
     .toLowerCase()
@@ -7,10 +20,15 @@ export function slugify(value) {
     .replace(/-+$/, '')
 }
 
+// Pads a number to two digits (e.g. 3 -> "03").
+// Used when constructing sortable date-based keys.
 function pad2(num) {
   return String(num).padStart(2, '0')
 }
 
+// Converts an ISO date string into a compact timestamp key.
+// Format: YYYYMMDDHHmmss
+// Used to make slugs unique and chronologically sortable.
 function dateKey(iso) {
   if (!iso) return ''
   const d = new Date(iso)
