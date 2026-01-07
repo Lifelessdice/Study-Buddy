@@ -233,7 +233,7 @@ export default {
           (c.code || '').toLowerCase().includes(term)
         )
         .slice(0, 5)
-    },
+    }
   },
 
   methods: {
@@ -308,9 +308,9 @@ export default {
       }
     },
 
-    // called when user types; we only update suggestions here
+    // called when user types;
     onSearchInput() {
-      // suggestions derived from current list; fetch on Search click
+      //  fetch on Search click
     },
 
     selectSuggestion(course) {

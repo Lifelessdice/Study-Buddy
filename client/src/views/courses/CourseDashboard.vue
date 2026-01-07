@@ -243,7 +243,6 @@ import { courseSlug, quizSlug } from '@/utils/slug'
 export default {
   name: 'CourseDashboard',
   components: {
-    BaseButton,
     CourseHeader,
     CourseOverview,
     CourseQuizzes,

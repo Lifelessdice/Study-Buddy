@@ -63,20 +63,19 @@ export default {
         const createRes = await CourseService.create(this.form)
         const created = createRes.data.data || createRes.data
 
-        // Auto-assign current logged-in teacher
+        // Auto- assigns the logged in user
         const userJson = localStorage.getItem('user')
         const user = userJson ? JSON.parse(userJson) : null
         if (user && user._id) {
           try {
             await CourseService.assignTeacher(created._id, user._id)
           } catch (errAssign) {
-            // if assignment fails, show a non-fatal warning
+            // shows a warning on failure
             console.warn('Assignment failed', errAssign)
-            // Optionally show user message
           }
         }
 
-        // Redirect to courses list
+        // Redirects to the course list
         this.$router.push({ name: 'Courses' })
       } catch (err) {
         const msg = err.response?.data?.message || 'Failed to create course'
