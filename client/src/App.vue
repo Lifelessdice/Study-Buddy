@@ -171,7 +171,7 @@ body,
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
-  text-align: left; /* lets Bootstrap containers look normal */
+  text-align: left;
 }
 
 /* Flex layout: navbar + main content */
@@ -183,9 +183,9 @@ body,
 
 /* Navbar stays at top, content scrolls under it */
 .app-header {
-  position: sticky;  /* if you don't want sticky, change to `static` */
+  position: sticky;
   top: 0;
-  z-index: 1030;     /* above cards etc. */
+  z-index: 1030;
   display: flex;
   align-items: center;
   gap: 1.5rem;
@@ -379,7 +379,6 @@ body,
   overflow-y: auto;
 }
 
-/* Just in case */
 body {
   margin: 0;
 }
@@ -563,7 +562,7 @@ body {
   }
 }
 
-/* Responsive button text/icon helpers */
+/* Responsive button */
 .btn-text-short,
 .btn-icon {
   display: none;
