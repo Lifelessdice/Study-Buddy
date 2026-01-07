@@ -1,86 +1,87 @@
 <template>
-  <div v-if="showDeleteMaterialConfirm" class="overlay">
-    <div class="overlay-card overlay-card--danger">
-      <h5 class="text-danger">Delete Material</h5>
-      <p class="mb-3">Are you sure you want to delete "{{ materialTitle }}"</p>
-      <div class="d-flex justify-content-end gap-2">
-        <BaseButton variant="primary" outline @click="$emit('cancel-delete-material')">Cancel</BaseButton>
-        <BaseButton variant="danger" @click="$emit('confirm-delete-material')">Delete</BaseButton>
+  <div>
+    <div v-if="showDeleteMaterialConfirm" class="overlay">
+      <div class="overlay-card overlay-card--danger">
+        <h5 class="text-danger">Delete Material</h5>
+        <p class="mb-3">Are you sure you want to delete "{{ materialTitle }}"</p>
+        <div class="d-flex justify-content-end gap-2">
+          <BaseButton variant="primary" outline @click="$emit('cancel-delete-material')">Cancel</BaseButton>
+          <BaseButton variant="danger" @click="$emit('confirm-delete-material')">Delete</BaseButton>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div v-if="showDeleteNoteConfirm" class="overlay">
-    <div class="overlay-card overlay-card--danger">
-      <h5 class="text-danger">Delete Lecture</h5>
-      <p class="mb-3">Are you sure you want to delete "{{ noteTitle }}"</p>
-      <div class="d-flex justify-content-end gap-2">
-        <BaseButton variant="primary" outline @click="$emit('cancel-delete-note')">Cancel</BaseButton>
-        <BaseButton variant="danger" @click="$emit('confirm-delete-note')">Delete</BaseButton>
+    <div v-if="showDeleteNoteConfirm" class="overlay">
+      <div class="overlay-card overlay-card--danger">
+        <h5 class="text-danger">Delete Lecture</h5>
+        <p class="mb-3">Are you sure you want to delete "{{ noteTitle }}"</p>
+        <div class="d-flex justify-content-end gap-2">
+          <BaseButton variant="primary" outline @click="$emit('cancel-delete-note')">Cancel</BaseButton>
+          <BaseButton variant="danger" @click="$emit('confirm-delete-note')">Delete</BaseButton>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div v-if="showMessageModal" class="overlay">
-    <div class="overlay-card">
-      <h5 class="mb-2">{{ messageTitle || 'Notice' }}</h5>
-      <p class="mb-3">{{ messageBody }}</p>
-      <div class="d-flex justify-content-end">
-        <BaseButton variant="primary" @click="$emit('close-message')">OK</BaseButton>
+    <div v-if="showMessageModal" class="overlay">
+      <div class="overlay-card">
+        <h5 class="mb-2">{{ messageTitle || 'Notice' }}</h5>
+        <p class="mb-3">{{ messageBody }}</p>
+        <div class="d-flex justify-content-end">
+          <BaseButton variant="primary" @click="$emit('close-message')">OK</BaseButton>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div v-if="showDeleteCourseConfirm" class="overlay">
-    <div class="overlay-card overlay-card--danger">
-      <h5 class="text-danger">Delete Course</h5>
-      <p class="mb-3">This will permanently delete "{{ courseName }}". Continue.</p>
-      <div class="d-flex justify-content-end gap-2">
-        <BaseButton variant="primary" outline @click="$emit('cancel-delete-course')">Cancel</BaseButton>
-        <BaseButton variant="danger" @click="$emit('confirm-delete-course')">Delete</BaseButton>
+    <div v-if="showDeleteCourseConfirm" class="overlay">
+      <div class="overlay-card overlay-card--danger">
+        <h5 class="text-danger">Delete Course</h5>
+        <p class="mb-3">This will permanently delete "{{ courseName }}". Continue.</p>
+        <div class="d-flex justify-content-end gap-2">
+          <BaseButton variant="primary" outline @click="$emit('cancel-delete-course')">Cancel</BaseButton>
+          <BaseButton variant="danger" @click="$emit('confirm-delete-course')">Delete</BaseButton>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div v-if="showRemoveStudentConfirm" class="overlay">
-    <div class="overlay-card overlay-card--danger">
-      <h5 class="text-danger">Remove Student</h5>
-      <p class="mb-3">Remove this student from the course.</p>
-      <div class="d-flex justify-content-end gap-2">
-        <BaseButton variant="primary" outline @click="$emit('cancel-remove-student')">Cancel</BaseButton>
-        <BaseButton variant="danger" @click="$emit('confirm-remove-student')">Remove</BaseButton>
+    <div v-if="showRemoveStudentConfirm" class="overlay">
+      <div class="overlay-card overlay-card--danger">
+        <h5 class="text-danger">Remove Student</h5>
+        <p class="mb-3">Remove this student from the course.</p>
+        <div class="d-flex justify-content-end gap-2">
+          <BaseButton variant="primary" outline @click="$emit('cancel-remove-student')">Cancel</BaseButton>
+          <BaseButton variant="danger" @click="$emit('confirm-remove-student')">Remove</BaseButton>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div v-if="showDeleteQuizConfirm" class="overlay">
-    <div class="overlay-card overlay-card--danger">
-      <h5 class="text-danger">Delete Quiz</h5>
-      <p class="mb-3">Are you sure you want to delete "{{ quizTitle }}"</p>
-      <div class="d-flex justify-content-end gap-2">
-        <BaseButton variant="primary" outline @click="$emit('cancel-delete-quiz')">Cancel</BaseButton>
-        <BaseButton variant="danger" @click="$emit('confirm-delete-quiz')">Delete</BaseButton>
+    <div v-if="showDeleteQuizConfirm" class="overlay">
+      <div class="overlay-card overlay-card--danger">
+        <h5 class="text-danger">Delete Quiz</h5>
+        <p class="mb-3">Are you sure you want to delete "{{ quizTitle }}"</p>
+        <div class="d-flex justify-content-end gap-2">
+          <BaseButton variant="primary" outline @click="$emit('cancel-delete-quiz')">Cancel</BaseButton>
+          <BaseButton variant="danger" @click="$emit('confirm-delete-quiz')">Delete</BaseButton>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div v-if="showLeaveConfirm" class="overlay">
-    <div class="overlay-card overlay-card--danger">
-      <h5 class="text-danger">Leave Course</h5>
-      <p class="mb-3">Leave this course?</p>
-      <div class="d-flex justify-content-end gap-2">
-        <BaseButton variant="primary" outline @click="$emit('cancel-leave')">Cancel</BaseButton>
-        <BaseButton variant="danger" @click="$emit('confirm-leave')">Leave</BaseButton>
+    <div v-if="showLeaveConfirm" class="overlay">
+      <div class="overlay-card overlay-card--danger">
+        <h5 class="text-danger">Leave Course</h5>
+        <p class="mb-3">Leave this course?</p>
+        <div class="d-flex justify-content-end gap-2">
+          <BaseButton variant="primary" outline @click="$emit('cancel-leave')">Cancel</BaseButton>
+          <BaseButton variant="danger" @click="$emit('confirm-leave')">Leave</BaseButton>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div v-if="showAttemptsModal" class="overlay">
-    <div class="overlay-card wide">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h5 class="mb-0">Quiz Attempts - {{ attemptsQuizTitle }}</h5>
-        <BaseButton variant="secondary" outline size="sm" @click="$emit('close-attempts')">Close</BaseButton>
-      </div>
+    <div v-if="showAttemptsModal" class="overlay">
+      <div class="overlay-card wide">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="mb-0">Quiz Attempts - {{ attemptsQuizTitle }}</h5>
+          <BaseButton variant="secondary" outline size="sm" @click="$emit('close-attempts')">Close</BaseButton>
+        </div>
       <div v-if="attemptsLoading" class="text-muted">Loading attempts...</div>
       <div v-else-if="!attempts.length" class="alert alert-info mb-0">No attempts yet.</div>
       <div v-else>
@@ -122,6 +123,7 @@
               </tr>
             </tbody>
           </table>
+        </div>
         </div>
       </div>
     </div>

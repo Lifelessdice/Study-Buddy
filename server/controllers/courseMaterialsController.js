@@ -60,7 +60,7 @@ async function extractPdfText(material) {
   const relPath = material.filePath.replace(/^\//, "");
   const fileOnDisk = path.join(__dirname, "..", relPath);
   const buffer = await fs.promises.readFile(fileOnDisk);
-  const parsed = await pdfParse(buffer);
+  const parsed = await pdfParse(buffer, { verbosity: 0 });
   return (parsed.text || "").trim();
 }
 
