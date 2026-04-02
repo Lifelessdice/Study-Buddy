@@ -239,6 +239,8 @@ import { toggleFlashcard } from '@/utils/aiFlashcards'
 import { selectQuizOption } from '@/utils/aiQuiz'
 import { createAiState } from '@/utils/aiState'
 import { courseSlug, quizSlug } from '@/utils/slug'
+import CourseHero from './components/CourseHero.vue'
+import CourseTabs from './components/CourseTabs.vue'
 
 export default {
   name: 'CourseDashboard',

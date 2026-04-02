@@ -120,44 +120,55 @@ export default {
       const user = JSON.parse(u)
       return user.role === 'teacher'
     },
-    isStudent() {
-      const u = localStorage.getItem('user')
-      if (!u) return false
-      const user = JSON.parse(u)
-      return user.role === 'student'
+    computed: {
+      isTeacher() {
+        const u = localStorage.getItem('user')
+        if (!u) return false
+        const user = JSON.parse(u)
+        return user.role === 'teacher'
+      },
+      isStudent() {
+        const u = localStorage.getItem('user')
+        if (!u) return false
+        const user = JSON.parse(u)
+        return user.role === 'student'
+      },
     },
-    paginatedCourses() {
-      const start = (this.currentPage - 1) * this.pageSize
-      const end = start + this.pageSize
-      return this.courses.slice(start, end)
-    }
-  },
 
-  methods: {
-    courseSlug(course) {
-      return courseSlug(course)
-    },
-    async fetchCourses() {
-      try {
-        this.loading = true
-        this.error = null
+    methods: {
+      courseSlug(course) {
+        return courseSlug(course)
+      },
+      async fetchCourses() {
+        try {
+          this.loading = true
+          this.error = null
 
-        let res
+          let res
 
         if (this.isTeacher) {
           try {
             // teachers: first try only their courses
             res = await CourseService.getMine()
-            const data = res.data.data || res.data || []
-            this.courses = data
 
-            // Update pagination based on courses list
+            // handle weird statuses or empty body (e.g. 304)
+            const raw = res.data
+            const mineData = (raw && raw.data) || raw || []
+
+            if (!Array.isArray(mineData) || mineData.length === 0) {
+              // behave as if it failed → go to catch and fall back to /courses
+              throw new Error(`No data from /courses/mine (status ${res.status})`)
+            }
+
+            this.courses = mineData
+
+            // 🔽 frontend pagination for teacher
             this.total = this.courses.length
             this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
 
             return
           } catch (err) {
-            // If teacher fetch fails (e.g., not assigned yet), fall back to all
+            // If teacher fetch fails or is empty, fall back to all (backend pagination)
             const params = {
               page: this.currentPage,
               limit: this.pageSize
@@ -181,12 +192,23 @@ export default {
             page: this.currentPage,
             limit: this.pageSize
           }
-          res = await CourseService.getAll(params)
-        }
 
-        const data = res.data
+          const data = res.data
 
-        this.courses = data.data || data // sometimes API uses data.data or data
+          this.courses = data.data || data // sometimes API uses data.data or data
+
+          // 🔽 use backend pagination numbers if available
+          if (typeof data.total === 'number') {
+            this.total = data.total
+          } else {
+            this.total = this.courses.length
+          }
+
+          if (typeof data.totalPages === 'number') {
+            this.totalPages = data.totalPages
+          } else {
+            this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
+          }
 
         // Update pagination based on what we actually have
         this.total = this.courses.length
