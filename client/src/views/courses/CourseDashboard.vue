@@ -1,78 +1,41 @@
+<!--
+  CourseDashboard.vue
+
+  This is the main dashboard page for a single course.
+  It acts as a container component that:
+  - fetches all course-related data 
+  - manages (current tab, loading states, modals)
+  - delegates rendering and interaction between child components:
+    - CourseHeader
+    - CourseOverview
+    - CourseQuizzes
+    - CourseStudents
+    - CourseNotes
+    - CourseMaterials
+    - CourseModals
+
+  Child components are mostly presentational,
+  while this file handles data flow and API communication.
+-->
+
 <template>
   <div class="container mt-4" v-if="course">
-    <div class="hero card mb-3">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-          <div>
-            <p class="text-uppercase small text-muted mb-1">Course</p>
-            <h2 class="mb-1">{{ course.name }}</h2>
-            <div class="text-muted fw-bold">{{ course.code }}</div>
-          </div>
-          <div class="d-flex gap-2 flex-wrap justify-content-end">
-            <BaseButton
-              to="/courses"
-              variant="secondary"
-              outline
-              size="sm"
-            >
-              Back
-            </BaseButton>
-            <template v-if="isTeacher">
-              <BaseButton
-                :to="`/courses/${course._id}/edit`"
-                variant="primary"
-                outline
-                size="sm"
-              >
-                Edit
-              </BaseButton>
-              <BaseButton
-                :to="{ path: `/courses/${course._id}/edit`, query: { mode: 'overwrite' } }"
-                variant="primary"
-                outline
-                size="sm"
-              >
-                Overwrite
-              </BaseButton>
-              <BaseButton
-                variant="danger"
-                outline
-                size="sm"
-                @click="removeCourse"
-              >
-                Delete
-              </BaseButton>
-            </template>
-            <template v-else>
-              <BaseButton
-                v-if="myAttendance"
-                variant="danger"
-                outline
-                size="sm"
-                @click="showLeaveConfirm = true"
-              >
-                Leave Course
-              </BaseButton>
-            </template>
-          </div>
-        </div>
-        <hr>
-        <div class="row gy-2 small text-muted">
-          <div class="col-md-6">
-            <strong>Degree:</strong> {{ course.degree || '-' }}
-          </div>
-          <div class="col-md-6 text-md-end">
-            <strong>Teacher:</strong> {{ courseTeacher || '-' }}
-          </div>
-          <div class="col-md-6">
-            <strong>Created:</strong> {{ formatDate(course.createdAt) }}
-          </div>
-          <div class="col-md-6 text-md-end">
-            <strong>Last Updated:</strong> {{ formatDate(course.updatedAt) }}
-          </div>
-        </div>
-      </div>
-    </div>
+    <CourseHeader
+      :course="course"
+      :is-teacher="isTeacher"
+      :my-attendance="myAttendance"
+      :course-slug="courseSlugValue"
+      :course-teacher="courseTeacher"
+      :created-at-label="formatDate(course.createdAt)"
+      :updated-at-label="formatDate(course.updatedAt)"
+      @request-delete-course="removeCourse"
+      @request-leave-course="showLeaveConfirm = true"
+    />
+    <!--
+      Tab navigation for the course dashboard.
+      currentTab controls which section is visible.
+      Switching tabs may also trigger data fetching (quizzes, notes, materials).
+    -->
 
     <div class="nav-tabs-custom mb-3">
       <div class="d-flex align-items-center gap-3 flex-wrap">
@@ -82,769 +45,228 @@
         <span class="tab" :class="{ active: currentTab === 'students' }" @click="setTab('students')">Students</span>
       </div>
     </div>
-
+      <!--
+        OVERVIEW TAB
+        Displays and optionally allows editing of the course overview.
+        Editing is restricted to teachers.
+      -->
     <div v-if="currentTab === 'overview'">
-      <div class="card mb-3">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-          <div>
-            <p class="text-uppercase small text-muted mb-1">Overview</p>
-            <h5 class="mb-0">Course Overview</h5>
-          </div>
-            <BaseButton
-              v-if="isTeacher"
-              variant="primary"
-              outline
-              size="sm"
-              @click="toggleOverviewEdit"
-            >
-              {{ overviewEditing ? 'Cancel' : 'Edit Overview' }}
-            </BaseButton>
-          </div>
-          <div v-if="overviewEditing && isTeacher">
-            <textarea v-model="overviewDraft" class="form-control mb-2" rows="4"></textarea>
-            <div class="d-flex gap-2">
-              <BaseButton
-                variant="primary"
-                size="sm"
-                :disabled="savingOverview"
-                @click="saveOverview"
-              >
-                {{ savingOverview ? 'Saving...' : 'Save Overview' }}
-              </BaseButton>
-              <BaseButton
-                variant="secondary"
-                outline
-                size="sm"
-                type="button"
-                @click="cancelOverviewEdit"
-              >
-                Discard
-              </BaseButton>
-            </div>
-          </div>
-          <div v-else>
-            <p class="text-muted mb-0">
-              {{ course.overview || 'No overview provided yet.' }}
-            </p>
-          </div>
-        </div>
-      </div>
+      <CourseOverview
+        :is-teacher="isTeacher"
+        :overview="course?.overview || ''"
+        :overview-draft="overviewDraft"
+        :overview-editing="overviewEditing"
+        :saving-overview="savingOverview"
+        @toggle-edit="toggleOverviewEdit"
+        @save="saveOverview"
+        @cancel="cancelOverviewEdit"
+        @update:overviewDraft="overviewDraft = $event"
+      />
     </div>
 
-    <div v-if="currentTab === 'quizzes'" class="card mb-3">
-      <div class="card-body">
-        <div class="row g-3 align-items-center mb-3">
-          <div class="col-md-9">
-            <div class="d-flex flex-wrap gap-3 small fw-semibold text-muted">
-              <div class="analytics-pill">
-                <span class="label">Quizzes</span>
-                <span class="value">{{ quizzes.length }}</span>
-              </div>
-              <div class="analytics-pill">
-                <span class="label">Total Questions</span>
-                <span class="value">{{ totalQuizQuestions }}</span>
-              </div>
-              <div class="analytics-pill" v-if="!isTeacher">
-                <span class="label">Completed</span>
-                <span class="value">{{ myCompletedQuizzes }} / {{ quizzes.length || 0 }}</span>
-              </div>
-              <div class="analytics-pill" v-if="hasQuizQuestions">
-                <span class="label">Avg Questions</span>
-                <span class="value">{{ avgQuestionsPerQuiz }}</span>
-              </div>
-              <div class="analytics-pill" v-if="hasMyScores">
-                <span class="label">Avg Score</span>
-                <span class="value">{{ avgMyScore }}%</span>
-              </div>
-              <div class="analytics-pill" v-if="hasMyScores">
-                <span class="label">Best Score</span>
-                <span class="value">{{ bestMyScore }}%</span>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3" v-if="!isTeacher">
-            <div class="completion-meter">
-              <div class="d-flex justify-content-between small text-muted mb-1">
-                <span>Completion</span>
-                <span>{{ completionRate }}%</span>
-              </div>
-              <div class="meter-track">
-                <div class="meter-fill" :style="{ width: completionRate + '%' }"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="mb-0">Quizzes</h5>
-          <BaseButton
-            v-if="isTeacher"
-            :to="{ name: 'CreateQuiz', params: { id: course._id } }"
-            variant="primary"
-            outline
-            size="sm"
-          >
-            + Create Quiz
-          </BaseButton>
-        </div>
-
-        <div v-if="loadingQuizzes" class="text-muted">Loading quizzes...</div>
-        <div v-else>
-          <div v-if="!quizzes.length" class="alert alert-info">
-            No quizzes have been created for this course yet.
-            <span v-if="isTeacher">Click "Create Quiz" to add one.</span>
-          </div>
-
-          <div v-for="quiz in quizzes" :key="quiz._id" class="quiz-card mb-3 p-3 border rounded">
-            <div class="d-flex justify-content-between align-items-start">
-              <div>
-                <h6 class="mb-1">{{ quiz.title }}</h6>
-                <div class="small text-muted">
-                  Questions: {{ (quiz.questions && quiz.questions.length) || 0 }}
-                </div>
-                <div class="small text-muted">Created: {{ formatDate(quiz.createdAt) }}</div>
-                <div v-if="!isTeacher && myParticipationByQuiz[quiz._id]" class="small text-success">
-                  Score: {{ myParticipationByQuiz[quiz._id].score ?? 'N/A' }}%
-                </div>
-              </div>
-              <div class="d-flex gap-2">
-                <BaseButton
-                  v-if="isTeacher"
-                  :to="{ name: 'EditQuiz', params: { quizId: quiz._id } }"
-                  variant="secondary"
-                  outline
-                  size="sm"
-                >
-                  Edit
-                </BaseButton>
-                <BaseButton
-                  v-else-if="!myParticipationByQuiz[quiz._id]"
-                  :to="{ name: 'TakeQuiz', params: { quizId: quiz._id } }"
-                  variant="primary"
-                  outline
-                  size="sm"
-                >
-                  Take Quiz
-                </BaseButton>
-                <BaseButton
-                  v-if="isTeacher"
-                  variant="secondary"
-                  outline
-                  size="sm"
-                  @click="viewAttempts(quiz)"
-                >
-                  View Attempts
-                </BaseButton>
-                <BaseButton
-                  v-if="isTeacher"
-                  variant="danger"
-                  outline
-                  size="sm"
-                  @click="promptDeleteQuiz(quiz)"
-                >
-                  Delete
-                </BaseButton>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div v-if="currentTab === 'quizzes'">
+      <CourseQuizzes
+        :quizzes="quizzes"
+        :loading="loadingQuizzes"
+        :is-teacher="isTeacher"
+        :course-slug="courseSlugValue"
+        :my-participation-by-quiz="myParticipationByQuiz"
+        :error="quizError"
+        :quiz-slug="quizSlug"
+        :format-date="formatDate"
+        @view-attempts="viewAttempts"
+        @delete-quiz="promptDeleteQuiz"
+      />
     </div>
 
-    <div v-if="currentTab === 'students'" class="card mb-3" ref="studentsCard">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start mb-2 position-relative add-student-header">
-          <h5 class="card-title mb-0">Enrolled Students</h5>
-          <div v-if="isTeacher" class="add-student-actions d-flex align-items-center justify-content-end gap-2">
-            <BaseButton
-              variant="primary"
-              outline
-              size="sm"
-              class="px-3"
-              @click="openAddOverlay"
-            >
-              + Add Student
-            </BaseButton>
-          </div>
-        </div>
-
-        <div class="mb-3">
-          <input
-            v-model="studentSearch"
-            type="text"
-            class="form-control"
-            placeholder="Search students..."
-          >
-        </div>
-
-        <div v-if="filteredEnrolled.length === 0" class="alert alert-info">No students are enrolled yet.</div>
-
-        <div v-else class="table-responsive">
-          <table class="table table-sm align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th class="text-end">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(att, idx) in filteredEnrolled" :key="att._id">
-                <td>{{ idx + 1 }}</td>
-                <td>{{ att.student?.name || 'Unknown' }}</td>
-                <td>{{ att.student?.email }}</td>
-                <td class="text-end">
-                  <BaseButton
-                    v-if="isTeacher"
-                    variant="danger"
-                    outline
-                    size="sm"
-                    @click="removeStudent(att._id)"
-                  >
-                    Remove
-                  </BaseButton>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="text-muted small">Total enrolled: {{ filteredEnrolled.length }} students</div>
-        </div>
-      </div>
+    <div v-if="currentTab === 'students'" ref="studentsCard">
+      <CourseStudents
+        :is-teacher="isTeacher"
+        :filtered-enrolled="filteredEnrolled"
+        :student-search="studentSearch"
+        :show-add-overlay="showAddOverlay"
+        :add-student-search="addStudentSearch"
+        :search-results="searchResults"
+        :students-loading="studentsLoading"
+        :adding-student-id="addingStudentId"
+        :add-student-error="addStudentError"
+        :is-already-enrolled="isAlreadyEnrolled"
+        :on-search-input="onSearchInput"
+        @open-add-overlay="openAddOverlay"
+        @close-add-overlay="closeAddOverlay"
+        @search-students="onSearchStudents"
+        @add-student="addStudentFromResult"
+        @remove-student="removeStudent"
+        @update:studentSearch="studentSearch = $event"
+        @update:addStudentSearch="addStudentSearch = $event"
+      />
     </div>
 
-    <div v-if="showAddOverlay" class="overlay">
-      <div class="overlay-card wide">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-          <div>
-            <h5 class="mb-1">Add student to course</h5>
-            <div class="small text-muted">Search by name or email and enroll instantly.</div>
-          </div>
-          <BaseButton variant="secondary" outline size="sm" @click="closeAddOverlay">Close</BaseButton>
-        </div>
+    <div v-if="currentTab === 'notes'">
+      <CourseNotes
+        :is-teacher="isTeacher"
+        :loading-notes="loadingNotes"
+        :filtered-notes="filteredNotes"
+        :show-create-note="showCreateNote"
+        :saving-note="savingNote"
+        :new-note-topic="newNoteTopic"
+        :new-note-content="newNoteContent"
+        :editing-note-id="editingNoteId"
+        :edit-note-topic="editNoteTopic"
+        :edit-note-content="editNoteContent"
+        :saving-edit-note="savingEditNote"
+        :expanded-note-id="expandedNoteId"
+        :note-ai="noteAi"
+        :format-date="formatDate"
+        @toggle-create="showCreateNote = !showCreateNote"
+        @create-note="createNote"
+        @cancel-create="showCreateNote = false"
+        @save-edit="saveEditedNote"
+        @cancel-edit="cancelEditNote"
+        @edit-note="editNote"
+        @prompt-delete="promptDeleteNote"
+        @toggle-note="toggleNote"
+        @set-note-tab="setNoteTab"
+        @generate-summary="generateNoteSummary"
+        @generate-quiz="generateNoteQuiz"
+        @generate-flashcards="generateNoteFlashcards"
+        @toggle-flashcard="toggleNoteFlashcard"
+        @select-option="selectOption"
+        @update:newNoteTopic="newNoteTopic = $event"
+        @update:newNoteContent="newNoteContent = $event"
+        @update:editNoteTopic="editNoteTopic = $event"
+        @update:editNoteContent="editNoteContent = $event"
+      />
+        <!--
+          NOTES & MATERIALS TAB
 
-        <div class="d-flex flex-column gap-2">
-          <div class="d-flex gap-2 flex-wrap">
-            <input
-              ref="addOverlayInput"
-              v-model="addStudentSearch"
-              type="text"
-              class="form-control flex-grow-1"
-              placeholder="Search by name or email"
-              aria-label="Search students"
-              @input="onSearchInput"
-              @keyup.enter="onSearchStudents"
-            />
-          </div>
+          This section handles:
+          - Lectures (notes written by teachers)
+          - Uploaded course materials (PDFs)
+          - AI-generated summaries, quizzes, and flashcards
 
-          <div v-if="studentsLoading" class="small text-muted">Loading students...</div>
-          <div v-else-if="searchResults.length" class="list-group suggestion-list">
-            <div
-              v-for="stu in searchResults"
-              :key="stu._id"
-              class="list-group-item d-flex justify-content-between align-items-center"
-            >
-              <div>
-                <div class="fw-semibold">{{ stu.name || 'Unnamed' }}</div>
-                <div class="small text-muted">{{ stu.email }}</div>
-              </div>
-              <BaseButton
-                variant="success"
-                size="sm"
-                :loading="addingStudentId === stu._id"
-                :disabled="addingStudentId === stu._id || isAlreadyEnrolled(stu._id)"
-                @click="addStudentFromResult(stu)"
-              >
-                {{ isAlreadyEnrolled(stu._id) ? 'Enrolled' : 'Add' }}
-              </BaseButton>
-            </div>
-          </div>
-          <div v-else class="small text-muted">
-            <span v-if="addStudentSearch.trim().length === 0">Start typing to search students.</span>
-            <span v-else>No matching students found.</span>
-          </div>
-
-          <div v-if="addStudentError" class="alert alert-warning py-2 mb-0">
-            {{ addStudentError }}
-          </div>
-        </div>
-      </div>
+          AI-related state is tracked per note/material using IDs
+          to avoid mixing UI state between items.
+        -->
+      <CourseMaterials
+        :is-teacher="isTeacher"
+        :materials="materials"
+        :loading-materials="loadingMaterials"
+        :upload-error="uploadError"
+        :new-material="newMaterial"
+        :uploading="uploading"
+        :file-input-key="materialFileKey"
+        :expanded-material-id="expandedMaterialId"
+        :material-ai="materialAi"
+        :pretty-size="prettySize"
+        :format-date="formatDate"
+        :material-url="materialUrl"
+        @file-change="onFileChange"
+        @upload="handleUpload"
+        @toggle-material="toggleMaterial"
+        @set-material-tab="setMaterialTab"
+        @generate-summary="generateMaterialSummary"
+        @generate-quiz="generateMaterialQuiz"
+        @generate-flashcards="generateMaterialFlashcards"
+        @toggle-flashcard="toggleMaterialFlashcard"
+        @select-option="selectOption"
+        @prompt-delete="promptDeleteMaterial"
+        @update:newMaterial="newMaterial = $event"
+      />
     </div>
 
-    <div v-if="currentTab === 'notes'" class="card mb-3">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="mb-0">Lectures</h5>
-          <BaseButton
-            v-if="isTeacher"
-            variant="primary"
-            outline
-            size="sm"
-            @click="showCreateNote = !showCreateNote"
-          >
-            {{ showCreateNote ? 'Cancel' : '+ Create Lecture' }}
-          </BaseButton>
-        </div>
-
-        <div v-if="isTeacher && showCreateNote" class="mb-3">
-          <input v-model="newNoteTopic" type="text" class="form-control mb-2" placeholder="Topic" />
-          <textarea v-model="newNoteContent" class="form-control mb-2" rows="4" placeholder="Content"></textarea>
-          <div class="d-flex gap-2">
-            <BaseButton
-              variant="primary"
-              size="sm"
-              :loading="savingNote"
-              :disabled="savingNote"
-              @click="createNote"
-            >
-              {{ savingNote ? 'Saving...' : 'Save Lecture' }}
-            </BaseButton>
-            <BaseButton variant="link" size="sm" @click="showCreateNote = false">Discard</BaseButton>
-          </div>
-        </div>
-
-        <div v-if="loadingNotes" class="text-muted">Loading lectures...</div>
-        <div v-else>
-          <div v-if="!filteredNotes.length" class="alert alert-info">
-            No lectures available for this course.
-          </div>
-
-          <div class="list-group">
-            <div v-for="note in filteredNotes" :key="note._id">
-              <div v-if="editingNoteId === note._id" class="list-group-item">
-                <input v-model="editNoteTopic" type="text" class="form-control mb-2" placeholder="Topic" />
-                <textarea v-model="editNoteContent" class="form-control mb-2" rows="4" placeholder="Content"></textarea>
-                <div class="d-flex gap-2">
-                  <BaseButton
-                    variant="primary"
-                    size="sm"
-                    :loading="savingEditNote"
-                    :disabled="savingEditNote"
-                    @click="saveEditedNote(note._id)"
-                  >
-                    {{ savingEditNote ? 'Saving...' : 'Save' }}
-                  </BaseButton>
-                  <BaseButton
-                    variant="secondary"
-                    outline
-                    size="sm"
-                    @click="cancelEditNote"
-                  >
-                    Cancel
-                  </BaseButton>
-                </div>
-              </div>
-              <div class="d-flex justify-content-between align-items-start list-group-item">
-                <div class="lecture-text">
-                  <h6 class="mb-1">{{ note.topic }}</h6>
-                  <div class="small text-muted">Created: {{ formatDate(note.createdAt) }}</div>
-                  <p class="mb-0">{{ note.content }}</p>
-                </div>
-                <div v-if="isTeacher" class="d-flex gap-2 ms-3">
-                  <BaseButton
-                    size="sm"
-                    variant="secondary"
-                    outline
-                    @click.stop="editNote(note)"
-                  >
-                    Edit
-                  </BaseButton>
-                  <BaseButton
-                    size="sm"
-                    variant="danger"
-                    outline
-                    @click.stop="promptDeleteNote(note)"
-                  >
-                    Delete
-                  </BaseButton>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="currentTab === 'notes'" class="card mb-3">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="mb-0">Course Materials (PDF)</h5>
-        </div>
-
-        <div v-if="isTeacher" class="mb-3">
-          <div v-if="uploadError" class="alert alert-danger mb-2">{{ uploadError }}</div>
-          <div class="row g-2">
-            <div class="col-md-6">
-              <input
-                v-model="newMaterial.title"
-                type="text"
-                class="form-control"
-                placeholder="Title"
-              />
-            </div>
-            <div class="col-md-6">
-              <input
-                ref="materialFile"
-                type="file"
-                class="form-control"
-                accept="application/pdf"
-                @change="onFileChange"
-              />
-            </div>
-            <div class="col-12">
-              <textarea
-                v-model="newMaterial.description"
-                class="form-control"
-                rows="2"
-                placeholder="Description (optional)"
-              ></textarea>
-            </div>
-            <div class="col-12">
-              <BaseButton
-                variant="primary"
-                size="sm"
-                :loading="uploading"
-                :disabled="uploading"
-                @click="handleUpload"
-              >
-                {{ uploading ? 'Uploading...' : 'Upload PDF' }}
-              </BaseButton>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="loadingMaterials" class="text-muted">Loading materials...</div>
-        <div v-else>
-          <div v-if="!materials.length" class="alert alert-info">
-            No PDF materials uploaded yet.
-          </div>
-          <div v-else class="list-group">
-            <div
-              v-for="mat in materials"
-              :key="mat._id"
-              class="list-group-item list-group-item-action text-start w-100"
-              role="button"
-              tabindex="0"
-              @click="toggleMaterial(mat)"
-              @keydown.enter.prevent="toggleMaterial(mat)"
-              @keydown.space.prevent="toggleMaterial(mat)"
-            >
-              <div class="d-flex justify-content-between align-items-start">
-                <div>
-                  <strong>{{ mat.title || mat.originalName }}</strong>
-                  <div class="small text-muted">PDF • {{ prettySize(mat.size) }}</div>
-                  <div v-if="mat.description" class="small text-muted">{{ mat.description }}</div>
-                </div>
-                <div class="d-flex align-items-center gap-2 ms-2">
-                  <small class="text-muted">{{ formatDate(mat.createdAt) }}</small>
-                  <BaseButton
-                    v-if="isTeacher"
-                    variant="danger"
-                    outline
-                    size="sm"
-                    @click.stop="promptDeleteMaterial(mat)"
-                  >
-                    Delete
-                  </BaseButton>
-                </div>
-              </div>
-
-              <div v-if="expandedMaterialId === mat._id" class="mt-3 p-3 border rounded bg-light-subtle">
-                <div class="d-flex flex-wrap gap-2 mb-3">
-                  <BaseButton
-                    size="sm"
-                    variant="primary"
-                    outline
-                    :href="materialUrl(mat.filePath)"
-                    target="_blank"
-                    rel="noopener"
-                    :download="mat.originalName || (mat.title || 'material') + '.pdf'"
-                    @click.stop
-                  >
-                    Open PDF
-                  </BaseButton>
-                </div>
-
-                <ul class="nav nav-tabs mb-3">
-                  <li class="nav-item">
-                    <a
-                      class="nav-link"
-                      :class="{ active: materialAi[mat._id]?.activeTab === 'summary' }"
-                      @click.stop.prevent="setMaterialTab(mat._id, 'summary')"
-                    >
-                      Summary
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a
-                      class="nav-link"
-                      :class="{ active: materialAi[mat._id]?.activeTab === 'quiz' }"
-                      @click.stop.prevent="setMaterialTab(mat._id, 'quiz')"
-                    >
-                      Quiz
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a
-                      class="nav-link"
-                      :class="{ active: materialAi[mat._id]?.activeTab === 'flashcards' }"
-                      @click.stop.prevent="setMaterialTab(mat._id, 'flashcards')"
-                    >
-                      Flashcards
-                    </a>
-                  </li>
-                </ul>
-
-                <div v-if="materialAi[mat._id]?.error" class="alert alert-warning mb-3">
-                  {{ materialAi[mat._id].error }}
-                </div>
-
-                <div v-show="materialAi[mat._id]?.activeTab === 'summary'">
-                  <BaseButton
-                    class="mb-2"
-                    variant="primary"
-                    :loading="materialAi[mat._id]?.loadingSummary"
-                    :disabled="materialAi[mat._id]?.loadingSummary"
-                    @click.stop="generateMaterialSummary(mat)"
-                  >
-                    Generate Summary
-                  </BaseButton>
-                  <div v-if="materialAi[mat._id]?.loadingSummary" class="text-center my-2">
-                    <div class="spinner-border text-primary" role="status">
-                      <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p>Generating summary, please wait...</p>
-                  </div>
-                  <div v-if="materialAi[mat._id]?.summary && !materialAi[mat._id]?.loadingSummary">
-                    {{ materialAi[mat._id].summary }}
-                  </div>
-                </div>
-
-                <div v-show="materialAi[mat._id]?.activeTab === 'quiz'">
-                  <BaseButton
-                    class="mb-2"
-                    variant="success"
-                    :loading="materialAi[mat._id]?.loadingQuiz"
-                    :disabled="materialAi[mat._id]?.loadingQuiz"
-                    @click.stop="generateMaterialQuiz(mat)"
-                  >
-                    Generate Quiz
-                  </BaseButton>
-                  <div v-if="materialAi[mat._id]?.loadingQuiz" class="text-center my-2">
-                    <div class="spinner-border text-success" role="status">
-                      <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p>Generating quiz, please wait...</p>
-                  </div>
-                  <ul v-if="materialAi[mat._id]?.quiz?.length && !materialAi[mat._id]?.loadingQuiz" class="list-group">
-                    <li v-for="(q, idx) in materialAi[mat._id].quiz" :key="idx" class="list-group-item">
-                      <strong>Q{{ idx + 1 }}: {{ q.question }}</strong>
-                      <ul class="list-group mt-2">
-                        <li v-for="(opt, i) in q.options" :key="i" class="list-group-item">
-                          {{ String.fromCharCode(65 + i) }}. {{ opt }}
-                        </li>
-                      </ul>
-                      <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
-                    </li>
-                  </ul>
-                </div>
-
-                <div v-show="materialAi[mat._id]?.activeTab === 'flashcards'">
-                  <BaseButton
-                    class="mb-2"
-                    variant="warning"
-                    :loading="materialAi[mat._id]?.loadingFlashcards"
-                    :disabled="materialAi[mat._id]?.loadingFlashcards"
-                    @click.stop="generateMaterialFlashcards(mat)"
-                  >
-                    <span v-if="materialAi[mat._id]?.loadingFlashcards">Generating...</span>
-                    <span v-else>Generate Flashcards</span>
-                  </BaseButton>
-                  <div v-if="materialAi[mat._id]?.loadingFlashcards" class="text-center my-2">
-                    <div class="spinner-border text-warning" role="status">
-                      <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p>Generating flashcards, please wait...</p>
-                  </div>
-                  <div v-if="materialAi[mat._id]?.flashcards?.length && !materialAi[mat._id]?.loadingFlashcards" class="flashcards-container">
-                    <div
-                      class="flashcard"
-                      v-for="(fc, idx) in materialAi[mat._id].flashcards"
-                      :key="idx"
-                      :class="{ flipped: fc.flipped }"
-                      @click.stop="fc.flipped = !fc.flipped"
-                    >
-                      <div class="front">
-                        Q: {{ fc.question }}
-                      </div>
-                      <div class="back">
-                        A: {{ fc.answer }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-    </div>
+    <CourseModals
+      :show-delete-material-confirm="showDeleteMaterialConfirm"
+      :show-delete-note-confirm="showDeleteNoteConfirm"
+      :show-message-modal="showMessageModal"
+      :show-delete-course-confirm="showDeleteCourseConfirm"
+      :show-remove-student-confirm="showRemoveStudentConfirm"
+      :show-delete-quiz-confirm="showDeleteConfirm"
+      :show-leave-confirm="showLeaveConfirm"
+      :show-attempts-modal="showAttemptsModal"
+      :material-title="materialToDelete?.title || materialToDelete?.originalName || ''"
+      :note-title="noteToDelete?.topic || ''"
+      :quiz-title="quizToDelete?.title || ''"
+      :course-name="course?.name || ''"
+      :message-title="messageTitle"
+      :message-body="messageBody"
+      :attempts="attempts"
+      :attempts-quiz-title="attemptsQuizTitle"
+      :attempts-loading="attemptsLoading"
+      :has-attempt-scores="hasAttemptScores"
+      :attempts-average-score="attemptsAverageScore"
+      :attempts-min-score="attemptsMinScore"
+      :attempts-max-score="attemptsMaxScore"
+      :format-date="formatDate"
+      @cancel-delete-material="cancelDeleteMaterial"
+      @confirm-delete-material="deleteMaterialConfirmed"
+      @cancel-delete-note="cancelDeleteNote"
+      @confirm-delete-note="deleteNoteConfirmed"
+      @close-message="showMessageModal = false"
+      @cancel-delete-course="cancelDeleteCourse"
+      @confirm-delete-course="confirmDeleteCourse"
+      @cancel-remove-student="cancelRemoveStudent"
+      @confirm-remove-student="confirmRemoveStudent"
+      @cancel-delete-quiz="cancelDeleteQuiz"
+      @confirm-delete-quiz="deleteQuizConfirmed"
+      @cancel-leave="showLeaveConfirm = false"
+      @confirm-leave="leaveCourse"
+      @close-attempts="closeAttempts"
+    />
   </div>
 
-    <div v-if="showDeleteMaterialConfirm" class="overlay">
-      <div class="overlay-card">
-        <h5 class="text-danger">Delete Material</h5>
-        <p class="mb-3">Are you sure you want to delete "{{ materialToDelete?.title || materialToDelete?.originalName }}"?</p>
-        <div class="d-flex justify-content-end gap-2">
-          <BaseButton variant="secondary" outline @click="cancelDeleteMaterial">Cancel</BaseButton>
-          <BaseButton variant="danger" @click="deleteMaterialConfirmed">Delete</BaseButton>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showDeleteNoteConfirm" class="overlay">
-  <div class="overlay-card">
-    <h5 class="text-danger">Delete Lecture</h5>
-    <p class="mb-3">Are you sure you want to delete "{{ noteToDelete?.topic }}"?</p>
-    <div class="d-flex justify-content-end gap-2">
-          <BaseButton variant="secondary" outline @click="cancelDeleteNote">Cancel</BaseButton>
-          <BaseButton variant="danger" @click="deleteNoteConfirmed">Delete</BaseButton>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showMessageModal" class="overlay">
-      <div class="overlay-card">
-        <h5 class="mb-2">{{ messageTitle || 'Notice' }}</h5>
-        <p class="mb-3">{{ messageBody }}</p>
-        <div class="d-flex justify-content-end">
-          <BaseButton variant="primary" @click="showMessageModal = false">OK</BaseButton>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showDeleteCourseConfirm" class="overlay">
-      <div class="overlay-card">
-        <h5 class="text-danger">Delete Course</h5>
-        <p class="mb-3">This will permanently delete "{{ course.name }}". Continue?</p>
-        <div class="d-flex justify-content-end gap-2">
-          <BaseButton variant="secondary" outline @click="cancelDeleteCourse">Cancel</BaseButton>
-          <BaseButton variant="danger" @click="confirmDeleteCourse">Delete</BaseButton>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showRemoveStudentConfirm" class="overlay">
-      <div class="overlay-card">
-        <h5 class="text-danger">Remove Student</h5>
-        <p class="mb-3">Remove this student from the course?</p>
-        <div class="d-flex justify-content-end gap-2">
-          <BaseButton variant="secondary" outline @click="cancelRemoveStudent">Cancel</BaseButton>
-          <BaseButton variant="danger" @click="confirmRemoveStudent">Remove</BaseButton>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showDeleteConfirm" class="overlay">
-      <div class="overlay-card">
-        <h5 class="text-danger">Delete Quiz</h5>
-        <p class="mb-3">Are you sure you want to delete "{{ quizToDelete?.title }}"?</p>
-        <div class="d-flex justify-content-end gap-2">
-          <BaseButton variant="secondary" outline @click="cancelDeleteQuiz">Cancel</BaseButton>
-          <BaseButton variant="danger" @click="deleteQuizConfirmed">Delete</BaseButton>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showAttemptsModal" class="overlay">
-      <div class="overlay-card wide">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h5 class="mb-0">Quiz Attempts - {{ attemptsQuizTitle }}</h5>
-          <BaseButton variant="secondary" outline size="sm" @click="closeAttempts">Close</BaseButton>
-        </div>
-        <div v-if="attemptsLoading" class="text-muted">Loading attempts...</div>
-        <div v-else-if="!attempts.length" class="alert alert-info mb-0">No attempts yet.</div>
-        <div v-else>
-          <div class="d-flex flex-wrap gap-4 mb-3 small">
-            <div>
-              <div class="text-uppercase text-muted">Attempts</div>
-              <strong>{{ attempts.length }}</strong>
-            </div>
-            <div v-if="hasAttemptScores">
-              <div class="text-uppercase text-muted">Average</div>
-              <strong>{{ attemptsAverageScore }}%</strong>
-            </div>
-            <div v-if="hasAttemptScores">
-              <div class="text-uppercase text-muted">Best</div>
-              <span>{{ attemptsMaxScore }}%</span>
-            </div>
-            <div v-if="hasAttemptScores">
-              <div class="text-uppercase text-muted">Lowest</div>
-              <span>{{ attemptsMinScore }}%</span>
-            </div>
-            <div v-else>
-              <div class="text-muted">No scores recorded yet.</div>
-            </div>
-          </div>
-          <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th>#</th>
-                  <th>Student</th>
-                  <th>Email</th>
-                  <th>Score</th>
-                  <th>Submitted</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(att, idx) in attempts" :key="att._id">
-                  <td>{{ idx + 1 }}</td>
-                  <td>{{ att.student?.name || 'Unknown' }}</td>
-                  <td>{{ att.student?.email || 'Unknown' }}</td>
-                  <td>{{ att.score ?? 'N/A' }}%</td>
-                  <td>{{ formatDate(att.createdAt) }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showLeaveConfirm" class="overlay">
-      <div class="overlay-card">
-        <h5 class="text-danger">Leave Course</h5>
-        <p class="mb-3">Are you sure you want to leave "{{ course.name }}"?</p>
-        <div class="d-flex justify-content-end gap-2">
-          <BaseButton variant="secondary" outline @click="showLeaveConfirm = false">Cancel</BaseButton>
-          <BaseButton variant="danger" @click="leaveCourse">Leave</BaseButton>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div v-else class="container mt-4">Loading...</div>
 </template>
 
 <script>
+  // Services handle API communication (backend calls)
 import CourseService from '@/services/CourseService'
 import Api from '@/Api'
 import QuizService from '@/services/QuizService'
 import QuizParticipationService from '@/services/QuizParticipationService'
 import CourseMaterialService from '@/services/CourseMaterialService'
 import BaseButton from '@/components/BaseButton.vue'
+// UI components used to render different sections of the dashboard
+import CourseHeader from '@/components/courses/CourseHeader.vue'
+import CourseOverview from '@/components/courses/CourseOverview.vue'
+import CourseQuizzes from '@/components/courses/CourseQuizzes.vue'
+import CourseStudents from '@/components/courses/CourseStudents.vue'
+import CourseNotes from '@/components/courses/CourseNotes.vue'
+import CourseMaterials from '@/components/courses/CourseMaterials.vue'
+import CourseModals from '@/components/courses/CourseModals.vue'
+// Utility helpers for AI features and shared logic
+import { handleAiFlashcards, handleAiQuiz, handleAiSummary } from '@/utils/aiHandlers'
+import { toggleFlashcard } from '@/utils/aiFlashcards'
+import { selectQuizOption } from '@/utils/aiQuiz'
+import { createAiState } from '@/utils/aiState'
+import { courseSlug, quizSlug } from '@/utils/slug'
+import CourseHero from './components/CourseHero.vue'
+import CourseTabs from './components/CourseTabs.vue'
 
 export default {
   name: 'CourseDashboard',
-  components: { BaseButton },
-  props: ['id'],
+  components: {
+    CourseHeader,
+    CourseOverview,
+    CourseQuizzes,
+    CourseStudents,
+    CourseNotes,
+    CourseMaterials,
+    CourseModals
+  },
+  props: ['courseSlug'],
   data() {
     return {
+       /*
+      Page-level reactive state.
+      This component holds all data needed by child components and modals,
+      including loading flags, form inputs, expanded items, and confirmation dialogs.
+    */
       course: null,
       addStudentSearch: '',
       searchResults: [],
       addingStudentId: '',
       studentsLoading: false,
+      // ---- Students----
       enrolled: [],
       showAddOverlay: false,
       searchDebounce: null,
@@ -854,9 +276,10 @@ export default {
       savingOverview: false,
       currentTab: 'overview',
       studentSearch: '',
+      // ---- Quizzes ----
       quizzes: [],
       loadingQuizzes: false,
-      quizError: null,
+      quizError: '',
       showDeleteConfirm: false,
       quizToDelete: null,
       showLeaveConfirm: false,
@@ -868,24 +291,27 @@ export default {
       showDeleteCourseConfirm: false,
       showRemoveStudentConfirm: false,
       studentToRemove: null,
+      // ---- Notes (lectures) ----
       notes: [],
       loadingNotes: false,
       savingNote: false,
       showCreateNote: false,
       newNoteTopic: '',
       newNoteContent: '',
-      newNoteCourse: '',
       editingNoteId: null,
       editNoteTopic: '',
       editNoteContent: '',
       savingEditNote: false,
       showDeleteNoteConfirm: false,
       noteToDelete: null,
-      // materials
+      noteAi: {},
+      expandedNoteId: null,
+      // ---- Materials ----
       materials: [],
       loadingMaterials: false,
       materialAi: {},
       newMaterial: { title: '', description: '', file: null },
+      materialFileKey: 0,
       uploading: false,
       uploadError: null,
       expandedMaterialId: null,
@@ -897,6 +323,13 @@ export default {
     }
   },
   computed: {
+     /*
+    Computed properties derive state from raw data.
+    They are used to:
+    - filter lists
+    - calculate statistics
+    - determine permissions (teacher vs student)
+      */
     currentUser() {
       const u = localStorage.getItem('user')
       return u ? JSON.parse(u) : null
@@ -915,6 +348,7 @@ export default {
         return name.includes(term) || email.includes(term)
       })
     },
+    // Determine whether the current user is a teacher
     isTeacher() {
       const user = this.currentUser
       return user?.role === 'teacher'
@@ -925,6 +359,10 @@ export default {
     },
     myParticipationByQuiz() {
       return this.myParticipations || {}
+    },
+    courseSlugValue() {
+      if (!this.course) return ''
+      return courseSlug(this.course)
     },
     filteredNotes() {
       if (!Array.isArray(this.notes) || !this.course?._id) return []
@@ -1008,6 +446,59 @@ export default {
     }
   },
   methods: {
+      /*
+    Methods are grouped by responsibility:
+    - Course loading & resolution
+    - Tab navigation
+    - Student management
+    - Quiz handling
+    - Notes & materials CRUD
+    - AI-powered actions
+    - UI helpers (formatting, modals)
+      */
+    quizSlug(quiz) {
+      return quizSlug(quiz)
+    },
+    // Resolves a course object based on the URL slug.
+    // The lookup strategy depends on the user role:
+    // - teachers: own courses
+    // - students: enrolled courses
+    // - fallback: all courses
+    async resolveCourseBySlug(slug) {
+      if (!slug) return null
+      const user = this.currentUser
+      let courses = []
+
+      if (user?.role === 'teacher') {
+        try {
+          const res = await CourseService.getMine()
+          courses = res.data.data || res.data || []
+        } catch (err) {
+          courses = []
+        }
+      }
+
+      if (!courses.length && user?.role === 'student') {
+        try {
+          const res = await CourseService.getStudentEnrollments()
+          const enrollments = res.data.data || res.data || []
+          courses = enrollments.map(att => att.course).filter(Boolean)
+        } catch (err) {
+          courses = []
+        }
+      }
+
+      if (!courses.length) {
+        try {
+          const res = await CourseService.getAll({ limit: 1000 })
+          courses = res.data.data || res.data || []
+        } catch (err) {
+          courses = []
+        }
+      }
+
+      return courses.find(c => courseSlug(c) === slug) || null
+    },
     setTab(tab) {
       this.currentTab = tab
       if (tab !== 'students') {
@@ -1025,7 +516,7 @@ export default {
       }
       if (tab === 'notes') {
         this.fetchNotes()
-        this.fetchMaterials(this.$route.params.id)
+        this.fetchMaterials(this.course?._id)
       }
     },
     notify(title, message) {
@@ -1036,10 +527,6 @@ export default {
     openAddOverlay() {
       this.showAddOverlay = true
       this.resetAddStudent()
-      this.$nextTick(() => {
-        const input = this.$refs.addOverlayInput
-        if (input) input.focus()
-      })
     },
     closeAddOverlay() {
       this.showAddOverlay = false
@@ -1068,10 +555,25 @@ export default {
       this.addStudentError = ''
       this.addingStudentId = ''
     },
-
+    
+    // Main entry point for loading course data.
+    // Resolves the course, fetches full details,
+    // and then loads dependent data.
     async fetchCourse() {
-      const res = await CourseService.getById(this.$route.params.id)
-      this.course = res.data.data || res.data
+      const slug = this.$route.params.courseSlug
+      const resolved = await this.resolveCourseBySlug(slug)
+      if (!resolved || !resolved._id) {
+        this.notify('Error', 'Course not found')
+        return
+      }
+
+      try {
+        const res = await CourseService.getById(resolved._id)
+        this.course = res.data.data || res.data || resolved
+      } catch (err) {
+        this.course = resolved
+      }
+
       this.overviewDraft = this.course.overview || ''
       await this.fetchEnrolled()
       await this.fetchMaterials(this.course?._id)
@@ -1081,7 +583,8 @@ export default {
     },
     async fetchEnrolled() {
       try {
-        const res = await CourseService.getStudents(this.$route.params.id)
+        if (!this.course?._id) return
+        const res = await CourseService.getStudents(this.course._id)
         this.enrolled = res.data.data || res.data
       } catch (err) {
         console.error(err)
@@ -1092,7 +595,7 @@ export default {
         return
       }
       this.loadingQuizzes = true
-      this.quizError = null
+      this.quizError = ''
       try {
         const res = await QuizService.getAll({ course: this.course._id, t: Date.now() })
         const payload = res?.data
@@ -1138,6 +641,9 @@ export default {
     formatDate(d) {
       if (!d) return '-'
       return new Date(d).toLocaleString()
+    },
+    selectOption(question, index) {
+      selectQuizOption(question, index)
     },
     async removeCourse() {
       this.showDeleteCourseConfirm = true
@@ -1328,72 +834,106 @@ export default {
         this.loadingMaterials = false
       }
     },
+    toggleNote(note) {
+      if (!note || !note._id) return
+      const isSame = this.expandedNoteId === note._id
+      this.expandedNoteId = isSame ? null : note._id
+      if (!isSame) {
+        this.ensureNoteState(note._id)
+      }
+    },
+    ensureNoteState(id) {
+      if (!this.noteAi[id]) {
+        this.noteAi[id] = createAiState()
+      }
+      return this.noteAi[id]
+    },
+    setNoteTab(id, tab) {
+      const state = this.ensureNoteState(id)
+      state.activeTab = tab
+    },
+    toggleNoteFlashcard(note, index) {
+      const state = this.ensureNoteState(note._id)
+      toggleFlashcard(state.flashcards, index)
+    },
+    // Generates an AI summary for a lecture note.
+    // Uses shared handler utilities to standardize loading/error handling.
+    async generateNoteSummary(note) {
+      const state = this.ensureNoteState(note._id)
+      await handleAiSummary({
+        request: () => Api.post(`/notes/${note._id}/summaries`),
+        setLoading: (value) => { state.loadingSummary = value },
+        setSummary: (value) => { state.summary = value },
+        setError: (value) => { state.error = value }
+      })
+    },
+    async generateNoteQuiz(note) {
+      const state = this.ensureNoteState(note._id)
+      await handleAiQuiz({
+        request: () => Api.post(`/notes/${note._id}/aiquizzes`),
+        setLoading: (value) => { state.loadingQuiz = value },
+        setQuiz: (value) => { state.quiz = value },
+        setError: (value) => { state.error = value }
+      })
+    },
+    async generateNoteFlashcards(note) {
+      const state = this.ensureNoteState(note._id)
+      await handleAiFlashcards({
+        request: () => Api.post(`/notes/${note._id}/flashcards`),
+        setLoading: (value) => { state.loadingFlashcards = value },
+        setFlashcards: (value) => { state.flashcards = value },
+        setError: (value) => { state.error = value }
+      })
+    },
     toggleMaterial(mat) {
       if (!mat || !mat._id) return
-      this.expandedMaterialId = this.expandedMaterialId === mat._id ? null : mat._id
+      const isSame = this.expandedMaterialId === mat._id
+      this.expandedMaterialId = isSame ? null : mat._id
+      if (!isSame) {
+        this.ensureMaterialState(mat._id)
+      }
     },
     ensureMaterialState(id) {
       if (!this.materialAi[id]) {
-        this.materialAi[id] = {
-          summary: '',
-          quiz: [],
-          flashcards: [],
-          loadingSummary: false,
-          loadingQuiz: false,
-          loadingFlashcards: false,
-          error: ''
-        }
+        this.materialAi[id] = createAiState()
       }
       return this.materialAi[id]
+    },
+    setMaterialTab(id, tab) {
+      const state = this.ensureMaterialState(id)
+      state.activeTab = tab
+    },
+    toggleMaterialFlashcard(mat, index) {
+      const state = this.ensureMaterialState(mat._id)
+      toggleFlashcard(state.flashcards, index)
     },
 
     async generateMaterialSummary(mat) {
       const state = this.ensureMaterialState(mat._id)
-      state.loadingSummary = true
-      state.summary = ''
-      state.error = ''
-      try {
-        const res = await CourseMaterialService.summarize(this.course._id, mat._id)
-        state.summary = res.data.summary || res.data.data?.summary || 'No summary returned'
-      } catch (err) {
-        state.error = 'Failed to generate summary. Please try again.'
-      } finally {
-        state.loadingSummary = false
-      }
+      await handleAiSummary({
+        request: () => CourseMaterialService.summarize(this.course._id, mat._id),
+        setLoading: (value) => { state.loadingSummary = value },
+        setSummary: (value) => { state.summary = value },
+        setError: (value) => { state.error = value }
+      })
     },
     async generateMaterialQuiz(mat) {
       const state = this.ensureMaterialState(mat._id)
-      state.loadingQuiz = true
-      state.quiz = []
-      state.error = ''
-      try {
-        const res = await CourseMaterialService.quiz(this.course._id, mat._id)
-        state.quiz = res.data.quiz || res.data.data?.quiz || []
-        if (!state.quiz.length) state.error = 'No quiz questions were returned.'
-      } catch (err) {
-        state.error = 'Failed to generate quiz. Please try again.'
-      } finally {
-        state.loadingQuiz = false
-      }
+      await handleAiQuiz({
+        request: () => CourseMaterialService.quiz(this.course._id, mat._id),
+        setLoading: (value) => { state.loadingQuiz = value },
+        setQuiz: (value) => { state.quiz = value },
+        setError: (value) => { state.error = value }
+      })
     },
     async generateMaterialFlashcards(mat) {
       const state = this.ensureMaterialState(mat._id)
-      state.loadingFlashcards = true
-      state.flashcards = []
-      state.error = ''
-      try {
-        const res = await CourseMaterialService.flashcards(this.course._id, mat._id)
-        const payload = res.data.flashcards || res.data.data?.flashcards || []
-        state.flashcards = payload.map(fc => ({
-          ...fc,
-          flipped: false
-        }))
-        if (!state.flashcards.length) state.error = 'No flashcards were returned.'
-      } catch (err) {
-        state.error = 'Failed to generate flashcards. Please try again.'
-      } finally {
-        state.loadingFlashcards = false
-      }
+      await handleAiFlashcards({
+        request: () => CourseMaterialService.flashcards(this.course._id, mat._id),
+        setLoading: (value) => { state.loadingFlashcards = value },
+        setFlashcards: (value) => { state.flashcards = value },
+        setError: (value) => { state.error = value }
+      })
     },
     onFileChange(event) {
       const file = event?.target?.files?.[0]
@@ -1401,7 +941,7 @@ export default {
       if (file.type !== 'application/pdf') {
         this.uploadError = 'Only PDF files are allowed'
         this.newMaterial.file = null
-        event.target.value = ''
+        this.materialFileKey += 1
         return
       }
       this.uploadError = null
@@ -1428,9 +968,7 @@ export default {
           this.materials.unshift(material)
         }
         this.newMaterial = { title: '', description: '', file: null }
-        if (this.$refs.materialFile) {
-          this.$refs.materialFile.value = ''
-        }
+        this.materialFileKey += 1
       } catch (err) {
         this.uploadError = err?.response?.data?.message || 'Failed to upload material'
       } finally {
@@ -1586,7 +1124,7 @@ export default {
       }
     }
   },
-
+  // Attach global keyboard listeners and load initial course data
   async mounted() {
     document.addEventListener('keydown', this.handleEsc)
     if (this.$route.query.tab) {
@@ -1594,7 +1132,8 @@ export default {
     }
     await this.fetchCourse()
   },
-
+  
+  // Clean up global listeners when leaving the page
   beforeUnmount() {
     document.removeEventListener('keydown', this.handleEsc)
   }
@@ -1642,89 +1181,10 @@ export default {
   overflow-y: auto;
   z-index: 2000;
 }
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: flex-start;    /* start near top for short screens */
-  justify-content: center;
-  padding: 1rem;
-  z-index: 3000;
-  overflow-y: auto;           /* scroll if content is too tall */
-}
-
-.overlay-card {
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  max-width: 640px;
-  width: 100%;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  max-height: 100%;
-  overflow-y: auto;           /* card can scroll internally */
-}
-
-.overlay-card.wide {
-  max-width: 720px;
-}
-
-@media (min-height: 700px) {
-  .overlay {
-    align-items: center;      /* center when we have enough height */
-    padding: 2rem;
-  }
-}
 .lecture-text {
   text-align: left;
   white-space: pre-line;
   line-height: 1.5;
-}
-
-.flashcards-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.flashcard {
-  width: 200px;
-  height: 120px;
-  perspective: 1000px;
-  cursor: pointer;
-  position: relative;
-  transform-style: preserve-3d;
-}
-
-.flashcard .front,
-.flashcard .back {
-  width: 100%;
-  height: 100%;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  backface-visibility: hidden;
-  transition: transform 0.6s;
-  position: absolute;
-}
-
-.flashcard .back {
-  background: #f8f9fa;
-  transform: rotateY(180deg);
-}
-
-.flashcard.flipped .front {
-  transform: rotateY(180deg);
-}
-
-.flashcard.flipped .back {
-  transform: rotateY(0deg);
 }
 
 .add-student-header {
@@ -1740,4 +1200,5 @@ export default {
 .add-student-search input {
   min-width: 220px;
 }
+
 </style>

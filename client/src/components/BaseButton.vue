@@ -20,6 +20,7 @@
 <script>
 export default {
   name: 'BaseButton',
+  emits: ['click'],
   props: {
     to: [String, Object],
     href: {

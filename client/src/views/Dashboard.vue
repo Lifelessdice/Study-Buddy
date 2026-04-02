@@ -34,7 +34,7 @@
           <div v-if="loadingUpcoming" class="text-muted">Loading upcoming quizzes...</div>
           <div v-else-if="upcomingError" class="alert alert-danger">{{ upcomingError }}</div>
           <div v-else-if="!upcomingQuizzes.length" class="alert alert-info">
-            Nothing coming up. Enjoy your day! 🎉
+            Nothing coming up. Enjoy your day!
           </div>
           <div v-else class="list-group">
             <div
@@ -47,7 +47,7 @@
               <div class="small text-muted mb-1">Due: {{ item.dueLabel }}</div>
             </div>
             <BaseButton
-              :to="{ name: 'TakeQuiz', params: { quizId: item._id } }"
+              :to="{ name: 'TakeQuiz', params: { quizSlug: item.slug } }"
               variant="primary"
               size="sm"
             >
@@ -65,6 +65,7 @@
 import CourseService from '@/services/CourseService'
 import QuizService from '@/services/QuizService'
 import QuizParticipationService from '@/services/QuizParticipationService'
+import { quizSlug } from '@/utils/slug'
 
 export default {
   data() {
@@ -128,6 +129,7 @@ export default {
           items.forEach(q => {
             allQuizzes.push({
               ...q,
+              slug: quizSlug(q),
               courseCode: course.code,
               courseName: course.name
             })

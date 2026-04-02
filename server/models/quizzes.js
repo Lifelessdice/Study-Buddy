@@ -43,7 +43,7 @@ const quizSchema = new mongoose.Schema(
     questions: {
       type: [questionSchema],
       default: [],
-    },
+    }
   },
   {
     timestamps: true,

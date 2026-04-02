@@ -1,6 +1,6 @@
 <template>
   <div class="small">
-    <div v-if="loading" class="text-muted">Loading stats…</div>
+    <div v-if="loading" class="text-muted">Loading stats...</div>
     <div v-else-if="error" class="text-danger">{{ error }}</div>
     <div v-else-if="!hasAttempts" class="text-muted">No attempts yet</div>
     <div v-else class="d-flex flex-wrap gap-3 align-items-baseline">

@@ -9,7 +9,7 @@
     </div>
 
     <!-- AI Feature Tabs -->
-    <ul class="nav nav-tabs mt-4" role="tablist">
+    <ul class="nav nav-tabs mt-4 responsive-tabs" role="tablist">
       <li class="nav-item">
         <a class="nav-link active" data-bs-toggle="tab" href="#summary">Summary</a>
       </li>
@@ -26,107 +26,58 @@
 
       <!-- Summary -->
       <div class="tab-pane fade show active" id="summary">
-        <BaseButton
-          class="mb-3"
-          variant="primary"
+        <AiSummaryPanel
+          :summary="summary"
           :loading="loadingSummary"
-          :disabled="loadingSummary"
-          @click="generateSummary"
-        >
-          Generate Summary
-        </BaseButton>
-
-        <div v-if="loadingSummary" class="text-center my-3">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-          <p>Generating summary, please wait...</p>
-        </div>
-
-        <div v-if="summary && !loadingSummary">{{ summary }}</div>
+          button-class="mb-3"
+          loading-class="text-center my-3"
+          @generate="generateSummary"
+        />
       </div>
 
       <!-- Quiz -->
       <div class="tab-pane fade" id="quiz">
-        <BaseButton
-          class="mb-3"
-          variant="success"
+        <AiQuizPanel
+          :quiz="quiz"
           :loading="loadingQuiz"
-          :disabled="loadingQuiz"
-          @click="generateQuiz"
-        >
-          Generate Quiz
-        </BaseButton>
-
-        <div v-if="loadingQuiz" class="text-center my-3">
-          <div class="spinner-border text-success" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-          <p>Generating quiz, please wait...</p>
-        </div>
-
-        <ul v-if="quiz.length && !loadingQuiz" class="list-group">
-          <li v-for="(q, index) in quiz" :key="index" class="list-group-item">
-            <strong>Q{{ index + 1 }}: {{ q.question }}</strong>
-            <ul class="list-group mt-2">
-              <li v-for="(opt, i) in q.options" :key="i" class="list-group-item">
-                {{ String.fromCharCode(65 + i) }}. {{ opt }}
-              </li>
-            </ul>
-            <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
-          </li>
-        </ul>
+          button-class="mb-3"
+          loading-class="text-center my-3"
+          @generate="generateQuiz"
+          @select="selectOption"
+        />
       </div>
 
       <!-- Flashcards Tab -->
       <div class="tab-pane fade" id="flashcards">
-      <BaseButton
-          class="mb-3"
-          variant="warning"
+        <FlashcardsPanel
+          :flashcards="flashcards"
           :loading="loadingFlashcards"
-          :disabled="loadingFlashcards"
-          @click="generateFlashcards"
-  >
-          <span v-if="loadingFlashcards">Generating...</span>
-          <span v-else>Generate Flashcards</span>
-      </BaseButton>
-
-      <div v-if="loadingFlashcards" class="text-center my-3">
-          <div class="spinner-border text-warning" role="status">
-          <span class="visually-hidden">Loading...</span>
-          </div>
-          <p>Generating flashcards, please wait...</p>
-      </div>
-
-      <div v-if="flashcards.length && !loadingFlashcards" class="flashcards-container">
-          <div
-          class="flashcard"
-          v-for="(fc, index) in flashcards"
-          :key="index"
-          :class="{ flipped: fc.flipped }"
-          @click="fc.flipped = !fc.flipped"
-    >
-          <div class="front">
-              Q: {{ fc.question }}
-          </div>
-          <div class="back">
-              A: {{ fc.answer }}
-          </div>
-          </div>
-      </div>
+          @generate="generateFlashcards"
+          @toggle="toggleFlashcard"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import api from '../Api'
+import Api from '@/Api'
+import { notifyError } from '@/utils/notify'
+import AiQuizPanel from '@/components/AiQuizPanel.vue'
+import AiSummaryPanel from '@/components/AiSummaryPanel.vue'
+import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
+import { handleAiFlashcards, handleAiQuiz, handleAiSummary } from '@/utils/aiHandlers'
+import { toggleFlashcard } from '@/utils/aiFlashcards'
+import { selectQuizOption } from '@/utils/aiQuiz'
+import { noteSlug } from '@/utils/slug'
 
 export default {
-  props: ['id'],
+  props: ['noteSlug'],
+  components: { AiQuizPanel, AiSummaryPanel, FlashcardsPanel },
   data() {
     return {
       note: {},
+      noteId: '',
       summary: '',
       quiz: [],
       flashcards: [],
@@ -138,114 +89,58 @@ export default {
   },
   async created() {
     try {
-      const res = await api.get(`/notes/${this.id}`)
-      this.note = res.data.data
+      const listRes = await Api.get('/notes')
+      const notes = listRes.data.data || listRes.data || []
+      const found = notes.find(n => noteSlug(n) === this.noteSlug)
+      if (!found) {
+        notifyError('Note not found')
+        return
+      }
+      this.noteId = found._id
+      try {
+        const detailRes = await Api.get(`/notes/${found._id}`)
+        this.note = detailRes.data.data || found
+      } catch (err) {
+        this.note = found
+      }
     } catch (err) {
-      alert('Failed to load note')
+      notifyError('Failed to load note')
     }
   },
   methods: {
+
+    selectOption(question, index) {
+      selectQuizOption(question, index)
+    },
+
     async generateSummary() {
-      try {
-        this.aiError = ''
-        this.loadingSummary = true
-        this.summary = ''
-        const res = await api.post(`/notes/${this.id}/summaries`)
-        this.summary = res.data.summary || res.data.data?.summary || 'No summary returned'
-      } catch (err) {
-        this.aiError = 'Failed to generate summary. Please try again.'
-      } finally {
-        this.loadingSummary = false
-      }
+      await handleAiSummary({
+        request: () => Api.post(`/notes/${this.noteId}/summaries`),
+        setLoading: (value) => { this.loadingSummary = value },
+        setSummary: (value) => { this.summary = value },
+        setError: (value) => { this.aiError = value }
+      })
     },
     async generateQuiz() {
-      try {
-        this.aiError = ''
-        this.loadingQuiz = true
-        this.quiz = []
-        const res = await api.post(`/notes/${this.id}/aiquizzes`)
-        this.quiz = res.data.quiz || res.data.data?.quiz || []
-        if (!this.quiz.length) {
-          this.aiError = 'No quiz questions were returned.'
-        }
-      } catch (err) {
-        this.aiError = 'Failed to generate quiz. Please try again.'
-      } finally {
-        this.loadingQuiz = false
-      }
+      await handleAiQuiz({
+        request: () => Api.post(`/notes/${this.noteId}/aiquizzes`),
+        setLoading: (value) => { this.loadingQuiz = value },
+        setQuiz: (value) => { this.quiz = value },
+        setError: (value) => { this.aiError = value }
+      })
+    },
+
+    toggleFlashcard(index) {
+      toggleFlashcard(this.flashcards, index)
     },
     async generateFlashcards() {
-      try {
-        this.aiError = ''
-        this.loadingFlashcards = true
-        this.flashcards = []
-        const res = await api.post(`/notes/${this.id}/flashcards`)
-        // Add a flipped property for animation
-        const payload = res.data.flashcards || res.data.data?.flashcards || []
-        this.flashcards = payload.map(fc => ({
-          ...fc,
-          flipped: false
-        }))
-        if (!this.flashcards.length) {
-          this.aiError = 'No flashcards were returned.'
-        }
-      } catch (err) {
-        this.aiError = 'Failed to generate flashcards. Please try again.'
-      } finally {
-        this.loadingFlashcards = false
-      }
+      await handleAiFlashcards({
+        request: () => Api.post(`/notes/${this.noteId}/flashcards`),
+        setLoading: (value) => { this.loadingFlashcards = value },
+        setFlashcards: (value) => { this.flashcards = value },
+        setError: (value) => { this.aiError = value }
+      })
     }
   }
 }
 </script>
-
-<style scoped>
-.flashcards-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.flashcard {
-  width: 200px;
-  height: 120px;
-  perspective: 1000px;
-  cursor: pointer;
-}
-
-.flashcard .front,
-.flashcard .back {
-  width: 100%;
-  height: 100%;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  backface-visibility: hidden;
-  transition: transform 0.6s;
-  position: absolute;
-}
-
-.flashcard .back {
-  background: #f8f9fa;
-  transform: rotateY(180deg);
-}
-
-.flashcard.flipped .front {
-  transform: rotateY(180deg);
-}
-
-.flashcard.flipped .back {
-  transform: rotateY(0deg);
-}
-
-.flashcard {
-  position: relative;
-  transform-style: preserve-3d;
-}
-</style>
