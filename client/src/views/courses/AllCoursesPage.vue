@@ -126,6 +126,7 @@
           class="page-btn"
           @click="prevPage"
           :disabled="currentPage === 1"
+          aria-label="Previous page"
         >
           <span class="page-icon">&lt;</span>
         </BaseButton>
@@ -136,6 +137,7 @@
           class="page-btn"
           @click="nextPage"
           :disabled="currentPage === totalPages"
+          aria-label="Next page"
         >
           <span class="page-icon">&gt;</span>
         </BaseButton>
