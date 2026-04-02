@@ -6,18 +6,18 @@
         <BaseButton to="/courses" variant="secondary" outline>
           <span class="btn-text btn-text-long">Back to My Courses</span>
           <span class="btn-text btn-text-short">My Courses</span>
-          <span class="btn-icon">📚</span>
+          <span class="btn-icon">C</span>
         </BaseButton>
 
         <BaseButton
           v-if="isTeacher"
-          to="/courses/delete-all"
           variant="danger"
           outline
+          @click="showDeleteAllConfirm = true"
         >
           <span class="btn-text btn-text-long">Delete All Courses</span>
           <span class="btn-text btn-text-short">Delete</span>
-          <span class="btn-icon">🗑️</span>
+          <span class="btn-icon">Del</span>
         </BaseButton>
       </div>
     </div>
@@ -85,7 +85,7 @@
     </div>
 
     <div class="row">
-      <div v-for="course in paginatedCourses" :key="course._id" class="col-md-6 mb-3">
+      <div v-for="course in courses" :key="course._id" class="col-md-6 mb-3">
         <div class="card h-100">
           <div class="card-body">
             <h5 class="card-title">
@@ -101,13 +101,10 @@
               v-if="isStudent"
               class="mt-3 d-flex justify-content-between align-items-center"
             >
-              <span v-if="isEnrolled(course)" class="badge bg-success">Enrolled</span>
-              <span v-else class="text-muted">Not enrolled</span>
-
               <BaseButton
                 size="sm"
-                :variant="isEnrolled(course) ? 'secondary' : 'primary'"
-                :outline="isEnrolled(course)"
+                :variant="isEnrolled(course) ? 'success' : 'primary'"
+                :outline="false"
                 :disabled="enrollingId === course._id || isEnrolled(course)"
                 @click="handleSignup(course)"
               >
@@ -129,8 +126,9 @@
           class="page-btn"
           @click="prevPage"
           :disabled="currentPage === 1"
+          aria-label="Previous page"
         >
-          <span class="page-icon">⬅️</span>
+          <span class="page-icon">&lt;</span>
         </BaseButton>
 
         <BaseButton
@@ -139,8 +137,9 @@
           class="page-btn"
           @click="nextPage"
           :disabled="currentPage === totalPages"
+          aria-label="Next page"
         >
-          <span class="page-icon">➡️</span>
+          <span class="page-icon">&gt;</span>
         </BaseButton>
       </div>
 
@@ -162,11 +161,30 @@
         </select>
       </div>
     </div>
+
+    <div v-if="showDeleteAllConfirm" class="overlay">
+      <div class="overlay-card overlay-card--danger">
+        <h5 class="text-danger">Delete All Courses</h5>
+        <p class="mb-3">This will remove all courses. This cannot be undone.</p>
+        <div class="d-flex gap-2 justify-content-end">
+          <BaseButton variant="primary" outline @click="showDeleteAllConfirm = false">Cancel</BaseButton>
+          <BaseButton
+            variant="danger"
+            :loading="deletingAll"
+            :disabled="deletingAll"
+            @click="deleteAllCourses"
+          >
+            {{ deletingAll ? 'Deleting...' : 'Yes, delete all' }}
+          </BaseButton>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import CourseService from '@/services/CourseService'
+import { notifyError, notifySuccess } from '@/utils/notify'
 
 export default {
   name: 'AllCoursesPage',
@@ -191,7 +209,8 @@ export default {
       enrollingId: null,
       enrollError: null,
 
-      apilinks: null
+      showDeleteAllConfirm: false,
+      deletingAll: false
     }
   },
   computed: {
@@ -216,9 +235,6 @@ export default {
           (c.code || '').toLowerCase().includes(term)
         )
         .slice(0, 5)
-    },
-    paginatedCourses() {
-      return this.courses
     }
   },
 
@@ -250,10 +266,10 @@ export default {
           this.degreeOptions = data.degrees
         }
 
-        // store HATEOAS collection links (self/next/prev/...)
-        this.apiLinks = data.links || null
-
         // use backend pagination numbers
+        if (typeof data.page === 'number') {
+          this.currentPage = data.page
+        }
         if (typeof data.total === 'number') {
           this.total = data.total
         } else {
@@ -294,9 +310,9 @@ export default {
       }
     },
 
-    // called when user types; we only update suggestions here
+    // called when user types;
     onSearchInput() {
-      // suggestions derived from current list; fetch on Search click
+      //  fetch on Search click
     },
 
     selectSuggestion(course) {
@@ -344,6 +360,25 @@ export default {
       }
     },
 
+    async deleteAllCourses() {
+      if (this.deletingAll) return
+      this.deletingAll = true
+      try {
+        await CourseService.removeAll()
+        this.courses = []
+        this.total = 0
+        this.totalPages = 1
+        this.currentPage = 1
+        this.showDeleteAllConfirm = false
+        notifySuccess('All courses deleted')
+      } catch (err) {
+        console.error(err)
+        notifyError('Failed to delete all courses')
+      } finally {
+        this.deletingAll = false
+      }
+    },
+
     nextPage() {
       if (this.currentPage < this.totalPages) {
         this.currentPage++
@@ -366,6 +401,7 @@ export default {
   },
   mounted() {
     this.fetchCourses()
+    this.fetchEnrollments()
   }
 }
 </script>
@@ -378,34 +414,6 @@ export default {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   background: #fff;
   border: 1px solid #dee2e6;
-}
-
-/* Buttons: text / icon switching */
-.btn-text-short,
-.btn-icon {
-  display: none;
-}
-
-/* Tablet & small desktop */
-@media (max-width: 576px) {
-  .btn-text-long {
-    display: none;
-  }
-
-  .btn-text-short {
-    display: inline;
-  }
-}
-
-/* Small phones (320px) */
-@media (max-width: 360px) {
-  .btn-text-short {
-    display: none;
-  }
-
-  .btn-icon {
-    display: inline;
-  }
 }
 
 @media (max-width: 480px) {

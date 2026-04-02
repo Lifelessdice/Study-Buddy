@@ -2,7 +2,7 @@
   <div class="container mt-4" style="max-width: 760px">
     <h3 class="mb-3">Create Quiz</h3>
     <div class="card p-3">
-      <p class="text-muted mb-3">Course: {{ courseName || courseSlug }}</p>
+      <p class="text-muted mb-3">Course: {{ courseName || courseSlugValue }}</p>
 
       <div class="mb-3">
         <label class="form-label">Title</label>
@@ -68,7 +68,7 @@
           {{ submitting ? 'Creating...' : 'Create Quiz' }}
         </BaseButton>
         <BaseButton
-          :to="{ name: 'CourseDashboard', params: { courseSlug: courseSlug }, query: { tab: 'quizzes' } }"
+          :to="{ name: 'CourseDashboard', params: { courseSlug: courseSlugValue }, query: { tab: 'quizzes' } }"
           variant="secondary"
           outline
         >
@@ -83,13 +83,14 @@
 import QuizService from '@/services/QuizService'
 import CourseService from '@/services/CourseService'
 import { courseSlug } from '@/utils/slug'
+import { notifyError } from '@/utils/notify'
 
 export default {
   name: 'CreateQuiz',
   props: ['courseSlug'],
   data() {
     return {
-      courseSlug: this.$route.params.courseSlug,
+      courseSlugValue: this.courseSlug || this.$route.params.courseSlug,
       courseId: '',
       courseName: '',
       submitting: false,
@@ -105,11 +106,11 @@ export default {
     try {
       const res = await CourseService.getAll({ limit: 1000 })
       const list = res.data.data || res.data || []
-      const found = list.find(c => courseSlug(c) === this.courseSlug)
+      const found = list.find(c => courseSlug(c) === this.courseSlugValue)
       if (found) {
         this.courseName = found.name
         this.courseId = found._id
-        this.courseSlug = courseSlug(found)
+        this.courseSlugValue = courseSlug(found)
       }
     } catch (err) {
       // non-fatal
@@ -140,7 +141,7 @@ export default {
       this.submitting = true
       try {
         if (!this.courseId) {
-          alert('Course not found')
+          notifyError('Course not found')
           return
         }
         const questions = this.form.questions
@@ -160,10 +161,10 @@ export default {
           questions
         }
         await QuizService.create(payload)
-        this.$router.push({ name: 'CourseDashboard', params: { courseSlug: this.courseSlug }, query: { tab: 'quizzes' } })
+        this.$router.push({ name: 'CourseDashboard', params: { courseSlug: this.courseSlugValue }, query: { tab: 'quizzes' } })
       } catch (err) {
         console.error(err)
-        alert('Failed to create quiz')
+        notifyError('Failed to create quiz')
       } finally {
         this.submitting = false
       }

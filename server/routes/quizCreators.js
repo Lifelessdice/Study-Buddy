@@ -1,5 +1,5 @@
 const express = require('express');
-const quizController = require('../controllers/QuizCreatorController');
+const quizController = require('../controllers/quizCreatorsController');
 const protect = require('../middleware/protect');
 
 const router = express.Router();

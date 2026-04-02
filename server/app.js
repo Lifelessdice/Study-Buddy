@@ -1,44 +1,43 @@
 // ---------------------------------------------
 //  ORIGINAL TEMPLATE IMPORTS
 // ---------------------------------------------
-var express = require('express');
-var mongoose = require('mongoose');
-var morgan = require('morgan');
-var path = require('path');
-var cors = require('cors');
-var history = require('connect-history-api-fallback');
+const express = require('express');
+const morgan = require('morgan');
+const path = require('path');
+const cors = require('cors');
+const fs = require('fs');
 
 // ---------------------------------------------
 //  ROUTES
 // ---------------------------------------------
-var userRoutes = require('./routes/users');   
-var courseRoutes = require('./routes/courses');
-var noteRoutes = require('./routes/notes');
-var quizRoutes = require('./routes/quizzes');
-var quizCreatorRoutes = require('./routes/quizCreators');
-var quizParticipationRoutes = require('./routes/quizParticipations');
-var courseAttendancesRoutes = require('./routes/courseAttendances');
-var teachingAssignmentRoutes = require('./routes/teachingAssignments');
-var noteSummariesRoutes = require('./routes/noteSummaries');
-var noteAIquizRoutes = require('./routes/noteAIquizzes');
-var noteFlashcardsRoutes = require('./routes/noteFlashcards');
-var authRoutes = require('./routes/auth');
-var courseMaterialRoutes = require('./routes/courseMaterials');
+const userRoutes = require('./routes/users');
+const courseRoutes = require('./routes/courses');
+const noteRoutes = require('./routes/notes');
+const quizRoutes = require('./routes/quizzes');
+const quizCreatorRoutes = require('./routes/quizCreators');
+const quizParticipationRoutes = require('./routes/quizParticipations');
+const courseAttendancesRoutes = require('./routes/courseAttendances');
+const teachingAssignmentRoutes = require('./routes/teachingAssignments');
+const noteSummariesRoutes = require('./routes/noteSummaries');
+const noteAIquizRoutes = require('./routes/noteAIquizzes');
+const noteFlashcardsRoutes = require('./routes/noteFlashcards');
+const authRoutes = require('./routes/auth');
+const courseMaterialRoutes = require('./routes/courseMaterials');
+const systemController = require('./controllers/systemController');
 
 
 
 // ---------------------------------------------
 //  ENV + CONFIG
 // ---------------------------------------------
-var mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/animalDevelopmentDB';
-var port = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
 //Versioned API prefix
-var API_PREFIX = '/api/v1';
+const API_PREFIX = '/api/v1';
 // ---------------------------------------------
 //  APP INIT
 // ---------------------------------------------
-var app = express();
+const app = express();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -48,18 +47,32 @@ app.use(cors());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ---------------------------------------------
+//  HTTP METHOD OVERRIDE (MS1 Extended)
+//  Supports POST with ?_method=PATCH|PUT|DELETE
+//  or X-HTTP-Method-Override header.
+// ---------------------------------------------
+app.use((req, res, next) => {
+    if (req.method === 'POST') {
+        const override = req.get('X-HTTP-Method-Override') || req.query._method;
+        if (override) {
+            const method = String(override).toUpperCase();
+            if (['PATCH', 'PUT', 'DELETE'].includes(method)) {
+                req.method = method;
+            }
+        }
+    }
+    next();
+});
+
+// ---------------------------------------------
 //  HEALTH CHECK (Required for CI)
 // ---------------------------------------------
-app.get("/api/v1/health", (req, res) => {
-    res.json({ status: "ok" });
-});
+app.get("/api/v1/health", systemController.healthCheck);
 
 // ---------------------------------------------
 //  ROOT TEMPLATE ENDPOINT (Required by template)
 // ---------------------------------------------
-app.get('/api', function(req, res) {
-    res.json({ 'message': 'Welcome to StudyBuddy API v1' });
-});
+app.get('/api', systemController.apiRoot);
 
 // ---------------------------------------------
 //  USER ROUTES 
@@ -79,6 +92,20 @@ app.use(API_PREFIX + "/courses", courseMaterialRoutes);
 app.use(API_PREFIX + "/notes", noteSummariesRoutes);
 app.use(API_PREFIX + "/notes", noteAIquizRoutes);
 app.use(API_PREFIX + "/notes", noteFlashcardsRoutes);
+
+// ---------------------------------------------
+//  STATIC FRONTEND (production build)
+// ---------------------------------------------
+const clientDistPath = path.join(__dirname, '..', 'client', 'dist');
+if (fs.existsSync(clientDistPath)) {
+    app.use(express.static(clientDistPath));
+    app.get('*', (req, res, next) => {
+        if (req.path.startsWith('/api')) {
+            return next();
+        }
+        res.sendFile(path.join(clientDistPath, 'index.html'));
+    });
+}
 
 
 
