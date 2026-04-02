@@ -10,8 +10,8 @@
               Focus on learning. Sign in to pick up where you left off or create an account to get started.
             </p>
             <div class="d-flex flex-wrap gap-2">
-              <router-link class="btn btn-primary" to="/login">Login</router-link>
-              <router-link class="btn btn-outline-secondary" to="/signup">Sign Up</router-link>
+              <BaseButton to="/login" variant="primary">Login</BaseButton>
+              <BaseButton to="/signup" variant="secondary" outline>Sign Up</BaseButton>
             </div>
           </div>
         </div>

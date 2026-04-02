@@ -25,10 +25,16 @@
         </div>
 
         <div class="d-flex gap-2">
-          <button class="btn btn-outline-primary" :disabled="submitting" type="submit">
-            {{ submitting ? 'Saving…' : submitLabel }}
-          </button>
-          <router-link to="/courses" class="btn btn-link ms-2">Cancel</router-link>
+          <BaseButton
+            variant="primary"
+            outline
+            type="submit"
+            :loading="submitting"
+            :disabled="submitting"
+          >
+            {{ submitting ? 'Saving...' : submitLabel }}
+          </BaseButton>
+          <BaseButton to="/courses" variant="primary" outline class="ms-2">Cancel</BaseButton>
         </div>
 
       </form>
@@ -40,10 +46,12 @@
 
 <script>
 import CourseService from '@/services/CourseService'
+import { courseSlug } from '@/utils/slug'
+import { notifyError } from '@/utils/notify'
 
 export default {
   name: 'EditCourse',
-  props: ['id'],
+  props: ['courseSlug'],
   data() {
     return {
       form: {
@@ -52,22 +60,30 @@ export default {
         overview: '',
         degree: ''
       },
+      courseId: '',
       loaded: false,
       submitting: false
     }
   },
   async mounted() {
     try {
-      const courseId = this.$route.params.id
-      const res = await CourseService.getById(courseId)
-      const c = res.data.data || res.data
-      this.form.name = c.name
-      this.form.code = c.code
+      const courseSlugParam = this.$route.params.courseSlug
+      const listRes = await CourseService.getAll({ limit: 1000 })
+      const list = listRes.data.data || listRes.data || []
+      const found = list.find(c => courseSlug(c) === courseSlugParam)
+      if (!found) {
+        throw new Error('Course not found')
+      }
+      const res = await CourseService.getById(found._id)
+      const c = res.data.data || res.data || found
+      this.courseId = c._id || found._id
+      this.form.name = c.name || found.name
+      this.form.code = c.code || found.code
       this.form.overview = c.overview || ''
       this.form.degree = c.degree || ''
       this.loaded = true
     } catch (err) {
-      alert('Failed to load course')
+      notifyError('Failed to load course')
       this.$router.push({ name: 'Courses' })
     }
   },
@@ -75,15 +91,14 @@ export default {
     async submit() {
       try {
         this.submitting = true
-        const courseId = this.$route.params.id
         if (this.isOverwrite) {
-          await CourseService.replace(courseId, this.form)
+          await CourseService.replace(this.courseId, this.form)
         } else {
-          await CourseService.update(courseId, this.form)
+          await CourseService.update(this.courseId, this.form)
         }
         this.$router.push({ name: 'Courses' })
       } catch (err) {
-        alert('Failed to save changes')
+        notifyError('Failed to save changes')
       } finally {
         this.submitting = false
       }

@@ -2,7 +2,7 @@
   <div class="container mt-4" style="max-width: 760px">
     <h3 class="mb-3">Create Quiz</h3>
     <div class="card p-3">
-      <p class="text-muted mb-3">Course: {{ courseName || courseId }}</p>
+      <p class="text-muted mb-3">Course: {{ courseName || courseSlugValue }}</p>
 
       <div class="mb-3">
         <label class="form-label">Title</label>
@@ -26,14 +26,16 @@
         >
           <div class="d-flex justify-content-between align-items-center mb-2">
             <label class="form-label mb-0">Question {{ qIdx + 1 }}</label>
-            <button
+            <BaseButton
               v-if="form.questions.length > 1"
-              class="btn btn-sm btn-outline-danger"
+              variant="danger"
+              outline
+              size="sm"
               type="button"
               @click="removeQuestion(qIdx)"
             >
               Remove question
-            </button>
+            </BaseButton>
           </div>
           <input v-model="q.text" type="text" class="form-control mb-3" placeholder="Question text">
           <div class="mb-2 fw-bold">Options</div>
@@ -46,27 +48,32 @@
               >
             </span>
             <input v-model="q.answers[oIdx]" type="text" class="form-control" placeholder="Option text">
-            <button
-              class="btn btn-outline-danger"
+            <BaseButton
+              variant="danger"
+              outline
               type="button"
               :disabled="q.answers.length <= 2"
               @click="removeOption(q, oIdx)"
             >
               Remove
-            </button>
+            </BaseButton>
           </div>
-          <button class="btn btn-sm btn-outline-secondary" type="button" @click="addOption(q)">+ Add option</button>
+          <BaseButton variant="secondary" outline size="sm" type="button" @click="addOption(q)">+ Add option</BaseButton>
         </div>
-        <button class="btn btn-sm btn-outline-primary" type="button" @click="addQuestion">+ Add question</button>
+        <BaseButton variant="primary" outline size="sm" type="button" @click="addQuestion">+ Add question</BaseButton>
       </div>
 
       <div class="d-flex gap-2">
-        <button class="btn btn-primary" :disabled="submitting" @click="submit">
+        <BaseButton variant="primary" :loading="submitting" :disabled="submitting" @click="submit">
           {{ submitting ? 'Creating...' : 'Create Quiz' }}
-        </button>
-        <router-link class="btn btn-link" :to="{ name: 'CourseDashboard', params: { id: courseId }, query: { tab: 'quizzes' } }">
+        </BaseButton>
+        <BaseButton
+          :to="{ name: 'CourseDashboard', params: { courseSlug: courseSlugValue }, query: { tab: 'quizzes' } }"
+          variant="secondary"
+          outline
+        >
           Cancel
-        </router-link>
+        </BaseButton>
       </div>
     </div>
   </div>
@@ -75,13 +82,16 @@
 <script>
 import QuizService from '@/services/QuizService'
 import CourseService from '@/services/CourseService'
+import { courseSlug } from '@/utils/slug'
+import { notifyError } from '@/utils/notify'
 
 export default {
   name: 'CreateQuiz',
-  props: ['id'],
+  props: ['courseSlug'],
   data() {
     return {
-      courseId: this.$route.params.id,
+      courseSlugValue: this.courseSlug || this.$route.params.courseSlug,
+      courseId: '',
       courseName: '',
       submitting: false,
       form: {
@@ -94,9 +104,14 @@ export default {
   },
   async mounted() {
     try {
-      const res = await CourseService.getById(this.courseId)
-      const c = res.data.data || res.data
-      this.courseName = c.name
+      const res = await CourseService.getAll({ limit: 1000 })
+      const list = res.data.data || res.data || []
+      const found = list.find(c => courseSlug(c) === this.courseSlugValue)
+      if (found) {
+        this.courseName = found.name
+        this.courseId = found._id
+        this.courseSlugValue = courseSlug(found)
+      }
     } catch (err) {
       // non-fatal
     }
@@ -125,6 +140,10 @@ export default {
     async submit() {
       this.submitting = true
       try {
+        if (!this.courseId) {
+          notifyError('Course not found')
+          return
+        }
         const questions = this.form.questions
           .filter(q => q.text && q.text.trim())
           .map(q => {
@@ -142,10 +161,10 @@ export default {
           questions
         }
         await QuizService.create(payload)
-        this.$router.push({ name: 'CourseDashboard', params: { id: this.courseId }, query: { tab: 'quizzes' } })
+        this.$router.push({ name: 'CourseDashboard', params: { courseSlug: this.courseSlugValue }, query: { tab: 'quizzes' } })
       } catch (err) {
         console.error(err)
-        alert('Failed to create quiz')
+        notifyError('Failed to create quiz')
       } finally {
         this.submitting = false
       }

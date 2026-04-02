@@ -7,15 +7,17 @@
           <h3 class="mb-1">{{ quiz.title }}</h3>
           <div class="text-muted small">
             Questions: {{ quiz.questions?.length || 0 }}
-            <span v-if="quiz.timeLimit">• Time: {{ quiz.timeLimit }} min</span>
+            <span v-if="quiz.timeLimit">Time: {{ quiz.timeLimit }} min</span>
           </div>
         </div>
-        <router-link
-          class="btn btn-outline-secondary btn-sm"
-          :to="{ name: 'CourseDashboard', params: { id: quiz.course }, query: { tab: 'quizzes' } }"
+        <BaseButton
+          :to="{ name: 'CourseDashboard', params: { courseSlug: courseSlug }, query: { tab: 'quizzes' } }"
+          variant="secondary"
+          outline
+          size="sm"
         >
           Back to course
-        </router-link>
+        </BaseButton>
       </div>
     </div>
 
@@ -50,13 +52,18 @@
         </div>
       </div>
 
-      <div class="d-flex justify-content-end gap-2 mt-3">
-        <button class="btn btn-outline-secondary" :disabled="submitting" @click="cancel">
+      <div class="d-flex justify-content-end gap-2 mt-3 quiz-actions">
+        <BaseButton variant="secondary" outline :disabled="submitting" @click="cancel">
           Cancel
-        </button>
-        <button class="btn btn-primary" :disabled="submitting || !allAnswered" @click="submit">
+        </BaseButton>
+        <BaseButton
+          variant="primary"
+          :loading="submitting"
+          :disabled="submitting || !allAnswered"
+          @click="submit"
+        >
           {{ submitting ? 'Submitting...' : 'Submit answers' }}
-        </button>
+        </BaseButton>
       </div>
     </div>
   </div>
@@ -65,15 +72,19 @@
 
 <script>
 import QuizService from '@/services/QuizService'
+import CourseService from '@/services/CourseService'
+import { courseSlug, quizSlug } from '@/utils/slug'
 import Api from '@/Api'
+import { notifyError, notifySuccess } from '@/utils/notify'
 
 export default {
   name: 'TakeQuiz',
-  props: ['quizId'],
+  props: ['quizSlug'],
   data() {
     return {
       quiz: {},
       answers: [],
+      courseSlug: '',
       submitting: false,
       loaded: false
     }
@@ -90,29 +101,42 @@ export default {
   },
   async mounted() {
     try {
-      const res = await QuizService.get(this.$route.params.quizId)
-      const quiz = res.data.data || res.data
+      const listRes = await QuizService.getAll()
+      const list = listRes.data.data || listRes.data || []
+      const found = list.find(q => quizSlug(q) === this.$route.params.quizSlug)
+      if (!found) {
+        throw new Error('Quiz not found')
+      }
+      const res = await QuizService.get(found._id)
+      const quiz = res.data.data || res.data || found
       this.quiz = quiz
       this.answers = (quiz.questions || []).map(() => null)
 
+      try {
+        const courseRes = await CourseService.getById(quiz.course)
+        const course = courseRes.data.data || courseRes.data
+        this.courseSlug = courseSlug(course)
+      } catch (err) {
+        // non-fatal
+      }
+
       this.loaded = true
     } catch (err) {
-      alert('Failed to load quiz')
+      notifyError('Failed to load quiz')
       this.$router.push({ name: 'Courses' })
     }
   },
   methods: {
     cancel() {
-      this.$router.push({ name: 'CourseDashboard', params: { id: this.quiz.course }, query: { tab: 'quizzes' } })
+      this.$router.push({ name: 'CourseDashboard', params: { courseSlug: this.courseSlug }, query: { tab: 'quizzes' } })
     },
     async submit() {
       if (!this.user || !this.user._id) {
-        alert('You must be logged in')
+        notifyError('You must be logged in')
         return
       }
       this.submitting = true
       try {
-        // Simple score calculation client-side
         let correct = 0
         this.quiz.questions.forEach((q, idx) => {
           if (this.answers[idx] === q.correctAnswerIndex) correct++
@@ -126,11 +150,11 @@ export default {
           score
         })
 
-        alert(`Quiz submitted! Score: ${score}%`)
-        this.$router.push({ name: 'CourseDashboard', params: { id: this.quiz.course }, query: { tab: 'quizzes' } })
+        notifySuccess(`Quiz submitted! Score: ${score}%`)
+        this.$router.push({ name: 'CourseDashboard', params: { courseSlug: this.courseSlug }, query: { tab: 'quizzes' } })
       } catch (err) {
         console.error(err)
-        alert('Failed to submit quiz')
+        notifyError('Failed to submit quiz')
       } finally {
         this.submitting = false
       }
@@ -142,5 +166,20 @@ export default {
 <style scoped>
 .list-group-item {
   cursor: pointer;
+}
+
+.quiz-actions {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 576px) {
+  .quiz-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .quiz-actions .btn {
+    width: 100%;
+  }
 }
 </style>

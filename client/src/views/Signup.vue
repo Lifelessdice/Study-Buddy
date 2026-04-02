@@ -28,7 +28,7 @@
           <input v-model="password" class="form-control" type="password" required minlength="6">
         </div>
 
-        <button class="btn btn-primary w-100">Create Account</button>
+        <BaseButton class="w-100" variant="primary" type="submit">Create Account</BaseButton>
 
         <p class="mt-3 text-center">
           Already have an account?
@@ -40,7 +40,8 @@
 </template>
 
 <script>
-import api from '../Api'
+import Api from '@/Api'
+import { notifyError, notifySuccess } from '@/utils/notify'
 
 export default {
   data() {
@@ -54,17 +55,17 @@ export default {
   methods: {
     async signup() {
       try {
-        await api.post('/auth/register', {
+        await Api.post('/auth/register', {
           name: this.name,
           email: this.email,
           role: this.role,
           password: this.password
         })
 
-        alert('Account created! You can now log in.')
+        notifySuccess('Account created! You can now log in.')
         this.$router.push('/login')
       } catch (err) {
-        alert(err.response?.data?.message || 'Error creating user')
+        notifyError(err.response?.data?.message || 'Error creating user')
       }
     }
   }

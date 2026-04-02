@@ -16,7 +16,7 @@
           <p class="text-uppercase small text-muted mb-1">Teacher</p>
           <h5 class="mb-0">Manage your courses</h5>
         </div>
-        <router-link to="/courses" class="btn btn-primary btn-sm">Go to Courses</router-link>
+        <BaseButton to="/courses" variant="primary" size="sm">Go to Courses</BaseButton>
       </div>
     </div>
 
@@ -34,7 +34,7 @@
           <div v-if="loadingUpcoming" class="text-muted">Loading upcoming quizzes...</div>
           <div v-else-if="upcomingError" class="alert alert-danger">{{ upcomingError }}</div>
           <div v-else-if="!upcomingQuizzes.length" class="alert alert-info">
-            Nothing coming up. Enjoy your day! 🎉
+            Nothing coming up. Enjoy your day!
           </div>
           <div v-else class="list-group">
             <div
@@ -43,18 +43,19 @@
               class="list-group-item d-flex justify-content-between align-items-start flex-wrap gap-2"
             >
               <div>
-                <div class="fw-bold">Quiz: {{ item.title }} <span class="text-muted">({{ item.courseCode || item.courseName }})</span></div>
-                <div class="small text-muted mb-1">Due: {{ item.dueLabel }}</div>
-              </div>
-              <router-link
-                class="btn btn-sm btn-primary"
-                :to="{ name: 'TakeQuiz', params: { quizId: item._id } }"
-              >
-                Start
-              </router-link>
+              <div class="fw-bold">Quiz: {{ item.title }} <span class="text-muted">({{ item.courseCode || item.courseName }})</span></div>
+              <div class="small text-muted mb-1">Due: {{ item.dueLabel }}</div>
             </div>
+            <BaseButton
+              :to="{ name: 'TakeQuiz', params: { quizSlug: item.slug } }"
+              variant="primary"
+              size="sm"
+            >
+              Start
+            </BaseButton>
           </div>
         </div>
+      </div>
       </div>
     </div>
   </div>
@@ -64,6 +65,7 @@
 import CourseService from '@/services/CourseService'
 import QuizService from '@/services/QuizService'
 import QuizParticipationService from '@/services/QuizParticipationService'
+import { quizSlug } from '@/utils/slug'
 
 export default {
   data() {
@@ -127,6 +129,7 @@ export default {
           items.forEach(q => {
             allQuizzes.push({
               ...q,
+              slug: quizSlug(q),
               courseCode: course.code,
               courseName: course.name
             })

@@ -2,14 +2,28 @@
   <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h2>Courses</h2>
-      <div>
-        <router-link v-if="isTeacher" to="/courses/create" class="btn btn-primary">
-          + Create Course
-        </router-link>
-        <router-link to="/courses/all" class="btn btn-outline-secondary ms-2">
-          See All Courses
-        </router-link>
+      <div class="d-flex align-items-center gap-2">
+        <BaseButton
+          v-if="isTeacher"
+          to="/courses/create"
+          variant="primary"
+        >
+          <span class="btn-text btn-text-long">+ Create Course</span>
+          <span class="btn-text btn-text-short">Add Course</span>
+          <span class="btn-icon">+</span>
+        </BaseButton>
+
+        <BaseButton
+          to="/courses/all"
+          variant="secondary"
+          outline
+        >
+          <span class="btn-text btn-text-long">See All Courses</span>
+          <span class="btn-text btn-text-short">All Courses</span>
+          <span class="btn-icon">C</span>
+        </BaseButton>
       </div>
+
     </div>
 
     <div v-if="loading">Loading courses...</div>
@@ -20,7 +34,7 @@
 
         <div class="row">
       <div v-for="course in paginatedCourses" :key="course._id" class="col-md-6 mb-3">
-        <router-link :to="`/courses/${course._id}`" class="course-card-link">
+        <router-link :to="`/courses/${courseSlug(course)}`" class="course-card-link">
           <div class="card h-100 course-card">
             <div class="card-body">
               <h5 class="card-title">{{ course.name }} <small class="text-muted">({{ course.code }})</small></h5>
@@ -33,34 +47,40 @@
       </div>
     </div>
 
-    <!-- 🔽 PASTE THIS BLOCK HERE -->
-    <div v-if="!loading" class="d-flex justify-content-between align-items-center mt-3">
-      <div>
-        <button
-          class="btn btn-outline-secondary me-2"
+    <!-- PASTE THIS BLOCK HERE -->
+    <div v-if="!loading" class="d-flex justify-content-between align-items-center mt-3 pagination-bar">
+      <div class="d-flex align-items-center gap-2 page-actions">
+        <BaseButton
+          variant="secondary"
+          outline
+          class="page-btn"
           @click="prevPage"
           :disabled="currentPage === 1"
+          aria-label="Previous page"
         >
-          Previous
-        </button>
+          <span class="page-icon">&lt;</span>
+        </BaseButton>
 
-        <button
-          class="btn btn-outline-secondary"
+        <BaseButton
+          variant="secondary"
+          outline
+          class="page-btn"
           @click="nextPage"
           :disabled="currentPage === totalPages"
+          aria-label="Next page"
         >
-          Next
-        </button>
+          <span class="page-icon">&gt;</span>
+        </BaseButton>
       </div>
 
-      <div class="d-flex align-items-center">
+      <div class="d-flex align-items-center page-info">
         <span class="me-3">
-          Page {{ currentPage }} of {{ totalPages }}
-          <span v-if="total"> ({{ total }} total)</span>
+          Pg {{ currentPage }}/{{ totalPages }}
+          <span v-if="total">({{ total }})</span>
         </span>
 
         <select
-          class="form-select"
+          class="form-select page-size-select"
           style="width: auto;"
           :value="pageSize"
           @change="changePageSize($event.target.value)"
@@ -71,13 +91,14 @@
         </select>
       </div>
     </div>
-    <!-- 🔼 END PAGINATION BLOCK -->
+    <!-- END PAGINATION BLOCK -->
 
   </div>
 </template>
 
 <script>
 import CourseService from '@/services/CourseService'
+import { courseSlug } from '@/utils/slug'
 
 export default {
   name: 'CoursesPage',
@@ -87,7 +108,7 @@ export default {
       loading: false,
       error: null,
 
-      // 🔽 pagination state for when we call getAll()
+      // Pagination state for when we call getAll()
       currentPage: 1,
       pageSize: 5,
       totalPages: 1,
@@ -101,41 +122,55 @@ export default {
       const user = JSON.parse(u)
       return user.role === 'teacher'
     },
-    isStudent() {
-      const u = localStorage.getItem('user')
-      if (!u) return false
-      const user = JSON.parse(u)
-      return user.role === 'student'
+    computed: {
+      isTeacher() {
+        const u = localStorage.getItem('user')
+        if (!u) return false
+        const user = JSON.parse(u)
+        return user.role === 'teacher'
+      },
+      isStudent() {
+        const u = localStorage.getItem('user')
+        if (!u) return false
+        const user = JSON.parse(u)
+        return user.role === 'student'
+      },
     },
-    paginatedCourses() {
-      const start = (this.currentPage - 1) * this.pageSize
-      const end = start + this.pageSize
-      return this.courses.slice(start, end)
-    }
-  },
 
-  methods: {
-    async fetchCourses() {
-      try {
-        this.loading = true
-        this.error = null
+    methods: {
+      courseSlug(course) {
+        return courseSlug(course)
+      },
+      async fetchCourses() {
+        try {
+          this.loading = true
+          this.error = null
 
-        let res
+          let res
 
         if (this.isTeacher) {
           try {
             // teachers: first try only their courses
             res = await CourseService.getMine()
-            const data = res.data.data || res.data || []
-            this.courses = data
 
-            // 🔽 update pagination based on courses list
+            // handle weird statuses or empty body (e.g. 304)
+            const raw = res.data
+            const mineData = (raw && raw.data) || raw || []
+
+            if (!Array.isArray(mineData) || mineData.length === 0) {
+              // behave as if it failed → go to catch and fall back to /courses
+              throw new Error(`No data from /courses/mine (status ${res.status})`)
+            }
+
+            this.courses = mineData
+
+            // 🔽 frontend pagination for teacher
             this.total = this.courses.length
             this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
 
             return
           } catch (err) {
-            // If teacher fetch fails (e.g., not assigned yet), fall back to all
+            // If teacher fetch fails or is empty, fall back to all (backend pagination)
             const params = {
               page: this.currentPage,
               limit: this.pageSize
@@ -148,7 +183,7 @@ export default {
           const data = enrollments.data.data || enrollments.data || []
           this.courses = data.map(att => att.course).filter(Boolean)
 
-          // 🔽 update pagination based on courses list
+          // Update pagination based on courses list
           this.total = this.courses.length
           this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
 
@@ -159,14 +194,25 @@ export default {
             page: this.currentPage,
             limit: this.pageSize
           }
-          res = await CourseService.getAll(params)
-        }
 
-        const data = res.data
+          const data = res.data
 
-        this.courses = data.data || data // sometimes API uses data.data or data
+          this.courses = data.data || data // sometimes API uses data.data or data
 
-        // 🔽 update pagination based on what we actually have
+          // 🔽 use backend pagination numbers if available
+          if (typeof data.total === 'number') {
+            this.total = data.total
+          } else {
+            this.total = this.courses.length
+          }
+
+          if (typeof data.totalPages === 'number') {
+            this.totalPages = data.totalPages
+          } else {
+            this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
+          }
+
+        // Update pagination based on what we actually have
         this.total = this.courses.length
         this.totalPages = Math.max(Math.ceil(this.total / this.pageSize), 1)
       } catch (err) {
@@ -182,7 +228,7 @@ export default {
       return new Date(d).toLocaleString()
     },
 
-    // 🔽 pagination actions (only used when getAll() is being used)
+    // Pagination actions (only used when getAll() is being used)
     nextPage() {
       if (this.currentPage < this.totalPages) {
         this.currentPage++
@@ -222,5 +268,27 @@ export default {
 .course-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+}
+
+.pagination-bar {
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+@media (max-width: 576px) {
+  .pagination-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-actions,
+  .page-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .page-size-select {
+    min-width: 5rem;
+  }
 }
 </style>

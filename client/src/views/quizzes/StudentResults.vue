@@ -6,7 +6,7 @@
         <h3 class="mb-0">Results</h3>
         <div class="text-muted small">All quiz attempts linked to your account.</div>
       </div>
-      <router-link class="btn btn-outline-secondary btn-sm" to="/courses">Back to courses</router-link>
+      <BaseButton to="/courses" variant="secondary" outline size="sm">Back to courses</BaseButton>
     </div>
 
     <div v-if="loading" class="text-muted">Loading results...</div>
@@ -17,7 +17,7 @@
     <div v-else>
       <!-- Stats card -->
       <div v-if="hasScoredResults" class="card mb-3">
-        <div class="card-body d-flex flex-wrap gap-4">
+        <div class="card-body d-flex flex-wrap gap-4 results-stats">
           <div>
             <div class="text-uppercase small text-muted">Your average score</div>
             <div class="h4 mb-0">
@@ -47,7 +47,7 @@
 
       <!-- Results table -->
       <div class="table-responsive">
-        <table class="table table-striped align-middle">
+        <table class="table table-striped align-middle table-responsive-stack">
           <thead>
             <tr>
               <th>#</th>
@@ -59,11 +59,11 @@
           </thead>
           <tbody>
             <tr v-for="(r, idx) in results" :key="r._id">
-              <td>{{ idx + 1 }}</td>
-              <td>{{ r.quizTitle }}</td>
-              <td>{{ r.courseLabel }}</td>
-              <td>{{ r.score ?? '—' }}%</td>
-              <td>{{ formatDate(r.createdAt) }}</td>
+              <td data-label="#">{{ idx + 1 }}</td>
+              <td data-label="Quiz">{{ r.quizTitle }}</td>
+              <td data-label="Course">{{ r.courseLabel }}</td>
+              <td data-label="Score">{{ r.score ?? '-' }}%</td>
+              <td data-label="Submitted">{{ formatDate(r.createdAt) }}</td>
             </tr>
           </tbody>
         </table>
@@ -126,12 +126,13 @@ export default {
       return new Date(d).toLocaleString()
     },
     courseLabel(courseRef) {
-      if (!courseRef) return '—'
+      if (!courseRef) return 'Unknown course'
       if (typeof courseRef === 'object') {
-        return courseRef.name || courseRef.code || courseRef._id || '—'
+        return courseRef.name || courseRef.code || courseRef.slug || 'Unknown course'
       }
-      return this.courseNameById[courseRef] || courseRef || '—'
+      return this.courseNameById[courseRef] || 'Unknown course'
     },
+
     async hydrateCourseMap(courseIds) {
       const idsToFetch = courseIds.filter(id => id && !this.courseNameById[id])
       if (!idsToFetch.length) return
@@ -141,7 +142,7 @@ export default {
         enrollments.forEach(att => {
           const c = att.course
           if (c && c._id) {
-            this.courseNameById[c._id] = c.name || c.code || c._id
+            this.courseNameById[c._id] = c.name || c.code || c.slug || 'Unknown course'
           }
         })
       } catch (err) {
@@ -165,7 +166,7 @@ export default {
             courseIds.push(courseRef)
           }
           if (courseRef && typeof courseRef === 'object' && courseRef._id) {
-            this.courseNameById[courseRef._id] = courseRef.name || courseRef.code || courseRef._id
+            this.courseNameById[courseRef._id] = courseRef.name || courseRef.code || courseRef.slug || 'Unknown course'
           }
         })
         await this.hydrateCourseMap(courseIds)
@@ -191,5 +192,21 @@ export default {
 <style scoped>
 table {
   min-width: 520px;
+}
+
+.results-stats > div {
+  min-width: 150px;
+}
+
+@media (max-width: 640px) {
+  table {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 576px) {
+  .results-stats > div {
+    flex: 1 1 45%;
+  }
 }
 </style>

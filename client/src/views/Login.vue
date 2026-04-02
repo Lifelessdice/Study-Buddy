@@ -14,7 +14,7 @@
           <input v-model="password" class="form-control" type="password" required>
         </div>
 
-        <button class="btn btn-success w-100">Log In</button>
+        <BaseButton class="w-100" variant="success" type="submit">Log In</BaseButton>
 
         <p class="mt-3 text-center">
           Don't have an account?
@@ -26,7 +26,8 @@
 </template>
 
 <script>
-import api from '../Api'
+import Api from '@/Api'
+import { notifyError, notifySuccess } from '@/utils/notify'
 
 export default {
   data() {
@@ -38,7 +39,7 @@ export default {
   methods: {
     async login() {
       try {
-        const res = await api.post('/auth/login', {
+        const res = await Api.post('/auth/login', {
           email: this.email,
           password: this.password
         })
@@ -48,9 +49,10 @@ export default {
         localStorage.setItem('token', token)
         localStorage.setItem('user', JSON.stringify(user))
 
+        notifySuccess('Welcome back!')
         this.$router.push('/dashboard')
       } catch (err) {
-        alert(err.response?.data?.message || 'Login error')
+        notifyError(err.response?.data?.message || 'Login error')
       }
     }
   }

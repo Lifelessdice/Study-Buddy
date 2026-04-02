@@ -26,14 +26,16 @@
         >
           <div class="d-flex justify-content-between align-items-center mb-2">
             <label class="form-label mb-0">Question {{ qIdx + 1 }}</label>
-            <button
+            <BaseButton
               v-if="form.questions.length > 1"
-              class="btn btn-sm btn-outline-danger"
+              variant="danger"
+              outline
+              size="sm"
               type="button"
               @click="removeQuestion(qIdx)"
             >
               Remove question
-            </button>
+            </BaseButton>
           </div>
           <input v-model="q.text" type="text" class="form-control mb-3" placeholder="Question text">
           <div class="mb-2 fw-bold">Options</div>
@@ -46,27 +48,32 @@
               >
             </span>
             <input v-model="q.answers[oIdx]" type="text" class="form-control" placeholder="Option text">
-            <button
-              class="btn btn-outline-danger"
+            <BaseButton
+              variant="danger"
+              outline
               type="button"
               :disabled="q.answers.length <= 2"
               @click="removeOption(q, oIdx)"
             >
               Remove
-            </button>
+            </BaseButton>
           </div>
-          <button class="btn btn-sm btn-outline-secondary" type="button" @click="addOption(q)">+ Add option</button>
+          <BaseButton variant="secondary" outline size="sm" type="button" @click="addOption(q)">+ Add option</BaseButton>
         </div>
-        <button class="btn btn-sm btn-outline-primary" type="button" @click="addQuestion">+ Add question</button>
+        <BaseButton variant="primary" outline size="sm" type="button" @click="addQuestion">+ Add question</BaseButton>
       </div>
 
       <div class="d-flex gap-2">
-        <button class="btn btn-primary" :disabled="submitting" @click="submit">
+        <BaseButton variant="primary" :loading="submitting" :disabled="submitting" @click="submit">
           {{ submitting ? 'Saving...' : 'Save Changes' }}
-        </button>
-        <router-link class="btn btn-link" :to="{ name: 'CourseDashboard', params: { id: courseId }, query: { tab: 'quizzes' } }">
+        </BaseButton>
+        <BaseButton
+          :to="{ name: 'CourseDashboard', params: { courseSlug: courseSlug }, query: { tab: 'quizzes' } }"
+          variant="primary"
+          outline
+        >
           Cancel
-        </router-link>
+        </BaseButton>
       </div>
     </div>
     <div v-else class="p-3">Loading...</div>
@@ -76,14 +83,17 @@
 <script>
 import QuizService from '@/services/QuizService'
 import CourseService from '@/services/CourseService'
+import { courseSlug, quizSlug } from '@/utils/slug'
+import { notifyError } from '@/utils/notify'
 
 export default {
   name: 'EditQuiz',
-  props: ['quizId'],
+  props: ['quizSlug'],
   data() {
     return {
       quiz: null,
       courseId: null,
+      courseSlug: '',
       courseName: '',
       loaded: false,
       submitting: false,
@@ -97,8 +107,14 @@ export default {
   },
   async mounted() {
     try {
-      const res = await QuizService.get(this.$route.params.quizId)
-      const quiz = res.data.data || res.data
+      const listRes = await QuizService.getAll()
+      const list = listRes.data.data || listRes.data || []
+      const found = list.find(q => quizSlug(q) === this.$route.params.quizSlug)
+      if (!found) {
+        throw new Error('Quiz not found')
+      }
+      const res = await QuizService.get(found._id)
+      const quiz = res.data.data || res.data || found
       this.quiz = quiz
       this.courseId = quiz.course
       this.form = {
@@ -118,12 +134,13 @@ export default {
         const courseRes = await CourseService.getById(this.courseId)
         const c = courseRes.data.data || courseRes.data
         this.courseName = c.name
+        this.courseSlug = courseSlug(c)
       } catch (err) {
         // non-fatal
       }
       this.loaded = true
     } catch (err) {
-      alert('Failed to load quiz')
+      notifyError('Failed to load quiz')
       this.$router.push({ name: 'Courses' })
     }
   },
@@ -168,10 +185,10 @@ export default {
           questions
         }
         await QuizService.update(this.quiz._id, payload)
-        this.$router.push({ name: 'CourseDashboard', params: { id: this.courseId }, query: { tab: 'quizzes' } })
+        this.$router.push({ name: 'CourseDashboard', params: { courseSlug: this.courseSlug }, query: { tab: 'quizzes' } })
       } catch (err) {
         console.error(err)
-        alert('Failed to save quiz')
+        notifyError('Failed to save quiz')
       } finally {
         this.submitting = false
       }

@@ -1,4 +1,3 @@
-// client/src/router.js
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from './views/Home.vue'
 import Signup from './views/Signup.vue'
@@ -9,7 +8,6 @@ import CreateCourse from './views/courses/CreateCourse.vue'
 import EditCourse from './views/courses/EditCourse.vue'
 import AllCoursesPage from './views/courses/AllCoursesPage.vue'
 import CourseDashboard from './views/courses/CourseDashboard.vue'
-import DeleteAllCourses from './views/courses/DeleteAllCourses.vue'
 import CreateQuiz from './views/quizzes/CreateQuiz.vue'
 import EditQuiz from './views/quizzes/EditQuiz.vue'
 import TakeQuiz from './views/quizzes/TakeQuiz.vue'
@@ -17,6 +15,7 @@ import StudentResults from './views/quizzes/StudentResults.vue'
 import CourseSignupPage from './views/courses/CourseSignupPage.vue'
 import NotesList from './views/NotesList.vue'
 import NoteDetail from './views/NoteDetail.vue'
+import Profile from './views/Profile.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -36,7 +35,7 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/courses/:id',
+    path: '/courses/:courseSlug',
     name: 'CourseDashboard',
     component: CourseDashboard,
     props: true,
@@ -57,40 +56,34 @@ const routes = [
   },
 
   {
-    path: '/courses/delete-all',
-    name: 'DeleteAllCourses',
-    component: DeleteAllCourses,
-    meta: { requiresAuth: true, requiresTeacher: true }
-  },
-  {
     path: '/courses/create',
     name: 'CreateCourse',
     component: CreateCourse,
     meta: { requiresAuth: true, requiresTeacher: true }
   },
   {
-    path: '/courses/:id/edit',
+    path: '/courses/:courseSlug/edit',
     name: 'EditCourse',
     component: EditCourse,
     props: true,
     meta: { requiresAuth: true, requiresTeacher: true }
   },
   {
-    path: '/courses/:id/quizzes/create',
+    path: '/courses/:courseSlug/quizzes/create',
     name: 'CreateQuiz',
     component: CreateQuiz,
     props: true,
     meta: { requiresAuth: true, requiresTeacher: true }
   },
   {
-    path: '/quizzes/:quizId/edit',
+    path: '/quizzes/:quizSlug/edit',
     name: 'EditQuiz',
     component: EditQuiz,
     props: true,
     meta: { requiresAuth: true, requiresTeacher: true }
   },
   {
-    path: '/quizzes/:quizId/take',
+    path: '/quizzes/:quizSlug/take',
     name: 'TakeQuiz',
     component: TakeQuiz,
     props: true,
@@ -109,10 +102,16 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/notes/:id',
+    path: '/notes/:noteSlug',
     name: 'NoteDetail',
     component: NoteDetail,
     props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: Profile,
     meta: { requiresAuth: true }
   }
 

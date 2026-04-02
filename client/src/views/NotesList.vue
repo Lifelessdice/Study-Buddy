@@ -4,7 +4,16 @@
 
     <div class="list-group shadow-sm">
       <template v-for="item in lectures">
-        <div v-if="item.type === 'pdf'" :key="`pdf-${item._id}`" class="list-group-item text-start">
+        <div
+          v-if="item.type === 'pdf'"
+          :key="`pdf-${item._id}`"
+          class="list-group-item list-group-item-action text-start w-100"
+          role="button"
+          tabindex="0"
+          @click="toggleMaterial(item)"
+          @keydown.enter.prevent="toggleMaterial(item)"
+          @keydown.space.prevent="toggleMaterial(item)"
+        >
           <div class="d-flex justify-content-between align-items-center">
             <strong>{{ item.title }}</strong>
             <small class="text-muted">{{ formatDate(item.createdAt) }}</small>
@@ -12,118 +21,132 @@
           <div class="small text-muted">PDF</div>
           <div v-if="item.description" class="small text-muted mt-1">{{ item.description }}</div>
 
-          <div class="d-flex flex-wrap gap-2 mt-3">
-            <a class="btn btn-sm btn-outline-primary" :href="item.filePath" target="_blank" rel="noopener" :download="item.downloadName">Open PDF</a>
-          </div>
-
-          <div class="mt-3 p-3 border rounded bg-light-subtle">
-            <!-- Summary -->
-            <div class="mb-3">
-              <div v-if="aiState[item._id]?.error" class="alert alert-warning mb-3">
-                {{ aiState[item._id].error }}
-              </div>
-              <button class="btn btn-primary mb-2" @click="generateMaterialSummary(item)" :disabled="aiState[item._id]?.loadingSummary">
-                Generate Summary
-              </button>
-              <div v-if="aiState[item._id]?.loadingSummary" class="text-center my-2">
-                <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Loading...</span>
-                </div>
-                <p>Generating summary, please wait...</p>
-              </div>
-              <div v-if="aiState[item._id]?.summary && !aiState[item._id]?.loadingSummary">{{ aiState[item._id].summary }}</div>
-            </div>
-
-            <!-- Quiz -->
-            <div class="mb-3">
-              <button class="btn btn-success mb-2" @click="generateMaterialQuiz(item)" :disabled="aiState[item._id]?.loadingQuiz">
-                Generate Quiz
-              </button>
-              <div v-if="aiState[item._id]?.loadingQuiz" class="text-center my-2">
-                <div class="spinner-border text-success" role="status">
-                  <span class="visually-hidden">Loading...</span>
-                </div>
-                <p>Generating quiz, please wait...</p>
-              </div>
-              <ul v-if="aiState[item._id]?.quiz?.length && !aiState[item._id]?.loadingQuiz" class="list-group">
-                <li v-for="(q, idx) in aiState[item._id].quiz" :key="idx" class="list-group-item">
-                  <strong>Q{{ idx + 1 }}: {{ q.question }}</strong>
-                  <ul class="list-group mt-2">
-                    <li v-for="(opt, i) in q.options" :key="i" class="list-group-item">
-                      {{ String.fromCharCode(65 + i) }}. {{ opt }}
-                    </li>
-                  </ul>
-                  <small class="text-muted mt-2 d-block">Answer: {{ q.answer }}</small>
-                </li>
-              </ul>
-            </div>
-
-            <!-- Flashcards -->
-            <div>
-              <button
-                class="btn btn-warning mb-2"
-                @click="generateMaterialFlashcards(item)"
-                :disabled="aiState[item._id]?.loadingFlashcards"
+          <div v-if="expandedMaterialId === item._id" class="mt-3 p-3 border rounded bg-light-subtle">
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <BaseButton
+                size="sm"
+                variant="primary"
+                outline
+                :href="item.filePath"
+                target="_blank"
+                rel="noopener"
+                :download="item.downloadName"
+                @click.stop
               >
-                <span v-if="aiState[item._id]?.loadingFlashcards">Generating...</span>
-                <span v-else>Generate Flashcards</span>
-              </button>
-              <div v-if="aiState[item._id]?.loadingFlashcards" class="text-center my-2">
-                <div class="spinner-border text-warning" role="status">
-                  <span class="visually-hidden">Loading...</span>
-                </div>
-                <p>Generating flashcards, please wait...</p>
-              </div>
-              <div v-if="aiState[item._id]?.flashcards?.length && !aiState[item._id]?.loadingFlashcards" class="flashcards-container">
-                <div
-                  class="flashcard"
-                  v-for="(fc, idx) in aiState[item._id].flashcards"
-                  :key="idx"
-                  :class="{ flipped: fc.flipped }"
-                  @click="fc.flipped = !fc.flipped"
+                Open PDF
+              </BaseButton>
+            </div>
+
+            <ul class="nav nav-tabs mb-3 responsive-tabs">
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  :class="{ active: aiState[item._id]?.activeTab === 'summary' }"
+                  @click.stop.prevent="setAiTab(item._id, 'summary')"
                 >
-                  <div class="front">
-                    Q: {{ fc.question }}
-                  </div>
-                  <div class="back">
-                    A: {{ fc.answer }}
-                  </div>
-                </div>
-              </div>
+                  Summary
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  :class="{ active: aiState[item._id]?.activeTab === 'quiz' }"
+                  @click.stop.prevent="setAiTab(item._id, 'quiz')"
+                >
+                  Quiz
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  :class="{ active: aiState[item._id]?.activeTab === 'flashcards' }"
+                  @click.stop.prevent="setAiTab(item._id, 'flashcards')"
+                >
+                  Flashcards
+                </a>
+              </li>
+            </ul>
+
+            <div v-if="aiState[item._id]?.error" class="alert alert-warning mb-3">
+              {{ aiState[item._id].error }}
+            </div>
+
+            <div v-show="aiState[item._id]?.activeTab === 'summary'">
+              <AiSummaryPanel
+                :summary="aiState[item._id]?.summary || ''"
+                :loading="aiState[item._id]?.loadingSummary"
+                button-class="mb-2"
+                loading-class="text-center my-2"
+                @generate="generateMaterialSummary(item)"
+              />
+            </div>
+
+            <div v-show="aiState[item._id]?.activeTab === 'quiz'">
+              <AiQuizPanel
+                :quiz="aiState[item._id]?.quiz || []"
+                :loading="aiState[item._id]?.loadingQuiz"
+                button-class="mb-2"
+                loading-class="text-center my-2"
+                @generate="generateMaterialQuiz(item)"
+                @select="selectOption"
+              />
+            </div>
+
+            <div v-show="aiState[item._id]?.activeTab === 'flashcards'">
+              <FlashcardsPanel
+                :flashcards="aiState[item._id]?.flashcards || []"
+                :loading="aiState[item._id]?.loadingFlashcards"
+                @generate="generateMaterialFlashcards(item)"
+                @toggle="toggleMaterialFlashcard(item, $event)"
+              />
             </div>
           </div>
         </div>
 
-        <button
+        <div
           v-else
           :key="`note-${item._id}`"
           class="list-group-item list-group-item-action text-start"
+          role="button"
+          tabindex="0"
           @click="goToLecture(item)"
+          @keydown.enter.prevent="goToLecture(item)"
+          @keydown.space.prevent="goToLecture(item)"
         >
           <div class="d-flex justify-content-between align-items-center">
             <strong>{{ item.title }}</strong>
             <small class="text-muted">{{ formatDate(item.createdAt) }}</small>
           </div>
           <div class="small text-muted">Text</div>
-        </button>
+        </div>
       </template>
     </div>
   </div>
 </template>
 
 <script>
-import api from '../Api'
 import Api from '@/Api'
+import { notifyError } from '@/utils/notify'
 import CourseMaterialService from '@/services/CourseMaterialService'
+import AiQuizPanel from '@/components/AiQuizPanel.vue'
+import AiSummaryPanel from '@/components/AiSummaryPanel.vue'
+import FlashcardsPanel from '@/components/FlashcardsPanel.vue'
+import { handleAiFlashcards, handleAiQuiz, handleAiSummary } from '@/utils/aiHandlers'
+import { toggleFlashcard } from '@/utils/aiFlashcards'
+import { selectQuizOption } from '@/utils/aiQuiz'
+import { createAiState } from '@/utils/aiState'
+import { noteSlug } from '@/utils/slug'
 
 export default {
+  components: { AiQuizPanel, AiSummaryPanel, FlashcardsPanel },
   data() {
     return {
       notes: [],
       materials: [],
       user: null,
       studentAttendance: [], // stores the student's enrolled courses
-      aiState: {}
+      aiState: {},
+      expandedMaterialId: null
     }
   },
 
@@ -151,6 +174,7 @@ export default {
     lectures() {
       const noteItems = (this.filteredNotes || []).map(n => ({
         _id: n._id,
+        slug: noteSlug(n),
         title: n.topic,
         description: '',
         createdAt: n.createdAt,
@@ -175,18 +199,13 @@ export default {
 
   async created() {
     try {
-      const token = localStorage.getItem('token')
       this.user = JSON.parse(localStorage.getItem('user'))
 
-      const notesRes = await api.get('/notes', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const notesRes = await Api.get('/notes')
       this.notes = notesRes.data.data
 
       if (this.user && this.user.role === 'student') {
-        const attRes = await api.get('/courses/attendances/mine', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        const attRes = await Api.get('/courses/attendances/mine')
         this.studentAttendance = attRes.data.data || []
 
         const courseIds = this.enrolledCourseIds
@@ -202,31 +221,37 @@ export default {
       }
     } catch (err) {
       console.error(err)
-      alert('Failed to load lectures')
+      notifyError('Failed to load lectures')
     }
   },
 
   methods: {
     ensureState(id) {
       if (this.aiState[id]) return this.aiState[id]
-      const fresh = {
-        summary: '',
-        quiz: [],
-        flashcards: [],
-        loadingSummary: false,
-        loadingQuiz: false,
-        loadingFlashcards: false,
-        error: ''
-      }
+      const fresh = createAiState()
       this.aiState = { ...this.aiState, [id]: fresh }
       return fresh
     },
-    goToLecture(item) {
-      if (item.type === 'pdf' && item.filePath) {
-        window.open(item.filePath, '_blank', 'noopener')
-      } else {
-        this.$router.push(`/notes/${item._id}`)
+    selectOption(question, index) {
+      selectQuizOption(question, index)
+    },
+    setAiTab(id, tab) {
+      const state = this.ensureState(id)
+      state.activeTab = tab
+    },
+    toggleMaterialFlashcard(item, index) {
+      const state = this.ensureState(item._id)
+      toggleFlashcard(state.flashcards, index)
+    },
+    toggleMaterial(item) {
+      const isSame = this.expandedMaterialId === item._id
+      this.expandedMaterialId = isSame ? null : item._id
+      if (!isSame) {
+        this.ensureState(item._id)
       }
+    },
+    goToLecture(item) {
+      this.$router.push(`/notes/${item.slug}`)
     },
     formatDate(iso) {
       if (!iso) return ''
@@ -234,112 +259,43 @@ export default {
     },
     async generateMaterialSummary(item) {
       const state = this.ensureState(item._id)
-      state.loadingSummary = true
-      state.summary = ''
-      state.error = ''
-      try {
-        if (!item.courseId) {
-          state.error = 'Missing course for this PDF.'
-          return
-        }
-        const res = await CourseMaterialService.summarize(item.courseId, item._id)
-        state.summary = res.data.summary || res.data.data?.summary || 'No summary returned'
-      } catch (err) {
-        state.error = 'Failed to generate summary. Please try again.'
-      } finally {
-        state.loadingSummary = false
+      if (!item.courseId) {
+        state.error = 'Missing course for this PDF.'
+        return
       }
+      await handleAiSummary({
+        request: () => CourseMaterialService.summarize(item.courseId, item._id),
+        setLoading: (value) => { state.loadingSummary = value },
+        setSummary: (value) => { state.summary = value },
+        setError: (value) => { state.error = value }
+      })
     },
     async generateMaterialQuiz(item) {
       const state = this.ensureState(item._id)
-      state.loadingQuiz = true
-      state.quiz = []
-      state.error = ''
-      try {
-        if (!item.courseId) {
-          state.error = 'Missing course for this PDF.'
-          return
-        }
-        const res = await CourseMaterialService.quiz(item.courseId, item._id)
-        state.quiz = res.data.quiz || res.data.data?.quiz || []
-        if (!state.quiz.length) state.error = 'No quiz questions were returned.'
-      } catch (err) {
-        state.error = 'Failed to generate quiz. Please try again.'
-      } finally {
-        state.loadingQuiz = false
+      if (!item.courseId) {
+        state.error = 'Missing course for this PDF.'
+        return
       }
+      await handleAiQuiz({
+        request: () => CourseMaterialService.quiz(item.courseId, item._id),
+        setLoading: (value) => { state.loadingQuiz = value },
+        setQuiz: (value) => { state.quiz = value },
+        setError: (value) => { state.error = value }
+      })
     },
     async generateMaterialFlashcards(item) {
       const state = this.ensureState(item._id)
-      state.loadingFlashcards = true
-      state.flashcards = []
-      state.error = ''
-      try {
-        if (!item.courseId) {
-          state.error = 'Missing course for this PDF.'
-          return
-        }
-        const res = await CourseMaterialService.flashcards(item.courseId, item._id)
-        const payload = res.data.flashcards || res.data.data?.flashcards || []
-        state.flashcards = payload.map(fc => ({
-          ...fc,
-          flipped: false
-        }))
-        if (!state.flashcards.length) state.error = 'No flashcards were returned.'
-      } catch (err) {
-        state.error = 'Failed to generate flashcards. Please try again.'
-      } finally {
-        state.loadingFlashcards = false
+      if (!item.courseId) {
+        state.error = 'Missing course for this PDF.'
+        return
       }
+      await handleAiFlashcards({
+        request: () => CourseMaterialService.flashcards(item.courseId, item._id),
+        setLoading: (value) => { state.loadingFlashcards = value },
+        setFlashcards: (value) => { state.flashcards = value },
+        setError: (value) => { state.error = value }
+      })
     }
   }
 }
 </script>
-
-<style scoped>
-.flashcards-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.flashcard {
-  width: 200px;
-  height: 120px;
-  perspective: 1000px;
-  cursor: pointer;
-  position: relative;
-  transform-style: preserve-3d;
-}
-
-.flashcard .front,
-.flashcard .back {
-  width: 100%;
-  height: 100%;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  backface-visibility: hidden;
-  transition: transform 0.6s;
-  position: absolute;
-}
-
-.flashcard .back {
-  background: #f8f9fa;
-  transform: rotateY(180deg);
-}
-
-.flashcard.flipped .front {
-  transform: rotateY(180deg);
-}
-
-.flashcard.flipped .back {
-  transform: rotateY(0deg);
-}
-</style>
