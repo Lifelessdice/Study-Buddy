@@ -34,7 +34,7 @@
           <div v-if="loadingUpcoming" class="text-muted">Loading upcoming quizzes...</div>
           <div v-else-if="upcomingError" class="alert alert-danger">{{ upcomingError }}</div>
           <div v-else-if="!upcomingQuizzes.length" class="alert alert-info">
-            Nothing coming up. Enjoy your day! 🎉
+            Nothing coming up. Enjoy your day!
           </div>
           <div v-else class="list-group">
             <div

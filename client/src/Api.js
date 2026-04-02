@@ -16,7 +16,7 @@ apiClient.interceptors.request.use((config) => {
   return config
 })
 
-// Global 401 handler: if token is invalid/expired → logout + go to login
+// Global 401 handler: if token is invalid/expired -> logout + go to login
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {

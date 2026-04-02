@@ -1,4 +1,3 @@
-// client/src/router.js
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from './views/Home.vue'
 import Signup from './views/Signup.vue'
@@ -9,7 +8,6 @@ import CreateCourse from './views/courses/CreateCourse.vue'
 import EditCourse from './views/courses/EditCourse.vue'
 import AllCoursesPage from './views/courses/AllCoursesPage.vue'
 import CourseDashboard from './views/courses/CourseDashboard.vue'
-import DeleteAllCourses from './views/courses/DeleteAllCourses.vue'
 import CreateQuiz from './views/quizzes/CreateQuiz.vue'
 import EditQuiz from './views/quizzes/EditQuiz.vue'
 import TakeQuiz from './views/quizzes/TakeQuiz.vue'
@@ -57,12 +55,6 @@ const routes = [
     meta: { requiresAuth: true }
   },
 
-  {
-    path: '/courses/delete-all',
-    name: 'DeleteAllCourses',
-    component: DeleteAllCourses,
-    meta: { requiresAuth: true, requiresTeacher: true }
-  },
   {
     path: '/courses/create',
     name: 'CreateCourse',

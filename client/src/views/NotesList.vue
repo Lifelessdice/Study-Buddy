@@ -3,9 +3,10 @@
     <h2 class="mb-4">Your Lectures</h2>
 
     <div class="list-group shadow-sm">
-      <template v-for="item in lectures" :key="item._id">
+      <template v-for="item in lectures">
         <div
           v-if="item.type === 'pdf'"
+          :key="`pdf-${item._id}`"
           class="list-group-item list-group-item-action text-start w-100"
           role="button"
           tabindex="0"
@@ -104,6 +105,7 @@
 
         <div
           v-else
+          :key="`note-${item._id}`"
           class="list-group-item list-group-item-action text-start"
           role="button"
           tabindex="0"
@@ -123,8 +125,8 @@
 </template>
 
 <script>
-import api from '../Api'
 import Api from '@/Api'
+import { notifyError } from '@/utils/notify'
 import CourseMaterialService from '@/services/CourseMaterialService'
 import AiQuizPanel from '@/components/AiQuizPanel.vue'
 import AiSummaryPanel from '@/components/AiSummaryPanel.vue'
@@ -197,18 +199,13 @@ export default {
 
   async created() {
     try {
-      const token = localStorage.getItem('token')
       this.user = JSON.parse(localStorage.getItem('user'))
 
-      const notesRes = await api.get('/notes', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const notesRes = await Api.get('/notes')
       this.notes = notesRes.data.data
 
       if (this.user && this.user.role === 'student') {
-        const attRes = await api.get('/courses/attendances/mine', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        const attRes = await Api.get('/courses/attendances/mine')
         this.studentAttendance = attRes.data.data || []
 
         const courseIds = this.enrolledCourseIds
@@ -224,7 +221,7 @@ export default {
       }
     } catch (err) {
       console.error(err)
-      alert('Failed to load lectures')
+      notifyError('Failed to load lectures')
     }
   },
 

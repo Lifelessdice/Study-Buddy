@@ -184,3 +184,9 @@ This feature qualifies as advanced functionality because it:
 - Extends the system beyond standard entity-based CRUD operations  
 
 The feature aligns with the system’s educational purpose and demonstrates a deeper understanding of full-stack web application development.
+
+
+
+##Teaser(MS3)##
+![Teaser](./images/teaser.png)
+

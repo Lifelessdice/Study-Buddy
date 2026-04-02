@@ -69,7 +69,8 @@
         </BaseButton>
         <BaseButton
           :to="{ name: 'CourseDashboard', params: { courseSlug: courseSlug }, query: { tab: 'quizzes' } }"
-          variant="link"
+          variant="primary"
+          outline
         >
           Cancel
         </BaseButton>
@@ -83,6 +84,7 @@
 import QuizService from '@/services/QuizService'
 import CourseService from '@/services/CourseService'
 import { courseSlug, quizSlug } from '@/utils/slug'
+import { notifyError } from '@/utils/notify'
 
 export default {
   name: 'EditQuiz',
@@ -138,7 +140,7 @@ export default {
       }
       this.loaded = true
     } catch (err) {
-      alert('Failed to load quiz')
+      notifyError('Failed to load quiz')
       this.$router.push({ name: 'Courses' })
     }
   },
@@ -186,7 +188,7 @@ export default {
         this.$router.push({ name: 'CourseDashboard', params: { courseSlug: this.courseSlug }, query: { tab: 'quizzes' } })
       } catch (err) {
         console.error(err)
-        alert('Failed to save quiz')
+        notifyError('Failed to save quiz')
       } finally {
         this.submitting = false
       }

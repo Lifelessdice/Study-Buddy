@@ -62,7 +62,7 @@
               <td data-label="#">{{ idx + 1 }}</td>
               <td data-label="Quiz">{{ r.quizTitle }}</td>
               <td data-label="Course">{{ r.courseLabel }}</td>
-              <td data-label="Score">{{ r.score ?? '—' }}%</td>
+              <td data-label="Score">{{ r.score ?? '-' }}%</td>
               <td data-label="Submitted">{{ formatDate(r.createdAt) }}</td>
             </tr>
           </tbody>
@@ -210,4 +210,3 @@ table {
   }
 }
 </style>
-
